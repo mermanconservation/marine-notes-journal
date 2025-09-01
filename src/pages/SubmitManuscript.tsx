@@ -85,6 +85,7 @@ const SubmitManuscript = () => {
                           <SelectItem value="research-article">Research Article</SelectItem>
                           <SelectItem value="review">Review Article</SelectItem>
                           <SelectItem value="short-communication">Short Communication</SelectItem>
+                          <SelectItem value="conservation-news">Conservation News</SelectItem>
                           <SelectItem value="case-study">Case Study</SelectItem>
                           <SelectItem value="methodology">Methodology Paper</SelectItem>
                         </SelectContent>

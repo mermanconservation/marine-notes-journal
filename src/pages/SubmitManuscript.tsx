@@ -98,7 +98,7 @@ const SubmitManuscript = () => {
                         id="abstract"
                         value={formData.abstract}
                         onChange={(e) => handleInputChange("abstract", e.target.value)}
-                        placeholder="Enter your manuscript abstract (250-300 words)"
+                        placeholder="Enter your manuscript abstract (up to 250 words)"
                         className="mt-2 min-h-[120px]"
                         required
                       />
@@ -110,7 +110,7 @@ const SubmitManuscript = () => {
                         id="keywords"
                         value={formData.keywords}
                         onChange={(e) => handleInputChange("keywords", e.target.value)}
-                        placeholder="Enter 4-6 keywords separated by commas"
+                        placeholder="Enter 5 keywords separated by commas"
                         className="mt-2"
                         required
                       />

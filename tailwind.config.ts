@@ -63,6 +63,19 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				}
 			},
+			backgroundImage: {
+				'gradient-ocean': 'var(--gradient-ocean)',
+				'gradient-waves': 'var(--gradient-waves)',
+				'gradient-deep': 'var(--gradient-deep)'
+			},
+			boxShadow: {
+				'ocean': 'var(--shadow-ocean)',
+				'soft': 'var(--shadow-soft)'
+			},
+			fontFamily: {
+				'academic': 'var(--font-academic)',
+				'sans': 'var(--font-sans)'
+			},
 			borderRadius: {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',

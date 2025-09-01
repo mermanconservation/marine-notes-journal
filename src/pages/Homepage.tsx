@@ -30,19 +30,7 @@ const Homepage = () => {
 
   const recentHighlights = [
     {
-      title: "Coral Reef Restoration in the Caribbean: A Decade of Progress",
-      authors: "Smith, J.M., Rodriguez, A.C., et al.",
-      issue: "Vol. 15, No. 3 (2024)"
-    },
-    {
-      title: "Deep-Sea Biodiversity Patterns in Marine Protected Areas",
-      authors: "Thompson, K.L., Chen, W., Martinez, R.",
-      issue: "Vol. 15, No. 2 (2024)"
-    },
-    {
-      title: "Climate Change Impacts on Arctic Marine Ecosystems",
-      authors: "Anderson, P.R., Nordström, L., Kim, S.H.",
-      issue: "Vol. 15, No. 1 (2024)"
+
     }
   ];
 

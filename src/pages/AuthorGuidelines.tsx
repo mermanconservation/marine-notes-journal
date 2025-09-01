@@ -12,6 +12,7 @@ const AuthorGuidelines = () => {
         "Research Articles: Original research (max 8,000 words)",
         "Review Articles: Comprehensive reviews (max 10,000 words)",
         "Short Communications: Brief reports (max 3,000 words)",
+        "Conservation News: Updates, reports, and announcements on current conservation issues from the last 6 months (max 2,000 words)
         "Case Studies: Specific case analyses (max 5,000 words)",
         "Methodology Papers: New methods or techniques (max 6,000 words)"
       ]
@@ -20,7 +21,7 @@ const AuthorGuidelines = () => {
       title: "Manuscript Structure",
       items: [
         "Title page with author information and affiliations",
-        "Abstract (250-300 words) with keywords (4-6 terms)",
+        "Abstract (250 words) with keywords (5 terms)",
         "Introduction with clear research objectives",
         "Materials and Methods with sufficient detail for replication",
         "Results presented clearly with appropriate figures/tables",
@@ -71,7 +72,7 @@ const AuthorGuidelines = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="mb-4">
-                    Marine Notes Journal welcomes original research articles, reviews, and communications 
+                    Marine Notes Journal welcomes original research articles, reviews, conservation news, and communications 
                     in all areas of marine science, with particular emphasis on conservation biology, 
                     ecology, oceanography, and sustainable resource management.
                   </p>
@@ -80,7 +81,7 @@ const AuthorGuidelines = () => {
                     <p className="text-sm text-muted-foreground">
                       All submissions undergo rigorous double-blind peer review by international 
                       experts in relevant fields. The editorial decision timeline is typically 
-                      8-12 weeks from submission.
+                      4-12 weeks from submission.
                     </p>
                   </div>
                 </CardContent>

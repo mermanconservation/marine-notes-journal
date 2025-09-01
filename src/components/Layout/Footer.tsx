@@ -50,9 +50,9 @@ const Footer = () => {
               <div className="flex items-start space-x-2 text-primary-foreground/80">
                 <MapPin className="h-4 w-4 mt-0.5" />
                 <span className="text-sm">
-                  Marine Research Institute<br />
-                  Ocean Science Department<br />
-                  University Campus
+                  Powered by Merman Conservation Expeditions Ltd<br />
+                  Environmental Consulting and Wildlife Research Company<br />
+                
                 </span>
               </div>
             </div>

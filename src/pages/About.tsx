@@ -6,10 +6,10 @@ import { Award, Globe, Users, BookOpen, Target, ArrowRight } from "lucide-react"
 
 const About = () => {
   const stats = [
-    { number: "150+", label: "Published Articles", icon: <BookOpen className="h-6 w-6" /> },
-    { number: "45", label: "Countries Represented", icon: <Globe className="h-6 w-6" /> },
-    { number: "300+", label: "Contributing Authors", icon: <Users className="h-6 w-6" /> },
-    { number: "14 Years", label: "Publishing Excellence", icon: <Award className="h-6 w-6" /> }
+    { number: "0", label: "Published Articles", icon: <BookOpen className="h-6 w-6" /> },
+    { number: "150+", label: "Countries Represented", icon: <Globe className="h-6 w-6" /> },
+    { number: "0", label: "Contributing Authors", icon: <Users className="h-6 w-6" /> },
+    { number: "0 Years", label: "Publishing Excellence", icon: <Award className="h-6 w-6" /> }
   ];
 
   const focusAreas = [
@@ -27,32 +27,32 @@ const About = () => {
 
   const milestones = [
     {
-      year: "2010",
+      year: "2026",
       title: "Journal Founded",
       description: "Marine Notes Journal established to advance open-access marine science publishing."
     },
     {
-      year: "2012", 
+      year: "-", 
       title: "First Impact Factor",
       description: "Achieved initial impact factor recognition within two years of operation."
     },
     {
-      year: "2015",
+      year: "-",
       title: "100th Article Published",
       description: "Reached milestone of 100 published peer-reviewed articles."
     },
     {
-      year: "2018",
+      year: "-",
       title: "International Editorial Board",
       description: "Expanded to include editorial board members from six continents."
     },
     {
-      year: "2020",
+      year: "2026",
       title: "Digital Transformation",
       description: "Launched enhanced digital platform with improved manuscript submission system."
     },
     {
-      year: "2024",
+      year: "-",
       title: "Sustainability Focus",
       description: "Launched special issue series on marine sustainability and climate resilience."
     }
@@ -68,10 +68,7 @@ const About = () => {
               About Marine Notes Journal
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Since 2010, Marine Notes Journal has been at the forefront of open-access 
-              marine science publication, fostering global collaboration in ocean research 
-              and conservation.
-            </p>
+Starting in 2026, Marine Notes Journal will be at the forefront of open-access marine science publication, fostering global collaboration in ocean research and conservation.            </p>
           </div>
 
           {/* Statistics */}

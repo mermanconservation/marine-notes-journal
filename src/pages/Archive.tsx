@@ -13,13 +13,13 @@ const Archive = () => {
 
   const volumes = [
     {
-      year: 2024,
-      volume: 15,
+      year: 2026,
+      volume: 1,
       issues: [
         {
-          issue: 3,
-          title: "Special Issue: Climate Change Impacts on Marine Ecosystems",
-          date: "September 2024",
+          issue: 1,
+          title: "TEST ",
+          date: "June 2026",
           articles: [
             {
               title: "Coral Reef Restoration in the Caribbean: A Decade of Progress and Future Directions",
@@ -29,65 +29,11 @@ const Archive = () => {
               doi: "10.1234/mnj.2024.15.3.001",
               abstract: "This comprehensive study analyzes ten years of coral restoration efforts across Caribbean marine protected areas, revealing significant recovery patterns and identifying key factors for successful restoration programs."
             },
-            {
-              title: "Ocean Acidification Effects on Shellfish Aquaculture: Economic and Ecological Implications",
-              authors: "Chen, W., Martinez, R., Patel, S.K.",
-              type: "Research Article", 
-              pages: "268-285",
-              doi: "10.1234/mnj.2024.15.3.002",
-              abstract: "An interdisciplinary analysis of ocean acidification impacts on commercial shellfish operations, combining ecological monitoring with economic modeling to project future industry challenges."
-            }
-          ]
-        },
-        {
-          issue: 2,
-          title: "Marine Biodiversity and Conservation",
-          date: "May 2024", 
-          articles: [
-            {
-              title: "Deep-Sea Biodiversity Patterns in Newly Established Marine Protected Areas",
-              authors: "Thompson, K.L., Chen, W., Martinez, R.",
-              type: "Research Article",
-              pages: "156-178",
-              doi: "10.1234/mnj.2024.15.2.001",
-              abstract: "First comprehensive survey of deep-sea fauna in recently designated MPAs, revealing unexpected diversity patterns and providing baseline data for conservation monitoring."
-            },
-            {
-              title: "Microplastic Distribution in Coastal Sediments: A Global Meta-Analysis",
-              authors: "Anderson, P.R., Kim, S.H., Müller, J.",
-              type: "Review Article",
-              pages: "179-201",
-              doi: "10.1234/mnj.2024.15.2.002",
-              abstract: "Systematic review of microplastic contamination patterns in coastal environments worldwide, identifying pollution hotspots and standardizing detection methodologies."
-            }
-          ]
-        }
-      ]
-    },
-    {
-      year: 2023,
-      volume: 14,
-      issues: [
-        {
-          issue: 4,
-          title: "Marine Biotechnology and Innovation",
-          date: "December 2023",
-          articles: [
-            {
-              title: "Novel Bioactive Compounds from Marine Sponges: Pharmaceutical Applications",
-              authors: "Foster, R.L., Wang, L., Santos, M.A.",
-              type: "Research Article",
-              pages: "312-329",
-              doi: "10.1234/mnj.2023.14.4.001",
-              abstract: "Discovery and characterization of three new bioactive metabolites from deep-sea sponges, with promising applications in cancer treatment and antimicrobial therapy."
-            }
-          ]
-        }
       ]
     }
   ];
 
-  const years = ["2024", "2023", "2022", "2021"];
+  const years = ["2026"];
   const articleTypes = ["All Types", "Research Article", "Review Article", "Short Communication", "Case Study"];
 
   const filteredVolumes = volumes.filter(volume => {

@@ -13,18 +13,9 @@ const EditorialBoard = () => {
     bio: "Mr. Taklis has over 20 years of experience in marine ecology and conservation biology research with a focus on shark conservation. He has authored over 40 peer-reviewed publications and serves on multiple international conservation panels."
   };
 
-  const associateEditors = [
-    {
-      
-    },
+  const associateEditors = [];
 
-  ];
-
-  const editorialBoard = [
-    {
-
-    },
-  ];
+  const editorialBoard = [];
 
   return (
     <div className="min-h-screen bg-background py-12">
@@ -83,74 +74,78 @@ const EditorialBoard = () => {
           </div>
 
           {/* Associate Editors */}
-          <div className="mb-12">
-            <h2 className="font-academic text-2xl font-semibold mb-6 text-center">Associate Editors</h2>
-            <div className="grid gap-6 lg:grid-cols-2">
-              {associateEditors.map((editor, index) => (
-                <Card key={index} className="hover:shadow-soft transition-shadow">
-                  <CardHeader>
-                    <CardTitle className="text-lg">{editor.name}</CardTitle>
-                    <p className="text-primary font-medium">{editor.title}</p>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{editor.affiliation}</p>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <MapPin className="h-4 w-4" />
-                          {editor.location}
+          {associateEditors.length > 0 && (
+            <div className="mb-12">
+              <h2 className="font-academic text-2xl font-semibold mb-6 text-center">Associate Editors</h2>
+              <div className="grid gap-6 lg:grid-cols-2">
+                {associateEditors.map((editor, index) => (
+                  <Card key={index} className="hover:shadow-soft transition-shadow">
+                    <CardHeader>
+                      <CardTitle className="text-lg">{editor.name}</CardTitle>
+                      <p className="text-primary font-medium">{editor.title}</p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">{editor.affiliation}</p>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <MapPin className="h-4 w-4" />
+                            {editor.location}
+                          </div>
                         </div>
-                      </div>
-                      
-                      <div>
-                        <h4 className="text-sm font-medium mb-2">Research Areas</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {editor.expertise.map((area, areaIndex) => (
-                            <Badge key={areaIndex} variant="outline" className="text-xs">
-                              {area}
-                            </Badge>
-                          ))}
+                        
+                        <div>
+                          <h4 className="text-sm font-medium mb-2">Research Areas</h4>
+                          <div className="flex flex-wrap gap-2">
+                            {editor.expertise.map((area, areaIndex) => (
+                              <Badge key={areaIndex} variant="outline" className="text-xs">
+                                {area}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
-                      </div>
 
-                      <div className="flex items-center gap-2 text-sm pt-2 border-t">
-                        <Mail className="h-4 w-4 text-primary" />
-                        <a href={`mailto:${editor.email}`} className="text-primary hover:underline">
-                          Contact
-                        </a>
+                        <div className="flex items-center gap-2 text-sm pt-2 border-t">
+                          <Mail className="h-4 w-4 text-primary" />
+                          <a href={`mailto:${editor.email}`} className="text-primary hover:underline">
+                            Contact
+                          </a>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Editorial Board Members */}
-          <div>
-            <h2 className="font-academic text-2xl font-semibold mb-6 text-center">Editorial Board Members</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {editorialBoard.map((member, index) => (
-                <Card key={index} className="hover:shadow-soft transition-shadow">
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-foreground mb-1">{member.name}</h3>
-                    <p className="text-sm text-muted-foreground mb-2">{member.affiliation}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                      <MapPin className="h-3 w-3" />
-                      {member.location}
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {member.expertise.map((area, areaIndex) => (
-                        <Badge key={areaIndex} variant="outline" className="text-xs">
-                          {area}
-                        </Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+          {editorialBoard.length > 0 && (
+            <div>
+              <h2 className="font-academic text-2xl font-semibold mb-6 text-center">Editorial Board Members</h2>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {editorialBoard.map((member, index) => (
+                  <Card key={index} className="hover:shadow-soft transition-shadow">
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold text-foreground mb-1">{member.name}</h3>
+                      <p className="text-sm text-muted-foreground mb-2">{member.affiliation}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                        <MapPin className="h-3 w-3" />
+                        {member.location}
+                      </div>
+                      <div className="flex flex-wrap gap-1">
+                        {member.expertise.map((area, areaIndex) => (
+                          <Badge key={areaIndex} variant="outline" className="text-xs">
+                            {area}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Call to Action */}
           <div className="mt-16 text-center">

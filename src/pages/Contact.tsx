@@ -20,10 +20,24 @@ const Contact = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const emailBody = `Name: ${formData.name}
+Email: ${formData.email}
+Inquiry Type: ${formData.inquiry_type}
+Subject: ${formData.subject}
+
+Message:
+${formData.message}`;
+
+    const mailtoLink = `mailto:editor@marinenotesjournal.com?subject=${encodeURIComponent(formData.subject)}&body=${encodeURIComponent(emailBody)}`;
+    
+    window.open(mailtoLink, '_blank');
+    
     toast({
-      title: "Message Sent",
-      description: "Thank you for your inquiry. We'll respond within 2-3 business days.",
+      title: "Email Opened",
+      description: "Your email client should open with the message pre-filled. Please send when ready.",
     });
+    
     setFormData({
       name: "",
       email: "",

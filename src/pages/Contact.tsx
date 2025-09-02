@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Mail, Phone, MapPin, Clock } from "lucide-react";
+import { Mail, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Contact = () => {
@@ -44,25 +44,8 @@ const Contact = () => {
     {
       icon: <Mail className="h-5 w-5" />,
       title: "Email",
-      details: ["editor@marinenotesjournal.org", "submissions@marinenotesjournal.org"],
+      details: ["editor@marinenotesjournal.org"],
       note: "Primary contact method"
-    },
-    {
-      icon: <Phone className="h-5 w-5" />,
-      title: "Phone",
-      details: ["+1 (555) 123-4567"],
-      note: "Business hours only"
-    },
-    {
-      icon: <MapPin className="h-5 w-5" />,
-      title: "Mailing Address",
-      details: [
-        "Marine Notes Journal",
-        "Marine Research Institute", 
-        "1234 Ocean Drive",
-        "San Diego, CA 92101, USA"
-      ],
-      note: "For physical correspondence"
     },
     {
       icon: <Clock className="h-5 w-5" />,
@@ -223,20 +206,6 @@ const Contact = () => {
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-ocean text-primary-foreground">
-                <CardHeader>
-                  <CardTitle className="text-primary-foreground">Emergency Contact</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-primary-foreground/90 mb-2">
-                    For urgent editorial matters outside business hours:
-                  </p>
-                  <p className="font-medium">emergency@marinenotesjournal.org</p>
-                  <p className="text-xs text-primary-foreground/80 mt-2">
-                    Reserved for time-sensitive editorial decisions and critical technical issues only.
-                  </p>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </div>

@@ -4,91 +4,26 @@ import { Mail, MapPin, ExternalLink } from "lucide-react";
 
 const EditorialBoard = () => {
   const editorInChief = {
-    name: "Dr. Sarah Martinez",
+    name: "Christos Taklis",
     title: "Editor-in-Chief",
-    affiliation: "Marine Research Institute, University of California",
-    location: "San Diego, CA, USA",
-    expertise: ["Marine Ecology", "Conservation Biology", "Coral Reef Systems"],
-    email: "s.martinez@marineresearch.edu",
-    bio: "Dr. Martinez has over 20 years of experience in marine ecology research with a focus on coral reef conservation. She has authored over 150 peer-reviewed publications and serves on multiple international conservation panels."
+    affiliation: "Merman Conservation Expeditions Ltd",
+    location: "Edinburgh, UK",
+    expertise: ["Marine Ecology", "Conservation Biology"],
+    email: "info@mermanconservation.co.uk",
+    bio: "Mr. Taklis has over 20 years of experience in marine ecology and conservation biology research with a focus on shark conservation. He has authored over 40 peer-reviewed publications and serves on multiple international conservation panels."
   };
 
   const associateEditors = [
     {
-      name: "Dr. James Thompson",
-      title: "Associate Editor",
-      affiliation: "Woods Hole Oceanographic Institution",
-      location: "Massachusetts, USA",
-      expertise: ["Deep-Sea Biology", "Marine Biodiversity", "Oceanography"],
-      email: "jthompson@whoi.edu"
+      
     },
-    {
-      name: "Dr. Elena Rodriguez",
-      title: "Associate Editor", 
-      affiliation: "Institute of Marine Sciences, Barcelona",
-      location: "Barcelona, Spain",
-      expertise: ["Marine Pollution", "Toxicology", "Environmental Chemistry"],
-      email: "erodriguez@icm.csic.es"
-    },
-    {
-      name: "Dr. Kenji Nakamura",
-      title: "Associate Editor",
-      affiliation: "Japan Agency for Marine-Earth Science",
-      location: "Yokohama, Japan",
-      expertise: ["Marine Geology", "Climate Change", "Ocean Acidification"],
-      email: "k.nakamura@jamstec.go.jp"
-    }
+
   ];
 
   const editorialBoard = [
     {
-      name: "Dr. Michael Chen",
-      affiliation: "National University of Singapore",
-      location: "Singapore",
-      expertise: ["Marine Biotechnology", "Aquaculture"]
+
     },
-    {
-      name: "Dr. Anna Petersen",
-      affiliation: "Norwegian Institute for Water Research",
-      location: "Oslo, Norway", 
-      expertise: ["Arctic Marine Ecology", "Climate Change"]
-    },
-    {
-      name: "Dr. Carlos Mendez",
-      affiliation: "Universidad Nacional de Colombia",
-      location: "Bogotá, Colombia",
-      expertise: ["Tropical Marine Systems", "Fisheries Science"]
-    },
-    {
-      name: "Dr. Rachel Foster",
-      affiliation: "University of Cape Town",
-      location: "Cape Town, South Africa",
-      expertise: ["Marine Microbiology", "Biogeochemistry"]
-    },
-    {
-      name: "Dr. Ahmed Al-Rashid",
-      affiliation: "King Abdullah University",
-      location: "Thuwal, Saudi Arabia",
-      expertise: ["Red Sea Ecology", "Coral Biology"]
-    },
-    {
-      name: "Dr. Sophie Laurent",
-      affiliation: "Sorbonne University",
-      location: "Paris, France",
-      expertise: ["Marine Mammal Biology", "Behavioral Ecology"]
-    },
-    {
-      name: "Dr. David Williams",
-      affiliation: "Australian Institute of Marine Science",
-      location: "Townsville, Australia",
-      expertise: ["Great Barrier Reef", "Marine Protected Areas"]
-    },
-    {
-      name: "Dr. Priya Sharma",
-      affiliation: "Indian Institute of Science",
-      location: "Bangalore, India",
-      expertise: ["Coastal Ecosystems", "Mangrove Ecology"]
-    }
   ];
 
   return (
@@ -230,7 +165,7 @@ const EditorialBoard = () => {
                 </p>
                 <div className="flex items-center justify-center gap-2 text-sm">
                   <Mail className="h-4 w-4" />
-                  <span>Contact us at: editor@marinenotesjournal.org</span>
+                  <span>Contact us at: editor@marinenotesjournal.com</span>
                 </div>
               </CardContent>
             </Card>

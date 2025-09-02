@@ -218,7 +218,7 @@ const AuthorGuidelines = () => {
                     Questions about submission guidelines?
                   </p>
                   <div className="space-y-2 text-sm">
-                    <p><strong>Email:</strong> editor@marinenotesjournal.org</p>
+                    <p><strong>Email:</strong> editor@marinenotesjournal.com</p>
                     <p><strong>Response Time:</strong> 2-3 business days</p>
                   </div>
                 </CardContent>

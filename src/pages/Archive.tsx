@@ -28,7 +28,9 @@ const Archive = () => {
               pages: "245-267",
               doi: "10.1234/mnj.2024.15.3.001",
               abstract: "This comprehensive study analyzes ten years of coral restoration efforts across Caribbean marine protected areas, revealing significant recovery patterns and identifying key factors for successful restoration programs."
-            },
+            }
+          ]
+        }
       ]
     }
   ];

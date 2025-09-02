@@ -30,7 +30,9 @@ const Homepage = () => {
 
   const recentHighlights = [
     {
-
+      title: "Coral Reef Restoration in the Caribbean: A Decade of Progress",
+      authors: "Smith, J.M., Rodriguez, A.C., Thompson, K.L.",
+      issue: "Volume 1, Issue 1 (2026)"
     }
   ];
 

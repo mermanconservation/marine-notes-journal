@@ -12,7 +12,7 @@ const AuthorGuidelines = () => {
         "Research Articles: Original research (max 8,000 words)",
         "Review Articles: Comprehensive reviews (max 10,000 words)",
         "Short Communications: Brief reports (max 3,000 words)",
-        "Conservation News: Updates, reports, and announcements on current conservation issues from the last 6 months (max 2,000 words)
+        "Conservation News: Updates, reports, and announcements on current conservation issues from the last 6 months (max 2,000 words)",
         "Case Studies: Specific case analyses (max 5,000 words)",
         "Methodology Papers: New methods or techniques (max 6,000 words)"
       ]

@@ -44,7 +44,7 @@ const Contact = () => {
     {
       icon: <Mail className="h-5 w-5" />,
       title: "Email",
-      details: ["editor@marinenotesjournal.org"],
+      details: ["editor@marinenotesjournal.com"],
       note: "Primary contact method"
     },
     {

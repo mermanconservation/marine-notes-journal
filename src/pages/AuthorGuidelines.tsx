@@ -1,8 +1,9 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Link } from "react-router-dom";
-import { FileText, Download, ArrowRight, CheckCircle } from "lucide-react";
+import { FileText, ArrowRight, CheckCircle, PoundSterling } from "lucide-react";
 
 const AuthorGuidelines = () => {
   const guidelinesSections = [
@@ -83,6 +84,30 @@ const AuthorGuidelines = () => {
                       experts in relevant fields. The editorial decision timeline is typically 
                       4-12 weeks from submission.
                     </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Publication Fee */}
+              <Card className="border-accent/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PoundSterling className="h-5 w-5 text-accent" />
+                    Publication Fee
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-accent/10 p-4 rounded-lg">
+                    <p className="text-lg font-semibold mb-2">£20 GBP Publication Fee</p>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      A publication fee of £20 (Twenty British Pounds) is required upon acceptance 
+                      of your manuscript for publication.
+                    </p>
+                    <ul className="text-sm space-y-1 text-muted-foreground">
+                      <li>• Fee covers editorial processing and open-access publication</li>
+                      <li>• Payment details will be provided after manuscript acceptance</li>
+                      <li>• Fee waivers may be available for authors from developing countries</li>
+                    </ul>
                   </div>
                 </CardContent>
               </Card>
@@ -180,26 +205,6 @@ const AuthorGuidelines = () => {
                       Submit Manuscript
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle>Download Templates</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Download className="mr-2 h-4 w-4" />
-                    Manuscript Template
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Download className="mr-2 h-4 w-4" />
-                    Cover Letter Template
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
-                    <Download className="mr-2 h-4 w-4" />
-                    Copyright Form
                   </Button>
                 </CardContent>
               </Card>

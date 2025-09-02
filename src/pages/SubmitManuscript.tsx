@@ -279,7 +279,6 @@ Please find attached manuscript files as mentioned in the submission guidelines.
                       <li>• Main manuscript (PDF/DOC)</li>
                       <li>• Figures and tables</li>
                       <li>• Supplementary materials</li>
-                      <li>• Copyright form (if accepted)</li>
                     </ul>
                   </div>
                 </CardContent>

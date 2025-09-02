@@ -24,9 +24,39 @@ const SubmitManuscript = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Construct mailto link with all form data
+    const subject = encodeURIComponent(`Manuscript Submission: ${formData.title}`);
+    const body = encodeURIComponent(`
+Manuscript Submission Details:
+
+Title: ${formData.title}
+Type: ${formData.manuscriptType}
+Corresponding Author: ${formData.correspondingAuthor}
+Email: ${formData.email}
+Institution: ${formData.institution}
+
+All Authors:
+${formData.authors}
+
+Abstract:
+${formData.abstract}
+
+Keywords: ${formData.keywords}
+
+Cover Letter:
+${formData.coverLetter}
+
+---
+Please find attached manuscript files as mentioned in the submission guidelines.
+    `);
+    
+    const mailtoLink = `mailto:editor@marinenotesjournal.org?subject=${subject}&body=${body}`;
+    window.open(mailtoLink, '_blank');
+    
     toast({
-      title: "Submission Received",
-      description: "Thank you! Your manuscript has been submitted successfully. You will receive a confirmation email shortly.",
+      title: "Submission Prepared",
+      description: "Your email client will open with the submission details. Please attach your manuscript files before sending.",
     });
   };
 

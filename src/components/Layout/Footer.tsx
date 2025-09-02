@@ -45,14 +45,13 @@ const Footer = () => {
             <div className="space-y-2">
               <div className="flex items-center space-x-2 text-primary-foreground/80">
                 <Mail className="h-4 w-4" />
-                <span className="text-sm">editor@marinenotesjournal.org</span>
+                <span className="text-sm">editor@marinenotesjournal.com</span>
               </div>
               <div className="flex items-start space-x-2 text-primary-foreground/80">
                 <MapPin className="h-4 w-4 mt-0.5" />
                 <span className="text-sm">
                   Powered by Merman Conservation Expeditions Ltd<br />
-                  Environmental Consulting and Wildlife Research Company<br />
-                
+                          
                 </span>
               </div>
             </div>

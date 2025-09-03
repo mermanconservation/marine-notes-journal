@@ -18,7 +18,7 @@ const Footer = () => {
               and ocean sciences through high-quality research publication.
             </p>
             <p className="text-sm text-primary-foreground/60">
-              ISSN: 2789-1234 (Online)
+              ISSN: - (Online)
             </p>
           </div>
 

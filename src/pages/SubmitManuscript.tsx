@@ -51,7 +51,7 @@ ${formData.coverLetter}
 Please find attached manuscript files as mentioned in the submission guidelines.
     `);
     
-    const mailtoLink = `mailto:editor@marinenotesjournal.org?subject=${subject}&body=${body}`;
+    const mailtoLink = `mailto:editor@marinenotesjournal.com?subject=${subject}&body=${body}`;
     window.open(mailtoLink, '_blank');
     
     toast({

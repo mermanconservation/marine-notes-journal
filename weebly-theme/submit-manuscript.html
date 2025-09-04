@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submit Your Manuscript - Marine Notes Journal</title>
+    <meta name="description" content="Submit your marine science research to Marine Notes Journal. Complete submission form and guidelines for authors.">
+    <link rel="stylesheet" href="main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Weebly Header -->
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="nav-logo">
+                    <a href="/">{site-title}</a>
+                </div>
+                {navigation}
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <div class="wsite-text" data-text-type="title">Submit Your Manuscript</div>
+                </h1>
+                <p class="page-description">
+                    <div class="wsite-text" data-text-type="paragraph">Share your marine science research with the global community. Please complete all required fields and upload your manuscript files.</div>
+                </p>
+            </div>
+
+            <div class="submission-layout">
+                <div class="submission-form">
+                    <form id="manuscriptForm" class="submission-form-container">
+                        <!-- Manuscript Information -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="form-card-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                                        <polyline points="14,2 14,8 20,8"/>
+                                    </svg>
+                                </div>
+                                <h2 class="form-card-title">Manuscript Information</h2>
+                            </div>
+                            <div class="form-card-content">
+                                <div class="form-field">
+                                    <label for="title" class="form-label">Manuscript Title *</label>
+                                    <input type="text" id="title" name="title" class="form-input" placeholder="Enter the full title of your manuscript" required>
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="manuscriptType" class="form-label">Manuscript Type *</label>
+                                    <select id="manuscriptType" name="manuscriptType" class="form-select" required>
+                                        <option value="">Select manuscript type</option>
+                                        <option value="research-article">Research Article</option>
+                                        <option value="review">Review Article</option>
+                                        <option value="short-communication">Short Communication</option>
+                                        <option value="conservation-news">Conservation News</option>
+                                        <option value="case-study">Case Study</option>
+                                        <option value="methodology">Methodology Paper</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="abstract" class="form-label">Abstract *</label>
+                                    <textarea id="abstract" name="abstract" class="form-textarea" placeholder="Enter your manuscript abstract (up to 250 words)" rows="5" required></textarea>
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="keywords" class="form-label">Keywords *</label>
+                                    <input type="text" id="keywords" name="keywords" class="form-input" placeholder="Enter 5 keywords separated by commas" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Author Information -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <h2 class="form-card-title">Author Information</h2>
+                            </div>
+                            <div class="form-card-content">
+                                <div class="form-row">
+                                    <div class="form-field">
+                                        <label for="correspondingAuthor" class="form-label">Corresponding Author *</label>
+                                        <input type="text" id="correspondingAuthor" name="correspondingAuthor" class="form-input" placeholder="Full name" required>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="email" class="form-label">Email Address *</label>
+                                        <input type="email" id="email" name="email" class="form-input" placeholder="email@institution.edu" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="institution" class="form-label">Institution/Affiliation *</label>
+                                    <input type="text" id="institution" name="institution" class="form-input" placeholder="University/Research Institute" required>
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="authors" class="form-label">All Authors *</label>
+                                    <textarea id="authors" name="authors" class="form-textarea" placeholder="List all authors with their affiliations (one per line)" rows="4" required></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- File Upload -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <div class="form-card-icon">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="7,10 12,15 17,10"/>
+                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                </div>
+                                <h2 class="form-card-title">File Upload</h2>
+                            </div>
+                            <div class="form-card-content">
+                                <div class="file-upload-area">
+                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="file-upload-icon">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                        <polyline points="7,10 12,15 17,10"/>
+                                        <line x1="12" y1="15" x2="12" y2="3"/>
+                                    </svg>
+                                    <h3 class="file-upload-title">Upload Manuscript Files</h3>
+                                    <p class="file-upload-description">Drag and drop files here or click to browse</p>
+                                    <button type="button" class="btn btn-outline">Choose Files</button>
+                                    <p class="file-upload-note">Accepted formats: PDF, DOC, DOCX (Max 10MB per file)</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cover Letter -->
+                        <div class="form-card">
+                            <div class="form-card-header">
+                                <h2 class="form-card-title">Cover Letter</h2>
+                            </div>
+                            <div class="form-card-content">
+                                <div class="form-field">
+                                    <label for="coverLetter" class="form-label">Cover Letter (Optional)</label>
+                                    <textarea id="coverLetter" name="coverLetter" class="form-textarea" placeholder="Provide a brief cover letter explaining the significance of your research" rows="5"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary btn-large">Submit Manuscript</button>
+                    </form>
+                </div>
+
+                <!-- Sidebar -->
+                <div class="submission-sidebar">
+                    <div class="sidebar-card guidelines-card">
+                        <div class="sidebar-card-header">
+                            <div class="sidebar-card-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="8" x2="12" y2="12"/>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                            </div>
+                            <h3 class="sidebar-card-title">Submission Guidelines</h3>
+                        </div>
+                        <div class="sidebar-card-content">
+                            <div class="guidelines-section">
+                                <h4 class="guidelines-subtitle">Before You Submit</h4>
+                                <ul class="guidelines-list">
+                                    <li>Review our author guidelines</li>
+                                    <li>Ensure proper formatting</li>
+                                    <li>Include all required sections</li>
+                                    <li>Check references format</li>
+                                </ul>
+                            </div>
+                            <div class="guidelines-section">
+                                <h4 class="guidelines-subtitle">Required Files</h4>
+                                <ul class="guidelines-list">
+                                    <li>Main manuscript (PDF/DOC)</li>
+                                    <li>Figures and tables</li>
+                                    <li>Supplementary materials</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-card help-card">
+                        <div class="sidebar-card-header">
+                            <h3 class="sidebar-card-title">Need Help?</h3>
+                        </div>
+                        <div class="sidebar-card-content">
+                            <p class="help-description">Contact our editorial team for assistance with your submission.</p>
+                            <a href="/contact" class="btn btn-outline btn-full">Contact Editorial Office</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Weebly Footer -->
+    <footer class="footer">
+        <div class="container">
+            {footer}
+        </div>
+    </footer>
+
+    <script src="main.js"></script>
+</body>
+</html>

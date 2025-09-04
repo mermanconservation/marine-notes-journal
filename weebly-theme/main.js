@@ -17,6 +17,9 @@
         
         // Initialize mobile menu if needed
         initMobileMenu();
+        
+        // Initialize form handlers
+        initFormHandlers();
     }
 
     // Smooth scrolling for anchor links
@@ -72,6 +75,113 @@
         }
     }
 
+    // Form handlers for submission and contact forms
+    function initFormHandlers() {
+        const manuscriptForm = document.getElementById('manuscriptForm');
+        const contactForm = document.getElementById('contactForm');
+        
+        if (manuscriptForm) {
+            manuscriptForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Collect form data
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData);
+                
+                // Create email content
+                const subject = encodeURIComponent(`Manuscript Submission: ${data.title}`);
+                const body = encodeURIComponent(`
+Manuscript Submission Details:
+
+Title: ${data.title}
+Type: ${data.manuscriptType}
+Corresponding Author: ${data.correspondingAuthor}
+Email: ${data.email}
+Institution: ${data.institution}
+
+All Authors:
+${data.authors}
+
+Abstract:
+${data.abstract}
+
+Keywords: ${data.keywords}
+
+Cover Letter:
+${data.coverLetter}
+
+---
+Please find attached manuscript files as mentioned in the submission guidelines.
+                `);
+                
+                // Open email client
+                const mailtoLink = `mailto:editor@marinenotesjournal.com?subject=${subject}&body=${body}`;
+                window.open(mailtoLink, '_blank');
+                
+                // Show success message (you could replace this with a more elegant notification)
+                showNotification('Your email client will open with the submission details. Please attach your manuscript files before sending.');
+            });
+        }
+        
+        if (contactForm) {
+            contactForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Collect form data
+                const formData = new FormData(this);
+                const data = Object.fromEntries(formData);
+                
+                // Create email content
+                const subject = encodeURIComponent(data.subject);
+                const body = encodeURIComponent(`
+Name: ${data.name}
+Email: ${data.email}
+Inquiry Type: ${data.inquiry_type}
+Subject: ${data.subject}
+
+Message:
+${data.message}
+                `);
+                
+                // Open email client
+                const mailtoLink = `mailto:editor@marinenotesjournal.com?subject=${subject}&body=${body}`;
+                window.open(mailtoLink, '_blank');
+                
+                // Show success message and reset form
+                showNotification('Your email client should open with the message pre-filled. Please send when ready.');
+                this.reset();
+            });
+        }
+    }
+
+    // Simple notification system
+    function showNotification(message) {
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: hsl(200, 85%, 35%);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            max-width: 400px;
+            font-family: var(--font-sans);
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Remove after 5 seconds
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+    }
+
     // Add utility functions for Weebly editor
     window.MarineNotesTheme = {
         // Function to handle dynamic content updates
@@ -98,7 +208,10 @@
             });
 
             images.forEach(img => imageObserver.observe(img));
-        }
+        },
+
+        // Function to show notifications
+        showNotification: showNotification
     };
 
 })();

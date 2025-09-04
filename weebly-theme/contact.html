@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Us - Marine Notes Journal</title>
+    <meta name="description" content="Get in touch with our editorial team for questions about submissions, peer review, or general inquiries.">
+    <link rel="stylesheet" href="main.css">
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Weebly Header -->
+    <header class="header">
+        <div class="container">
+            <nav class="nav">
+                <div class="nav-logo">
+                    <a href="/">{site-title}</a>
+                </div>
+                {navigation}
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="page-header">
+                <h1 class="page-title">
+                    <div class="wsite-text" data-text-type="title">Contact Us</div>
+                </h1>
+                <p class="page-description">
+                    <div class="wsite-text" data-text-type="paragraph">Get in touch with our editorial team for questions about submissions, peer review, or general inquiries about Marine Notes Journal.</div>
+                </p>
+            </div>
+
+            <div class="contact-layout">
+                <!-- Contact Form -->
+                <div class="contact-form">
+                    <div class="form-card">
+                        <div class="form-card-header">
+                            <h2 class="form-card-title">Send us a Message</h2>
+                        </div>
+                        <div class="form-card-content">
+                            <form id="contactForm" class="contact-form-container">
+                                <div class="form-row">
+                                    <div class="form-field">
+                                        <label for="name" class="form-label">Full Name *</label>
+                                        <input type="text" id="name" name="name" class="form-input" placeholder="Your full name" required>
+                                    </div>
+                                    <div class="form-field">
+                                        <label for="email" class="form-label">Email Address *</label>
+                                        <input type="email" id="email" name="email" class="form-input" placeholder="your.email@example.com" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="inquiry_type" class="form-label">Inquiry Type *</label>
+                                    <select id="inquiry_type" name="inquiry_type" class="form-select" required>
+                                        <option value="">Select inquiry type</option>
+                                        <option value="submission">Manuscript Submission</option>
+                                        <option value="review">Peer Review Process</option>
+                                        <option value="editorial">Editorial Questions</option>
+                                        <option value="technical">Technical Support</option>
+                                        <option value="subscription">Subscription & Access</option>
+                                        <option value="partnership">Partnership & Collaboration</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="subject" class="form-label">Subject *</label>
+                                    <input type="text" id="subject" name="subject" class="form-input" placeholder="Brief description of your inquiry" required>
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="message" class="form-label">Message *</label>
+                                    <textarea id="message" name="message" class="form-textarea" placeholder="Please provide details about your inquiry..." rows="5" required></textarea>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary btn-large">Send Message</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Information -->
+                <div class="contact-info">
+                    <div class="info-card">
+                        <div class="info-header">
+                            <div class="info-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                                    <polyline points="22,6 12,13 2,6"/>
+                                </svg>
+                            </div>
+                            <h3 class="info-title">Email</h3>
+                        </div>
+                        <div class="info-content">
+                            <p class="info-detail">editor@marinenotesjournal.com</p>
+                            <p class="info-note">Primary contact method</p>
+                        </div>
+                    </div>
+
+                    <div class="info-card">
+                        <div class="info-header">
+                            <div class="info-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <polyline points="12,6 12,12 16,14"/>
+                                </svg>
+                            </div>
+                            <h3 class="info-title">Response Time</h3>
+                        </div>
+                        <div class="info-content">
+                            <p class="info-detail">Editorial inquiries: 2-3 business days</p>
+                            <p class="info-detail">Technical support: 1-2 business days</p>
+                            <p class="info-note">Excluding weekends and holidays</p>
+                        </div>
+                    </div>
+
+                    <!-- Editorial Office Hours -->
+                    <div class="info-card office-hours">
+                        <div class="info-header">
+                            <h3 class="info-title">Editorial Office Hours</h3>
+                        </div>
+                        <div class="info-content">
+                            <div class="hours-grid">
+                                <div class="hours-row">
+                                    <span class="hours-day">Monday - Friday:</span>
+                                    <span class="hours-time">9:00 AM - 5:00 PM PST</span>
+                                </div>
+                                <div class="hours-row">
+                                    <span class="hours-day">Weekend:</span>
+                                    <span class="hours-time">Closed</span>
+                                </div>
+                                <div class="hours-row">
+                                    <span class="hours-day">Holidays:</span>
+                                    <span class="hours-time">Closed</span>
+                                </div>
+                            </div>
+                            <p class="info-note">Email inquiries are monitored regularly and will receive responses within our standard timeframe.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Weebly Footer -->
+    <footer class="footer">
+        <div class="container">
+            {footer}
+        </div>
+    </footer>
+
+    <script src="main.js"></script>
+</body>
+</html>

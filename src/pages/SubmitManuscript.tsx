@@ -41,23 +41,34 @@ const SubmitManuscript = () => {
       });
       
       if (response.ok) {
-        toast({
-          title: "Submission Sent!",
-          description: "Your manuscript has been submitted successfully. We'll contact you soon.",
-        });
-        form.reset();
-        setSelectedFiles([]);
-        setFormData({
-          title: "",
-          correspondingAuthor: "",
-          email: "",
-          institution: "",
-          authors: "",
-          abstract: "",
-          keywords: "",
-          manuscriptType: "",
-          coverLetter: ""
-        });
+        const html = await response.text();
+        
+        // Check if FormSubmit needs activation
+        if (html.includes('Check Your Email') && html.includes('Activation')) {
+          toast({
+            title: "Activation Required",
+            description: "Please check editor@marinenotesjournal.com and click the activation link to enable submissions.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Submission Sent!",
+            description: "Your manuscript has been submitted successfully. We'll contact you soon.",
+          });
+          form.reset();
+          setSelectedFiles([]);
+          setFormData({
+            title: "",
+            correspondingAuthor: "",
+            email: "",
+            institution: "",
+            authors: "",
+            abstract: "",
+            keywords: "",
+            manuscriptType: "",
+            coverLetter: ""
+          });
+        }
       } else {
         throw new Error('Submission failed');
       }

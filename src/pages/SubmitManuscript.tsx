@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const SubmitManuscript = () => {
   const { toast } = useToast();
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [formData, setFormData] = useState({
     title: "",
     correspondingAuthor: "",
@@ -54,9 +55,12 @@ Please find attached manuscript files as mentioned in the submission guidelines.
     const mailtoLink = `mailto:editor@marinenotesjournal.com?subject=${subject}&body=${body}`;
     window.open(mailtoLink, '_blank');
     
+    const fileCount = selectedFiles.length;
     toast({
       title: "Submission Prepared",
-      description: "Your email client will open with the submission details. Please attach your manuscript files before sending.",
+      description: fileCount > 0 
+        ? `Your email client will open with the submission details. Please attach the ${fileCount} selected file${fileCount > 1 ? 's' : ''} before sending.`
+        : "Your email client will open with the submission details. Please attach your manuscript files before sending.",
     });
   };
 
@@ -65,6 +69,17 @@ Please find attached manuscript files as mentioned in the submission guidelines.
       ...prev,
       [field]: value
     }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      setSelectedFiles(prev => [...prev, ...filesArray]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -219,15 +234,46 @@ Please find attached manuscript files as mentioned in the submission guidelines.
                       <Upload className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                       <p className="text-lg font-medium mb-2">Upload Manuscript Files</p>
                       <p className="text-sm text-muted-foreground mb-4">
-                        Drag and drop files here or click to browse
+                        Click to select your manuscript files
                       </p>
-                      <Button type="button" variant="outline">
+                      <input
+                        type="file"
+                        id="fileUpload"
+                        onChange={handleFileChange}
+                        multiple
+                        accept=".pdf,.doc,.docx"
+                        className="hidden"
+                      />
+                      <Button 
+                        type="button" 
+                        variant="outline"
+                        onClick={() => document.getElementById('fileUpload')?.click()}
+                      >
                         Choose Files
                       </Button>
                       <p className="text-xs text-muted-foreground mt-2">
                         Accepted formats: PDF, DOC, DOCX (Max 10MB per file)
                       </p>
                     </div>
+                    
+                    {selectedFiles.length > 0 && (
+                      <div className="space-y-2">
+                        <Label>Selected Files:</Label>
+                        {selectedFiles.map((file, index) => (
+                          <div key={index} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                            <span className="text-sm truncate flex-1">{file.name}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeFile(index)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 

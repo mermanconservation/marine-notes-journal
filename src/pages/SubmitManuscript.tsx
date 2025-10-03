@@ -23,45 +23,51 @@ const SubmitManuscript = () => {
     coverLetter: ""
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Construct mailto link with all form data
-    const subject = encodeURIComponent(`Manuscript Submission: ${formData.title}`);
-    const body = encodeURIComponent(`
-Manuscript Submission Details:
-
-Title: ${formData.title}
-Type: ${formData.manuscriptType}
-Corresponding Author: ${formData.correspondingAuthor}
-Email: ${formData.email}
-Institution: ${formData.institution}
-
-All Authors:
-${formData.authors}
-
-Abstract:
-${formData.abstract}
-
-Keywords: ${formData.keywords}
-
-Cover Letter:
-${formData.coverLetter}
-
----
-Please find attached manuscript files as mentioned in the submission guidelines.
-    `);
+    const form = e.target as HTMLFormElement;
+    const formDataToSend = new FormData(form);
     
-    const mailtoLink = `mailto:editor@marinenotesjournal.com?subject=${subject}&body=${body}`;
-    window.open(mailtoLink, '_blank');
+    // Add FormSubmit.co configuration
+    formDataToSend.append('_subject', `Manuscript Submission: ${formData.title}`);
+    formDataToSend.append('_template', 'table');
+    formDataToSend.append('_captcha', 'false');
     
-    const fileCount = selectedFiles.length;
-    toast({
-      title: "Submission Prepared",
-      description: fileCount > 0 
-        ? `Your email client will open with the submission details. Please attach the ${fileCount} selected file${fileCount > 1 ? 's' : ''} before sending.`
-        : "Your email client will open with the submission details. Please attach your manuscript files before sending.",
-    });
+    try {
+      const response = await fetch('https://formsubmit.co/editor@marinenotesjournal.com', {
+        method: 'POST',
+        body: formDataToSend,
+      });
+      
+      if (response.ok) {
+        toast({
+          title: "Submission Sent!",
+          description: "Your manuscript has been submitted successfully. We'll contact you soon.",
+        });
+        form.reset();
+        setSelectedFiles([]);
+        setFormData({
+          title: "",
+          correspondingAuthor: "",
+          email: "",
+          institution: "",
+          authors: "",
+          abstract: "",
+          keywords: "",
+          manuscriptType: "",
+          coverLetter: ""
+        });
+      } else {
+        throw new Error('Submission failed');
+      }
+    } catch (error) {
+      toast({
+        title: "Submission Error",
+        description: "Failed to submit manuscript. Please try again or contact us directly.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -98,7 +104,7 @@ Please find attached manuscript files as mentioned in the submission guidelines.
 
           <div className="grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-2">
-              <form onSubmit={handleSubmit} className="space-y-8">
+              <form onSubmit={handleSubmit} className="space-y-8" encType="multipart/form-data">
                 {/* Manuscript Information */}
                 <Card>
                   <CardHeader>
@@ -112,6 +118,7 @@ Please find attached manuscript files as mentioned in the submission guidelines.
                       <Label htmlFor="title">Manuscript Title *</Label>
                       <Input
                         id="title"
+                        name="title"
                         value={formData.title}
                         onChange={(e) => handleInputChange("title", e.target.value)}
                         placeholder="Enter the full title of your manuscript"
@@ -122,7 +129,8 @@ Please find attached manuscript files as mentioned in the submission guidelines.
 
                     <div>
                       <Label htmlFor="manuscriptType">Manuscript Type *</Label>
-                      <Select onValueChange={(value) => handleInputChange("manuscriptType", value)}>
+                      <input type="hidden" name="manuscriptType" value={formData.manuscriptType} />
+                      <Select onValueChange={(value) => handleInputChange("manuscriptType", value)} required>
                         <SelectTrigger className="mt-2">
                           <SelectValue placeholder="Select manuscript type" />
                         </SelectTrigger>
@@ -141,6 +149,7 @@ Please find attached manuscript files as mentioned in the submission guidelines.
                       <Label htmlFor="abstract">Abstract *</Label>
                       <Textarea
                         id="abstract"
+                        name="abstract"
                         value={formData.abstract}
                         onChange={(e) => handleInputChange("abstract", e.target.value)}
                         placeholder="Enter your manuscript abstract (up to 250 words)"
@@ -153,6 +162,7 @@ Please find attached manuscript files as mentioned in the submission guidelines.
                       <Label htmlFor="keywords">Keywords *</Label>
                       <Input
                         id="keywords"
+                        name="keywords"
                         value={formData.keywords}
                         onChange={(e) => handleInputChange("keywords", e.target.value)}
                         placeholder="Enter 5 keywords separated by commas"
@@ -174,6 +184,7 @@ Please find attached manuscript files as mentioned in the submission guidelines.
                         <Label htmlFor="correspondingAuthor">Corresponding Author *</Label>
                         <Input
                           id="correspondingAuthor"
+                          name="correspondingAuthor"
                           value={formData.correspondingAuthor}
                           onChange={(e) => handleInputChange("correspondingAuthor", e.target.value)}
                           placeholder="Full name"
@@ -185,6 +196,7 @@ Please find attached manuscript files as mentioned in the submission guidelines.
                         <Label htmlFor="email">Email Address *</Label>
                         <Input
                           id="email"
+                          name="email"
                           type="email"
                           value={formData.email}
                           onChange={(e) => handleInputChange("email", e.target.value)}
@@ -199,6 +211,7 @@ Please find attached manuscript files as mentioned in the submission guidelines.
                       <Label htmlFor="institution">Institution/Affiliation *</Label>
                       <Input
                         id="institution"
+                        name="institution"
                         value={formData.institution}
                         onChange={(e) => handleInputChange("institution", e.target.value)}
                         placeholder="University/Research Institute"
@@ -211,6 +224,7 @@ Please find attached manuscript files as mentioned in the submission guidelines.
                       <Label htmlFor="authors">All Authors *</Label>
                       <Textarea
                         id="authors"
+                        name="authors"
                         value={formData.authors}
                         onChange={(e) => handleInputChange("authors", e.target.value)}
                         placeholder="List all authors with their affiliations (one per line)"
@@ -239,6 +253,7 @@ Please find attached manuscript files as mentioned in the submission guidelines.
                       <input
                         type="file"
                         id="fileUpload"
+                        name="attachment"
                         onChange={handleFileChange}
                         multiple
                         accept=".pdf,.doc,.docx"
@@ -286,6 +301,7 @@ Please find attached manuscript files as mentioned in the submission guidelines.
                     <Label htmlFor="coverLetter">Cover Letter (Optional)</Label>
                     <Textarea
                       id="coverLetter"
+                      name="coverLetter"
                       value={formData.coverLetter}
                       onChange={(e) => handleInputChange("coverLetter", e.target.value)}
                       placeholder="Provide a brief cover letter explaining the significance of your research"

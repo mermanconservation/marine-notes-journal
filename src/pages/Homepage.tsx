@@ -63,13 +63,13 @@ const Homepage = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild size="lg" variant="secondary" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
+              <Button asChild size="lg" variant="hero-primary">
                 <Link to="/submit">
                   Submit Manuscript
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
+              <Button asChild size="lg" variant="hero-outline">
                 <Link to="/archive">Browse Articles</Link>
               </Button>
             </div>
@@ -162,10 +162,10 @@ const Homepage = () => {
               conservationists, and policy makers.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button asChild size="lg" variant="secondary" className="bg-primary-foreground text-primary hover:bg-primary-foreground/90">
+              <Button asChild size="lg" variant="hero-primary">
                 <Link to="/submit">Submit Your Manuscript</Link>
               </Button>
-              <Button asChild size="lg" variant="outline" className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary">
+              <Button asChild size="lg" variant="hero-outline">
                 <Link to="/guidelines">View Guidelines</Link>
               </Button>
             </div>

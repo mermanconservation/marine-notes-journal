@@ -1,0 +1,27 @@
+export interface Article {
+  id: number;
+  doi: string;
+  title: string;
+  authors: string;
+  type: "Research" | "Notes" | "Review" | "Case Study";
+  publicationDate: string;
+  pdfUrl: string;
+  resolverUrl: string;
+  volume: string;
+  issue: string;
+  abstract: string;
+}
+
+export interface ArticlesData {
+  articles: Article[];
+  nextSequence: number;
+}
+
+export function generateDOI(year: number, sequence: number): string {
+  const paddedSequence = sequence.toString().padStart(3, '0');
+  return `MNJ-${year}-${paddedSequence}`;
+}
+
+export function generateResolverUrl(doi: string): string {
+  return `https://www.marinenotesjournal.com/doi/${doi}`;
+}

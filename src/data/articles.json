@@ -1,0 +1,18 @@
+{
+  "articles": [
+    {
+      "id": 1,
+      "doi": "MNJ-2026-001",
+      "title": "Coral Reef Restoration in the Caribbean: A Decade of Progress",
+      "authors": "Smith, J.M., Rodriguez, A.C., Thompson, K.L.",
+      "type": "Research",
+      "publicationDate": "2026-01-15",
+      "pdfUrl": "/manuscripts/2026/MNJ-2026-001.pdf",
+      "resolverUrl": "https://www.marinenotesjournal.com/doi/MNJ-2026-001",
+      "volume": "1",
+      "issue": "1",
+      "abstract": "This study examines coral reef restoration efforts across the Caribbean region over the past decade."
+    }
+  ],
+  "nextSequence": 2
+}

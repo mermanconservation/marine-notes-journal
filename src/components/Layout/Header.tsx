@@ -13,6 +13,7 @@ const Header = () => {
     { name: "Author Guidelines", href: "/guidelines" },
     { name: "Editorial Board", href: "/editorial-board" },
     { name: "Archive", href: "/archive" },
+    { name: "DOI Lookup", href: "/doi-search" },
     { name: "Contact", href: "/contact" }
   ];
 

@@ -1,3 +1,11 @@
+export interface ArticleMetrics {
+  citations: number;
+  downloads: number;
+  views: number;
+  altmetricScore: number;
+  socialShares: number;
+}
+
 export interface Article {
   id: number;
   doi: string;
@@ -10,6 +18,7 @@ export interface Article {
   volume: string;
   issue: string;
   abstract: string;
+  metrics?: ArticleMetrics;
 }
 
 export interface ArticlesData {

@@ -14,6 +14,7 @@ const Header = () => {
     { name: "Editorial Board", href: "/editorial-board" },
     { name: "Archive", href: "/archive" },
     { name: "DOI Lookup", href: "/doi-search" },
+    { name: "Citation Tracker", href: "/citation-tracker" },
     { name: "Contact", href: "/contact" }
   ];
 

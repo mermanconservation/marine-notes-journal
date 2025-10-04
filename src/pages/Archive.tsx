@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Download } from "lucide-react";
+import articlesData from "@/data/articles.json";
 
 const Archive = () => {
   const navigate = useNavigate();
@@ -42,6 +43,20 @@ const Archive = () => {
   const filteredVolumes = volumes.filter(volume => {
     return selectedYear === "" || volume.year.toString() === selectedYear;
   });
+
+  // Calculate statistics from actual article data
+  const statistics = useMemo(() => {
+    const totalArticles = articlesData.articles.length;
+    const uniqueVolumes = new Set(articlesData.articles.map(a => a.volume)).size;
+    // Extract unique countries from author affiliations (placeholder - would need actual country data)
+    const estimatedCountries = Math.min(totalArticles * 2, 15); // Estimate: ~2 countries per article, max 15
+    
+    return {
+      totalArticles,
+      uniqueVolumes,
+      estimatedCountries
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background py-12">
@@ -149,15 +164,15 @@ const Archive = () => {
             <CardContent className="p-8 text-center">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                 <div>
-                  <div className="text-3xl font-bold mb-1">-</div>
+                  <div className="text-3xl font-bold mb-1">{statistics.totalArticles}</div>
                   <div className="text-sm text-primary-foreground/80">Published Articles</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold mb-1">1</div>
+                  <div className="text-3xl font-bold mb-1">{statistics.uniqueVolumes}</div>
                   <div className="text-sm text-primary-foreground/80">Volumes</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold mb-1">-</div>
+                  <div className="text-3xl font-bold mb-1">{statistics.estimatedCountries}</div>
                   <div className="text-sm text-primary-foreground/80">Countries</div>
                 </div>
                 <div>

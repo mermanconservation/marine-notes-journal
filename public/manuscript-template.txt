@@ -1,0 +1,139 @@
+MARINE NOTES JOURNAL
+MANUSCRIPT TEMPLATE
+====================================
+
+[TITLE OF MANUSCRIPT IN TITLE CASE]
+Running Head: [Short title, max 40 characters]
+
+Authors:
+[First Author Name]¹*, [Second Author Name]², [Third Author Name]¹
+
+Affiliations:
+¹ [Department, Institution, City, Country]
+² [Department, Institution, City, Country]
+
+*Corresponding author: [email@institution.edu]
+
+ORCID IDs:
+[First Author]: 0000-0000-0000-0000
+[Second Author]: 0000-0000-0000-0000
+
+====================================
+
+ABSTRACT
+
+[250 words maximum. Provide a concise summary of the background, objectives, methods, main results, and conclusions of your study.]
+
+Keywords: [keyword 1]; [keyword 2]; [keyword 3]; [keyword 4]; [keyword 5]
+
+====================================
+
+1. INTRODUCTION
+
+[Provide background information, context for the research, and clearly state the research objectives or hypotheses. Cite relevant literature to establish the significance of your work.]
+
+====================================
+
+2. MATERIALS AND METHODS
+
+2.1 Study Area
+[Describe the location and characteristics of your study site]
+
+2.2 Data Collection
+[Provide sufficient detail for replication of your methods]
+
+2.3 Statistical Analysis
+[Describe analytical approaches and software used]
+
+====================================
+
+3. RESULTS
+
+[Present your findings clearly and logically. Use subheadings as needed. Reference all figures and tables in the text.]
+
+====================================
+
+4. DISCUSSION
+
+[Interpret your results in the context of existing literature. Discuss implications, limitations, and future research directions.]
+
+====================================
+
+5. CONCLUSIONS
+
+[Summarize the key findings and their significance]
+
+====================================
+
+ACKNOWLEDGMENTS
+
+[Acknowledge funding sources, field assistance, and other contributions]
+
+====================================
+
+CONFLICT OF INTEREST
+
+[Declare any conflicts of interest or state "The authors declare no conflicts of interest."]
+
+====================================
+
+DATA AVAILABILITY STATEMENT
+
+[Describe where and how readers can access the data supporting your findings]
+
+====================================
+
+REFERENCES
+
+[Format references according to journal style. Examples:]
+
+Journal Article:
+Smith, J.M., Anderson, K.L. (2024). Coral bleaching responses to temperature stress in the Caribbean. Marine Notes Journal, 15(2), 45-62.
+
+Book:
+Thompson, R.C. (2023). Marine Conservation Biology: Principles and Practice. Academic Press, London, 345 pp.
+
+Book Chapter:
+Martinez, P.L., Chen, W. (2024). Deep-sea mining impacts. In: Ocean Resources and Sustainability (Ed. K. Johnson). Springer, pp. 123-145.
+
+====================================
+
+FORMATTING INSTRUCTIONS:
+- Double-space throughout
+- Use 12-point Times New Roman or similar serif font
+- 1-inch margins on all sides
+- Include line numbers
+- Use SI units throughout
+- Italicize species names at first mention
+- Submit figures at minimum 300 DPI resolution
+- Maximum word counts by type:
+  * Research Articles: 8,000 words
+  * Review Articles: 10,000 words
+  * Short Communications: 3,000 words
+  * Conservation News: 2,000 words
+  * Case Studies: 5,000 words
+  * Methodology Papers: 6,000 words
+
+====================================
+
+FIGURE CAPTIONS
+(Submit separately or at end of manuscript)
+
+Figure 1. [Descriptive caption with sufficient detail to understand the figure without referring to the main text]
+
+Figure 2. [Additional figures as needed]
+
+====================================
+
+TABLES
+(Submit separately or embedded in text)
+
+Table 1. [Table title]
+[Table content with clear column headers and appropriate units]
+
+====================================
+
+SUPPLEMENTARY MATERIALS
+(If applicable)
+
+List any supplementary files, data sets, or additional materials here.

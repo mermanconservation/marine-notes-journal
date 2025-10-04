@@ -192,6 +192,26 @@ const AuthorGuidelines = () => {
 
             {/* Sidebar */}
             <div className="space-y-6">
+              <Card className="bg-accent/10 border-accent">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Manuscript Template
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Download our manuscript template to ensure your submission meets all formatting requirements.
+                  </p>
+                  <Button asChild variant="outline" className="w-full">
+                    <a href="/manuscript-template.txt" download="Marine_Notes_Journal_Template.txt">
+                      <FileText className="mr-2 h-4 w-4" />
+                      Download Template
+                    </a>
+                  </Button>
+                </CardContent>
+              </Card>
+
               <Card className="bg-gradient-ocean text-primary-foreground">
                 <CardHeader>
                   <CardTitle className="text-primary-foreground">Ready to Submit?</CardTitle>

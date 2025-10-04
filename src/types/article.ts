@@ -11,6 +11,7 @@ export interface Article {
   doi: string;
   title: string;
   authors: string;
+  orcidIds?: string[];
   type: "Research" | "Notes" | "Review" | "Case Study";
   publicationDate: string;
   pdfUrl: string;

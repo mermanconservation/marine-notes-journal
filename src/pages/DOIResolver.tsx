@@ -6,6 +6,7 @@ import { FileText, Download, ArrowLeft, BookOpen, Eye, Share2, TrendingUp, Quote
 import articlesData from "@/data/articles.json";
 import type { Article } from "@/types/article";
 import { PromotionAssistant } from "@/components/PromotionAssistant";
+import { AuthorWithOrcid } from "@/components/AuthorWithOrcid";
 
 const DOIResolver = () => {
   const { doi } = useParams<{ doi: string }>();
@@ -60,7 +61,7 @@ const DOIResolver = () => {
               <CardTitle className="text-3xl font-academic mb-4">
                 {article.title}
               </CardTitle>
-              <p className="text-lg text-muted-foreground mb-2">{article.authors}</p>
+              <AuthorWithOrcid authors={article.authors} orcidIds={article.orcidIds} />
               <div className="flex flex-wrap gap-4 text-sm">
                 <span className="text-muted-foreground">
                   Volume {article.volume}, Issue {article.issue}

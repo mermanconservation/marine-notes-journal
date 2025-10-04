@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Download, ArrowLeft, BookOpen, Eye, Share2, TrendingUp, Quote } from "lucide-react";
 import articlesData from "@/data/articles.json";
 import type { Article } from "@/types/article";
+import { PromotionAssistant } from "@/components/PromotionAssistant";
 
 const DOIResolver = () => {
   const { doi } = useParams<{ doi: string }>();
@@ -147,6 +148,10 @@ const DOIResolver = () => {
             <p className="font-mono text-sm leading-relaxed">
               {article.authors} ({new Date(article.publicationDate).getFullYear()}). {article.title}. <em>Marine Notes Journal</em>, <em>{article.volume}</em>({article.issue}). {article.doi}
             </p>
+          </div>
+
+          <div className="mb-6">
+            <PromotionAssistant article={article} />
           </div>
 
           <div className="flex gap-4">

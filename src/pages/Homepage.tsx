@@ -54,8 +54,11 @@ const Homepage = () => {
             <h1 className="font-academic text-4xl lg:text-6xl font-semibold mb-6 text-[#0B3D5D]">
               Marine Notes Journal
             </h1>
-            <p className="text-xl lg:text-2xl mb-8 text-[#0B3D5D]/90">
+            <p className="text-xl lg:text-2xl mb-4 text-[#0B3D5D]/90">
               Advancing Ocean Science Through Open Access Research
+            </p>
+            <p className="text-lg font-semibold mb-8 text-[#0B3D5D] bg-white/80 inline-block px-6 py-2 rounded-full">
+              The First AI-Edited and Peer-Reviewed Marine Science Journal
             </p>
             <p className="text-lg mb-12 max-w-2xl mx-auto text-[#0B3D5D]/80">
               An international peer-reviewed journal dedicated to marine conservation, 

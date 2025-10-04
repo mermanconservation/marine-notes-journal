@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Download, ArrowLeft, BookOpen, Eye, Share2, TrendingUp } from "lucide-react";
+import { FileText, Download, ArrowLeft, BookOpen, Eye, Share2, TrendingUp, Quote } from "lucide-react";
 import articlesData from "@/data/articles.json";
 import type { Article } from "@/types/article";
 
@@ -138,6 +138,16 @@ const DOIResolver = () => {
               </div>
             </div>
           )}
+
+          <div className="mb-6 p-4 border rounded-lg bg-muted/50">
+            <div className="flex items-center gap-2 mb-3">
+              <Quote className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold">How to Cite (APA Format)</h3>
+            </div>
+            <p className="font-mono text-sm leading-relaxed">
+              {article.authors} ({new Date(article.publicationDate).getFullYear()}). {article.title}. <em>Marine Notes Journal</em>, <em>{article.volume}</em>({article.issue}). {article.doi}
+            </p>
+          </div>
 
           <div className="flex gap-4">
             <Button asChild size="lg">

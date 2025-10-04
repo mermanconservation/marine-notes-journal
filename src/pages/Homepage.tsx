@@ -50,14 +50,14 @@ const Homepage = () => {
         </div>
         
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center text-primary-foreground">
-            <h1 className="font-academic text-4xl lg:text-6xl font-semibold mb-6">
+          <div className="max-w-4xl mx-auto text-center">
+            <h1 className="font-academic text-4xl lg:text-6xl font-semibold mb-6 text-[#0B3D5D]">
               Marine Notes Journal
             </h1>
-            <p className="text-xl lg:text-2xl mb-8 text-primary-foreground/90">
+            <p className="text-xl lg:text-2xl mb-8 text-[#0B3D5D]/90">
               Advancing Ocean Science Through Open Access Research
             </p>
-            <p className="text-lg mb-12 max-w-2xl mx-auto text-primary-foreground/80">
+            <p className="text-lg mb-12 max-w-2xl mx-auto text-[#0B3D5D]/80">
               An international peer-reviewed journal dedicated to marine conservation, 
               ocean sciences, and sustainable marine resource management.
             </p>

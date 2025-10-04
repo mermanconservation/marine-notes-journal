@@ -174,19 +174,19 @@ const Archive = () => {
             <CardContent className="p-8 text-center">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                 <div>
-                  <div className="text-3xl font-bold mb-1">150+</div>
+                  <div className="text-3xl font-bold mb-1">-</div>
                   <div className="text-sm text-primary-foreground/80">Published Articles</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold mb-1">15</div>
+                  <div className="text-3xl font-bold mb-1">1</div>
                   <div className="text-sm text-primary-foreground/80">Volumes</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold mb-1">45</div>
+                  <div className="text-3xl font-bold mb-1">-</div>
                   <div className="text-sm text-primary-foreground/80">Countries</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold mb-1">2010</div>
+                  <div className="text-3xl font-bold mb-1">2026</div>
                   <div className="text-sm text-primary-foreground/80">Founded</div>
                 </div>
               </div>

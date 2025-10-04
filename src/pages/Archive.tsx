@@ -72,10 +72,9 @@ const Archive = () => {
                 <div className="flex gap-2">
                   <Select value={selectedYear} onValueChange={setSelectedYear}>
                     <SelectTrigger className="w-32">
-                      <SelectValue placeholder="Year" />
+                      <SelectValue placeholder="All Years" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Years</SelectItem>
                       {years.map(year => (
                         <SelectItem key={year} value={year}>{year}</SelectItem>
                       ))}
@@ -83,11 +82,11 @@ const Archive = () => {
                   </Select>
                   <Select value={selectedType} onValueChange={setSelectedType}>
                     <SelectTrigger className="w-48">
-                      <SelectValue placeholder="Article Type" />
+                      <SelectValue placeholder="All Types" />
                     </SelectTrigger>
                     <SelectContent>
-                      {articleTypes.map(type => (
-                        <SelectItem key={type} value={type === "All Types" ? "" : type}>
+                      {articleTypes.filter(type => type !== "All Types").map(type => (
+                        <SelectItem key={type} value={type}>
                           {type}
                         </SelectItem>
                       ))}

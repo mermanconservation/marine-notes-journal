@@ -5,6 +5,7 @@ import { ArrowLeft, Download, FileText, BookOpen, Eye, Share2, TrendingUp, Quote
 import articlesData from "@/data/articles.json";
 import type { Article } from "@/types/article";
 import { PromotionAssistant } from "@/components/PromotionAssistant";
+import volumeCover from "@/assets/volume-1-issue-1-cover.png";
 
 const IssueDetail = () => {
   const { volume, issue } = useParams<{ volume: string; issue: string }>();
@@ -55,6 +56,18 @@ const IssueDetail = () => {
             {articles.length} {articles.length === 1 ? 'article' : 'articles'} published
           </p>
         </div>
+
+        {volume === "1" && issue === "1" && (
+          <Card className="mb-8 overflow-hidden">
+            <CardContent className="p-0">
+              <img 
+                src={volumeCover} 
+                alt="Marine Notes Journal Volume 1 Issue 1 Cover - June 2026"
+                className="w-full h-auto"
+              />
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="mb-8 bg-muted/20">
           <CardContent className="p-6 text-center">

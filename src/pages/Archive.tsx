@@ -1,12 +1,13 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Search, Download, ExternalLink, Filter } from "lucide-react";
+import { Search, Download } from "lucide-react";
 
 const Archive = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
   const [selectedType, setSelectedType] = useState("");
@@ -108,7 +109,11 @@ const Archive = () => {
                 </div>
 
                 {volume.issues.map((issue) => (
-                  <Card key={issue.issue} className="shadow-soft">
+                  <Card 
+                    key={issue.issue} 
+                    className="shadow-soft cursor-pointer hover:shadow-lg transition-shadow"
+                    onClick={() => navigate(`/archive/${volume.volume}/${issue.issue}`)}
+                  >
                     <CardHeader className="bg-muted/20">
                       <div className="flex items-start justify-between">
                         <div>
@@ -116,8 +121,11 @@ const Archive = () => {
                             Issue {issue.issue}: {issue.title}
                           </CardTitle>
                           <p className="text-muted-foreground mt-1">{issue.date}</p>
+                          <p className="text-sm text-muted-foreground mt-2">
+                            {issue.articles.length} {issue.articles.length === 1 ? 'article' : 'articles'}
+                          </p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                           <Button variant="outline" size="sm">
                             <Download className="h-4 w-4 mr-2" />
                             Full Issue PDF
@@ -125,43 +133,10 @@ const Archive = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="p-0">
-                      <div className="divide-y divide-border">
-                        {issue.articles.map((article, articleIndex) => (
-                          <div key={articleIndex} className="p-6 hover:bg-muted/10 transition-colors">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1">
-                                <div className="flex items-start gap-3 mb-3">
-                                  <div className="flex-1">
-                                    <h3 className="font-semibold text-lg leading-tight mb-2">
-                                      {article.title}
-                                    </h3>
-                                    <p className="text-muted-foreground mb-2">{article.authors}</p>
-                                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                      <Badge variant="outline">{article.type}</Badge>
-                                      <span>Pages {article.pages}</span>
-                                      <span>DOI: {article.doi}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                                <p className="text-sm text-muted-foreground leading-relaxed">
-                                  {article.abstract}
-                                </p>
-                              </div>
-                              <div className="flex flex-col gap-2 ml-4">
-                                <Button variant="outline" size="sm">
-                                  <Download className="h-4 w-4 mr-2" />
-                                  PDF
-                                </Button>
-                                <Button variant="ghost" size="sm">
-                                  <ExternalLink className="h-4 w-4 mr-2" />
-                                  Abstract
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                    <CardContent className="p-6">
+                      <p className="text-muted-foreground text-center">
+                        Click to view all articles in this issue
+                      </p>
                     </CardContent>
                   </Card>
                 ))}

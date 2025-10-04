@@ -10,6 +10,7 @@ import SubmitManuscript from "./pages/SubmitManuscript";
 import AuthorGuidelines from "./pages/AuthorGuidelines";
 import EditorialBoard from "./pages/EditorialBoard";
 import Archive from "./pages/Archive";
+import IssueDetail from "./pages/IssueDetail";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import DOIResolver from "./pages/DOIResolver";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/guidelines" element={<AuthorGuidelines />} />
             <Route path="/editorial-board" element={<EditorialBoard />} />
             <Route path="/archive" element={<Archive />} />
+            <Route path="/archive/:volume/:issue" element={<IssueDetail />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/doi/:doi" element={<DOIResolver />} />
             <Route path="/doi-search" element={<DOISearch />} />

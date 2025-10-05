@@ -23,6 +23,16 @@ const EditorialBoard = () => {
     }
   ];
 
+   const editors = [
+    {
+      name: "Charlotte Hayes",
+      affiliation: "None",
+      location: "Bath, UK",
+      expertise: ["Marine Ecology"],
+      email: "-"
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-background py-12">
       <div className="container mx-auto px-4">

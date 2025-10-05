@@ -21,9 +21,7 @@ const EditorialBoard = () => {
       expertise: ["Marine Ecology", "Conservation Biology", "Shark Conservation"],
       email: "info@mermanconservation.co.uk"
     }
-  ];
 
-   const editors = [
     {
       name: "Charlotte Hayes",
       affiliation: "None",

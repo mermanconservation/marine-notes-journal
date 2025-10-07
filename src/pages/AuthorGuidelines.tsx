@@ -203,23 +203,12 @@ const AuthorGuidelines = () => {
                   <p className="text-sm text-muted-foreground mb-4">
                     Download our manuscript template to ensure your submission meets all formatting requirements.
                   </p>
-                  <div className="space-y-2">
-                    <Button asChild variant="outline" className="w-full">
-                      <a href="/manuscript-template.rtf" download="Marine_Notes_Journal_Template.rtf">
-                        <FileText className="mr-2 h-4 w-4" />
-                        Download Word Format (.rtf)
-                      </a>
-                    </Button>
-                    <Button asChild variant="outline" className="w-full">
-                      <a href="/manuscript-template.txt" download="Marine_Notes_Journal_Template.txt">
-                        <FileText className="mr-2 h-4 w-4" />
-                        Download Text Format (.txt)
-                      </a>
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-3">
-                    The .rtf file can be opened in Microsoft Word and saved as .docx
-                  </p>
+                  <Button asChild variant="outline" className="w-full">
+                    <a href="/manuscript-template.txt" download="Marine_Notes_Journal_Template.txt">
+                      <FileText className="mr-2 h-4 w-4" />
+                      Download Template
+                    </a>
+                  </Button>
                 </CardContent>
               </Card>
 

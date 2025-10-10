@@ -20,7 +20,7 @@ const Archive = () => {
       issues: [
         {
           issue: 1,
-          title: "TEST ",
+          title: "Volume 1 - Issue 1 ",
           date: "June 2026",
           articles: [
             {

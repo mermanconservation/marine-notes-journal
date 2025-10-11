@@ -38,7 +38,7 @@ const Archive = () => {
   ];
 
   const years = ["2026"];
-  const articleTypes = ["All Types", "Research Article", "Review Article", "Short Communication", "Case Study"];
+  const articleTypes = ["All Types", "Research Article", "Review Article", "Short Communication", "Case Study", "Field Notes", "Observational Reports"];
 
   const filteredVolumes = volumes.filter(volume => {
     return selectedYear === "" || volume.year.toString() === selectedYear;

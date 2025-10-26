@@ -177,7 +177,7 @@ const Archive = () => {
                                   {article.type}
                                 </span>
                               </div>
-                              <h4 className="font-medium text-sm mb-1">{article.doi}</h4>
+                              <h4 className="font-medium text-sm mb-1">{article.title}</h4>
                               <p className="text-xs text-muted-foreground">{article.authors}</p>
                             </div>
                             {article.pdfUrl && (

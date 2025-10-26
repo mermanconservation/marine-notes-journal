@@ -3,13 +3,33 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 import { Award, Globe, Users, BookOpen, Target, ArrowRight } from "lucide-react";
+import articlesData from "@/data/articles.json";
 
 const About = () => {
+  // Calculate dynamic stats from articles data
+  const publishedArticles = articlesData.articles.length;
+  
+  // Get unique authors
+  const uniqueAuthors = new Set<string>();
+  articlesData.articles.forEach(article => {
+    const authors = article.authors.split(',').map(a => a.trim());
+    authors.forEach(author => uniqueAuthors.add(author));
+  });
+  const contributingAuthors = uniqueAuthors.size;
+  
+  // Calculate years of publishing excellence (from earliest publication to now)
+  const publicationYears = articlesData.articles.map(article => 
+    new Date(article.publicationDate).getFullYear()
+  );
+  const earliestYear = Math.min(...publicationYears);
+  const currentYear = new Date().getFullYear();
+  const yearsOfExcellence = currentYear - earliestYear;
+
   const stats = [
-    { number: "0", label: "Published Articles", icon: <BookOpen className="h-6 w-6" /> },
+    { number: publishedArticles.toString(), label: "Published Articles", icon: <BookOpen className="h-6 w-6" /> },
     { number: "150+", label: "Countries Represented", icon: <Globe className="h-6 w-6" /> },
-    { number: "0", label: "Contributing Authors", icon: <Users className="h-6 w-6" /> },
-    { number: "0 Years", label: "Publishing Excellence", icon: <Award className="h-6 w-6" /> }
+    { number: contributingAuthors.toString(), label: "Contributing Authors", icon: <Users className="h-6 w-6" /> },
+    { number: `${yearsOfExcellence} ${yearsOfExcellence === 1 ? 'Year' : 'Years'}`, label: "Publishing Excellence", icon: <Award className="h-6 w-6" /> }
   ];
 
   const focusAreas = [

@@ -111,8 +111,58 @@ FORMATTING INSTRUCTIONS:
   * Review Articles: 10,000 words
   * Short Communications: 3,000 words
   * Conservation News: 2,000 words
+  * Field Notes: 1,500 words
+  * Observational Reports: 3,000 words
   * Case Studies: 5,000 words
   * Methodology Papers: 6,000 words
+
+====================================
+
+SPECIAL GUIDELINES FOR FIELD NOTES & OBSERVATIONAL REPORTS:
+
+FIELD NOTES FORMAT:
+- Date and time of observation
+- Geographic location (GPS coordinates, depth if applicable)
+- Observer name(s) and qualifications
+- Environmental conditions (temperature, visibility, sea state, weather)
+- Species identification (scientific name, common name)
+- Behavioral observations or phenomena observed
+- Photographic/video documentation (if available)
+- Equipment used for observation and documentation
+- Brief discussion of significance or unusual aspects
+
+OBSERVATIONAL REPORTS FORMAT:
+1. INTRODUCTION
+   [Context and significance of the observation]
+
+2. OBSERVATION DETAILS
+   2.1 Location and Time
+       [Precise geographic coordinates, dates, duration]
+   2.2 Methods
+       [Observation techniques, equipment, sampling protocol]
+   2.3 Environmental Conditions
+       [Water temperature, salinity, weather, sea state, habitat description]
+   2.4 Observer Information
+       [Qualifications, experience, number of observers]
+
+3. OBSERVATIONS
+   [Detailed description of phenomena, species, or events observed]
+   [Include measurements, counts, behavioral descriptions]
+
+4. DISCUSSION
+   [Comparison with existing literature]
+   [Ecological or conservation significance]
+   [Potential implications]
+
+5. CONCLUSIONS
+   [Summary of key observations and their importance]
+
+REQUIRED ELEMENTS FOR BOTH:
+- High-quality photographs with scale bars where applicable
+- GPS coordinates with datum specified (e.g., WGS84)
+- Species identification keys or references used
+- Any corroborating evidence or witness accounts
+- Declaration of observation accuracy and limitations
 
 ====================================
 

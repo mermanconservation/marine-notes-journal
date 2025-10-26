@@ -14,8 +14,21 @@ const AuthorGuidelines = () => {
         "Review Articles: Comprehensive reviews (max 10,000 words)",
         "Short Communications: Brief reports (max 3,000 words)",
         "Conservation News: Updates, reports, and announcements on current conservation issues from the last 6 months (max 2,000 words)",
+        "Field Notes: Brief descriptions of marine observations, species sightings, behavioral observations, or environmental conditions from field work (max 1,500 words)",
+        "Observational Reports: Detailed accounts of specific marine phenomena, unusual events, or field observations requiring documentation (max 3,000 words)",
         "Case Studies: Specific case analyses (max 5,000 words)",
         "Methodology Papers: New methods or techniques (max 6,000 words)"
+      ]
+    },
+    {
+      title: "Field Notes & Observational Reports",
+      items: [
+        "Field Notes: Document brief observations including date, location (GPS coordinates), environmental conditions, species identification, behavior, and photographs/video if available",
+        "Observational Reports: Include detailed methodology, observation period, geographic context, environmental parameters, and comparative analysis with existing literature",
+        "Both types should include: Observer qualifications, observation duration, equipment used, weather/sea conditions, and any corroborating evidence",
+        "Visual documentation strongly encouraged: High-quality photographs, video footage, or field sketches with scale references",
+        "Geographic data: Provide precise coordinates, depth (if applicable), habitat description, and regional context",
+        "Species identification: Use scientific nomenclature, include identifying features, and reference field guides or taxonomic keys used"
       ]
     },
     {

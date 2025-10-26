@@ -7,10 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, FileText, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { CopyrightForm } from "@/components/CopyrightForm";
 
 const SubmitManuscript = () => {
   const { toast } = useToast();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [showCopyrightForm, setShowCopyrightForm] = useState(false);
+  const [submissionComplete, setSubmissionComplete] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     correspondingAuthor: "",
@@ -52,22 +55,10 @@ const SubmitManuscript = () => {
           });
         } else {
           toast({
-            title: "Submission Sent!",
-            description: "Your manuscript has been submitted successfully. We'll contact you soon.",
+            title: "Manuscript Submitted!",
+            description: "Please complete the copyright form to finalize your submission.",
           });
-          form.reset();
-          setSelectedFiles([]);
-          setFormData({
-            title: "",
-            correspondingAuthor: "",
-            email: "",
-            institution: "",
-            authors: "",
-            abstract: "",
-            keywords: "",
-            manuscriptType: "",
-            coverLetter: ""
-          });
+          setShowCopyrightForm(true);
         }
       } else {
         throw new Error('Submission failed');
@@ -98,6 +89,41 @@ const SubmitManuscript = () => {
   const removeFile = (index: number) => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
+
+  const handleCopyrightComplete = () => {
+    setSubmissionComplete(true);
+    toast({
+      title: "Submission Complete!",
+      description: "Thank you for submitting your manuscript. We will review it and contact you soon.",
+    });
+    setTimeout(() => {
+      window.location.reload();
+    }, 3000);
+  };
+
+  if (showCopyrightForm) {
+    return (
+      <div className="min-h-screen bg-background py-12">
+        <div className="container mx-auto px-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="text-center mb-8">
+              <h1 className="font-academic text-4xl font-semibold mb-4">
+                Complete Copyright Agreement
+              </h1>
+              <p className="text-muted-foreground">
+                One final step to complete your manuscript submission
+              </p>
+            </div>
+            <CopyrightForm
+              manuscriptTitle={formData.title}
+              authorName={formData.correspondingAuthor}
+              onComplete={handleCopyrightComplete}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background py-12">

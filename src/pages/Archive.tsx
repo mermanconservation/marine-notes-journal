@@ -13,32 +13,51 @@ const Archive = () => {
   const [selectedYear, setSelectedYear] = useState("");
   const [selectedType, setSelectedType] = useState("");
 
-  const volumes = [
-    {
-      year: 2026,
-      volume: 1,
-      issues: [
-        {
-          issue: 1,
-          title: "Inaugural Issue",
-          date: "June 2026",
-          articles: [
-            {
-              title: "Coral Reef Restoration in the Caribbean: A Decade of Progress and Future Directions",
-              authors: "Smith, J.M., Rodriguez, A.C., Thompson, K.L.",
-              type: "Research Article",
-              pages: "245-267",
-              doi: "10.1234/mnj.2024.15.3.001",
-              abstract: "This comprehensive study analyzes ten years of coral restoration efforts across Caribbean marine protected areas, revealing significant recovery patterns and identifying key factors for successful restoration programs."
-            }
-          ]
-        }
-      ]
-    }
-  ];
+  // Load articles from articles.json and organize by volume/issue
+  const volumes = useMemo(() => {
+    const volumeMap = new Map();
+    
+    articlesData.articles.forEach(article => {
+      const volKey = `${article.volume}`;
+      if (!volumeMap.has(volKey)) {
+        volumeMap.set(volKey, {
+          year: 2026, // Default year, can be extracted from publication date if needed
+          volume: parseInt(article.volume),
+          issues: new Map()
+        });
+      }
+      
+      const vol = volumeMap.get(volKey);
+      const issueKey = article.issue;
+      
+      if (!vol.issues.has(issueKey)) {
+        vol.issues.set(issueKey, {
+          issue: parseInt(article.issue),
+          title: "Issue " + article.issue,
+          date: new Date(article.publicationDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          articles: []
+        });
+      }
+      
+      vol.issues.get(issueKey).articles.push({
+        title: article.title,
+        authors: article.authors,
+        type: article.type,
+        doi: article.doi,
+        abstract: article.abstract,
+        pdfUrl: article.pdfUrl
+      });
+    });
+    
+    // Convert maps to arrays
+    return Array.from(volumeMap.values()).map(vol => ({
+      ...vol,
+      issues: Array.from(vol.issues.values())
+    }));
+  }, []);
 
   const years = ["2026"];
-  const articleTypes = ["All Types", "Research Article", "Review Article", "Short Communication", "Case Study", "Field Notes", "Observational Reports"];
+  const articleTypes = ["All Types", "Research Article", "Review Article", "Short Communication", "Case Study", "Field Notes", "Observational Reports", "Conservation News"];
 
   const filteredVolumes = volumes.filter(volume => {
     return selectedYear === "" || volume.year.toString() === selectedYear;
@@ -149,9 +168,33 @@ const Archive = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="p-6">
-                      <p className="text-muted-foreground text-center">
-                        Click to view all articles in this issue
-                      </p>
+                      <div className="space-y-3">
+                        {issue.articles.map((article, idx) => (
+                          <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-medium px-2 py-1 bg-primary/10 text-primary rounded">
+                                  {article.type}
+                                </span>
+                              </div>
+                              <h4 className="font-medium text-sm mb-1">{article.title}</h4>
+                              <p className="text-xs text-muted-foreground">{article.authors}</p>
+                            </div>
+                            {article.pdfUrl && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open(article.pdfUrl, '_blank');
+                                }}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </CardContent>
                   </Card>
                 ))}

@@ -6,7 +6,7 @@
       "title": "Coral Reef Restoration in the Caribbean: A Decade of Progress",
       "authors": "Smith, J.M., Rodriguez, A.C., Thompson, K.L.",
       "orcidIds": ["0000-0001-2345-6789", "0000-0002-3456-7890", "0000-0003-4567-8901"],
-      "type": "Research",
+      "type": "Research Article",
       "publicationDate": "2026-01-15",
       "pdfUrl": "/manuscripts/2026/MNJ-2026-001.pdf",
       "resolverUrl": "https://www.marinenotesjournal.com/doi/MNJ-2026-001",
@@ -20,7 +20,28 @@
         "altmetricScore": 28,
         "socialShares": 47
       }
+    },
+    {
+      "id": 2,
+      "doi": "MNJ-2026-002",
+      "title": "Unusual 2025 interactions of Iberian Orcinus orca with sailing vessels: behaviour patterns and conservation responses",
+      "authors": "Research Team",
+      "orcidIds": [],
+      "type": "Observational Reports",
+      "publicationDate": "2026-06-01",
+      "pdfUrl": "/manuscripts/2026/vol1-iss1-Unusual 2025 interactions of Iberian Orcinus orca with sailing vessels behaviour patterns and conservation responses.pdf",
+      "resolverUrl": "https://www.marinenotesjournal.com/doi/MNJ-2026-002",
+      "volume": "1",
+      "issue": "1",
+      "abstract": "Documentation of unusual orca interactions with sailing vessels in Iberian waters during 2025.",
+      "metrics": {
+        "citations": 0,
+        "downloads": 78,
+        "views": 456,
+        "altmetricScore": 15,
+        "socialShares": 23
+      }
     }
   ],
-  "nextSequence": 2
+  "nextSequence": 3
 }

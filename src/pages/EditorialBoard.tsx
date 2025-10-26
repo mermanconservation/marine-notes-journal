@@ -20,6 +20,13 @@ const EditorialBoard = () => {
       location: "Edinburgh, UK",
       expertise: ["Marine Ecology", "Conservation Biology", "Shark Conservation"],
       email: "info@mermanconservation.co.uk"
+    },
+    {
+      name: "Charlotte Hayers",
+      affiliation: "University of Bristol",
+      location: "Bristol, UK",
+      expertise: ["Marine Science", "Research Management", "Conservation"],
+      email: "editor@marinenotesjournal.com"
     }
   ];
 

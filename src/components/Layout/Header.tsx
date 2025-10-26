@@ -8,14 +8,14 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navigation = [
-    { name: "Home", href: "/" },
-    { name: "About", href: "/about" },
-    { name: "Submit Manuscript", href: "/submit" },
-    { name: "Author Guidelines", href: "/guidelines" },
-    { name: "Editorial Board", href: "/editorial-board" },
-    { name: "Archive", href: "/archive" },
-    { name: "DOI Lookup", href: "/doi-search" },
-    { name: "Contact", href: "/contact" }
+    { name: "Home", href: "/", url: "marinenotesjournal.com" },
+    { name: "About", href: "/about", url: "marinenotesjournal.com/about" },
+    { name: "Submit Manuscript", href: "/submit", url: "marinenotesjournal.com/submit" },
+    { name: "Author Guidelines", href: "/guidelines", url: "marinenotesjournal.com/guidelines" },
+    { name: "Editorial Board", href: "/editorial-board", url: "marinenotesjournal.com/editorial-board" },
+    { name: "Archive", href: "/archive", url: "marinenotesjournal.com/archive" },
+    { name: "DOI Lookup", href: "/doi-search", url: "marinenotesjournal.com/doi-search" },
+    { name: "Contact", href: "/contact", url: "marinenotesjournal.com/contact" }
   ];
 
   return (
@@ -34,9 +34,13 @@ const Header = () => {
               <Link
                 key={item.name}
                 to={item.href}
-                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+                className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors group"
+                title={item.url}
               >
-                {item.name}
+                <span className="block">{item.name}</span>
+                <span className="block text-xs opacity-60 group-hover:opacity-100 transition-opacity">
+                  {item.url}
+                </span>
               </Link>
             ))}
           </nav>
@@ -61,7 +65,8 @@ const Header = () => {
                   className="block px-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary hover:bg-muted/50 rounded transition-colors"
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  {item.name}
+                  <span className="block">{item.name}</span>
+                  <span className="block text-xs opacity-60">{item.url}</span>
                 </Link>
               ))}
             </nav>

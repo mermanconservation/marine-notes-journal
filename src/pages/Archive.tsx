@@ -186,7 +186,7 @@ const Archive = () => {
                                 size="sm"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  window.open(article.pdfUrl, '_blank');
+                                  window.open(encodeURI(article.pdfUrl), '_blank');
                                 }}
                               >
                                 <Download className="h-4 w-4" />

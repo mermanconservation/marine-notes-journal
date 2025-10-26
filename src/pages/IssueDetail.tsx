@@ -182,13 +182,13 @@ const IssueDetail = () => {
 
               <div className="flex gap-4">
                 <Button asChild size="lg">
-                  <a href={article.pdfUrl} download>
+                  <a href={encodeURI(article.pdfUrl)} download>
                     <Download className="mr-2 h-4 w-4" />
                     Download PDF
                   </a>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                  <a href={article.pdfUrl} target="_blank" rel="noopener noreferrer">
+                  <a href={encodeURI(article.pdfUrl)} target="_blank" rel="noopener noreferrer">
                     <FileText className="mr-2 h-4 w-4" />
                     View PDF
                   </a>

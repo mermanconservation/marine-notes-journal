@@ -5,15 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, FileText, AlertCircle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Separator } from "@/components/ui/separator";
+import { Upload, FileText, AlertCircle, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { CopyrightForm } from "@/components/CopyrightForm";
 
 const SubmitManuscript = () => {
   const { toast } = useToast();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [showCopyrightForm, setShowCopyrightForm] = useState(false);
-  const [submissionComplete, setSubmissionComplete] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     correspondingAuthor: "",
@@ -26,50 +25,80 @@ const SubmitManuscript = () => {
     coverLetter: ""
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const [copyrightData, setCopyrightData] = useState({
+    authorSignature: "",
+    date: new Date().toISOString().split('T')[0],
+    originalWork: false,
+    noConflict: false,
+    transferRights: false,
+    creativeCommons: false
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const form = e.target as HTMLFormElement;
-    const formDataToSend = new FormData(form);
+    // Validate copyright agreement
+    const allCopyrightChecked = copyrightData.originalWork && 
+                               copyrightData.noConflict && 
+                               copyrightData.transferRights && 
+                               copyrightData.creativeCommons;
     
-    // Add FormSubmit.co configuration
-    formDataToSend.append('_subject', `Manuscript Submission: ${formData.title}`);
-    formDataToSend.append('_template', 'table');
-    formDataToSend.append('_captcha', 'false');
-    
-    try {
-      const response = await fetch('https://formsubmit.co/editor@marinenotesjournal.com', {
-        method: 'POST',
-        body: formDataToSend,
-      });
-      
-      if (response.ok) {
-        const html = await response.text();
-        
-        // Check if FormSubmit needs activation
-        if (html.includes('Check Your Email') && html.includes('Activation')) {
-          toast({
-            title: "Activation Required",
-            description: "Please check editor@marinenotesjournal.com and click the activation link to enable submissions.",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Manuscript Submitted!",
-            description: "Please complete the copyright form to finalize your submission.",
-          });
-          setShowCopyrightForm(true);
-        }
-      } else {
-        throw new Error('Submission failed');
-      }
-    } catch (error) {
+    if (!allCopyrightChecked || !copyrightData.authorSignature) {
       toast({
-        title: "Submission Error",
-        description: "Failed to submit manuscript. Please try again or contact us directly.",
+        title: "Copyright Agreement Required",
+        description: "Please complete the copyright agreement section below.",
         variant: "destructive",
       });
+      return;
     }
+
+    // Create email content
+    const filesText = selectedFiles.length > 0 
+      ? `\n\nFiles to be sent separately:\n${selectedFiles.map(f => f.name).join('\n')}`
+      : '\n\nNo files attached. Author will send files separately.';
+
+    const emailBody = `
+NEW MANUSCRIPT SUBMISSION
+
+Title: ${formData.title}
+Type: ${formData.manuscriptType}
+
+CORRESPONDING AUTHOR:
+Name: ${formData.correspondingAuthor}
+Email: ${formData.email}
+Institution: ${formData.institution}
+
+ALL AUTHORS:
+${formData.authors}
+
+ABSTRACT:
+${formData.abstract}
+
+KEYWORDS:
+${formData.keywords}
+
+COVER LETTER:
+${formData.coverLetter || 'N/A'}
+
+${filesText}
+
+COPYRIGHT AGREEMENT:
+✓ Original work, not published elsewhere
+✓ All authors approved, no conflicts of interest
+✓ Copyright transferred to Marine Notes Journal
+✓ Creative Commons CC BY 4.0 License
+Signed by: ${copyrightData.authorSignature}
+Date: ${copyrightData.date}
+    `.trim();
+
+    const mailtoLink = `mailto:editor@marinenotesjournal.com?subject=Manuscript Submission: ${encodeURIComponent(formData.title)}&body=${encodeURIComponent(emailBody)}`;
+    
+    window.location.href = mailtoLink;
+    
+    toast({
+      title: "Opening Email Client",
+      description: "Your submission will open in your email client. Please attach your manuscript files and send.",
+    });
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -90,41 +119,6 @@ const SubmitManuscript = () => {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleCopyrightComplete = () => {
-    setSubmissionComplete(true);
-    toast({
-      title: "Submission Complete!",
-      description: "Thank you for submitting your manuscript. We will review it and contact you soon.",
-    });
-    setTimeout(() => {
-      window.location.reload();
-    }, 3000);
-  };
-
-  if (showCopyrightForm) {
-    return (
-      <div className="min-h-screen bg-background py-12">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-8">
-              <h1 className="font-academic text-4xl font-semibold mb-4">
-                Complete Copyright Agreement
-              </h1>
-              <p className="text-muted-foreground">
-                One final step to complete your manuscript submission
-              </p>
-            </div>
-            <CopyrightForm
-              manuscriptTitle={formData.title}
-              authorName={formData.correspondingAuthor}
-              onComplete={handleCopyrightComplete}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background py-12">
       <div className="container mx-auto px-4">
@@ -141,7 +135,7 @@ const SubmitManuscript = () => {
 
           <div className="grid gap-8 lg:grid-cols-3">
             <div className="lg:col-span-2">
-              <form onSubmit={handleSubmit} className="space-y-8" encType="multipart/form-data">
+              <form onSubmit={handleSubmit} className="space-y-8">
                 {/* Manuscript Information */}
                 <Card>
                   <CardHeader>
@@ -349,9 +343,108 @@ const SubmitManuscript = () => {
                   </CardContent>
                 </Card>
 
+                {/* Copyright Agreement */}
+                <Card className="border-accent/50">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      Copyright Transfer Agreement *
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="bg-muted/30 p-4 rounded-lg space-y-2 text-sm">
+                      <p className="font-medium">By submitting this manuscript, I/we confirm:</p>
+                    </div>
+
+                    <div className="space-y-4 text-sm">
+                      <div className="flex items-start space-x-3 p-3 bg-background rounded border">
+                        <Checkbox
+                          id="originalWork"
+                          checked={copyrightData.originalWork}
+                          onCheckedChange={(checked) => 
+                            setCopyrightData(prev => ({ ...prev, originalWork: checked as boolean }))
+                          }
+                        />
+                        <Label htmlFor="originalWork" className="cursor-pointer leading-relaxed">
+                          This manuscript is original work and has not been published elsewhere, nor is it currently under consideration for publication elsewhere.
+                        </Label>
+                      </div>
+
+                      <div className="flex items-start space-x-3 p-3 bg-background rounded border">
+                        <Checkbox
+                          id="noConflict"
+                          checked={copyrightData.noConflict}
+                          onCheckedChange={(checked) => 
+                            setCopyrightData(prev => ({ ...prev, noConflict: checked as boolean }))
+                          }
+                        />
+                        <Label htmlFor="noConflict" className="cursor-pointer leading-relaxed">
+                          All authors have reviewed and approved the manuscript and there are no conflicts of interest to declare.
+                        </Label>
+                      </div>
+
+                      <div className="flex items-start space-x-3 p-3 bg-background rounded border">
+                        <Checkbox
+                          id="transferRights"
+                          checked={copyrightData.transferRights}
+                          onCheckedChange={(checked) => 
+                            setCopyrightData(prev => ({ ...prev, transferRights: checked as boolean }))
+                          }
+                        />
+                        <Label htmlFor="transferRights" className="cursor-pointer leading-relaxed">
+                          I/we transfer copyright of this manuscript to Marine Notes Journal upon acceptance for publication.
+                        </Label>
+                      </div>
+
+                      <div className="flex items-start space-x-3 p-3 bg-background rounded border">
+                        <Checkbox
+                          id="creativeCommons"
+                          checked={copyrightData.creativeCommons}
+                          onCheckedChange={(checked) => 
+                            setCopyrightData(prev => ({ ...prev, creativeCommons: checked as boolean }))
+                          }
+                        />
+                        <Label htmlFor="creativeCommons" className="cursor-pointer leading-relaxed">
+                          I/we agree to publish this work under a Creative Commons Attribution 4.0 International License (CC BY 4.0).
+                        </Label>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor="authorSignature">Full Name (Electronic Signature) *</Label>
+                        <Input
+                          id="authorSignature"
+                          value={copyrightData.authorSignature}
+                          onChange={(e) => setCopyrightData(prev => ({ ...prev, authorSignature: e.target.value }))}
+                          placeholder="Type your full name"
+                          className="mt-2"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="date">Date</Label>
+                        <Input
+                          id="date"
+                          type="date"
+                          value={copyrightData.date}
+                          onChange={(e) => setCopyrightData(prev => ({ ...prev, date: e.target.value }))}
+                          className="mt-2"
+                          readOnly
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 <Button type="submit" size="lg" className="w-full bg-gradient-ocean">
                   Submit Manuscript
                 </Button>
+                <p className="text-xs text-center text-muted-foreground">
+                  Submission will open your email client. Please attach your manuscript files and send.
+                </p>
               </form>
             </div>
 

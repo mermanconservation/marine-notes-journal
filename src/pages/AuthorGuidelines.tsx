@@ -23,12 +23,13 @@ const AuthorGuidelines = () => {
     {
       title: "Field Notes & Observational Reports",
       items: [
-        "Field Notes: Document brief observations including date, location (GPS coordinates), environmental conditions, species identification, behavior, and photographs/video if available",
+        "Field Notes: Document brief observations including date, location (GPS coordinates), environmental conditions, species identification, and behavior",
         "Observational Reports: Include detailed methodology, observation period, geographic context, environmental parameters, and comparative analysis with existing literature",
-        "Both types should include: Observer qualifications, observation duration, equipment used, weather/sea conditions, and any corroborating evidence",
+        "Required elements: Date and location (GPS coordinates), environmental conditions, species identification (scientific names), and description of observation",
+        "Optional but encouraged: Observer qualifications, observation duration, equipment used, witness accounts, and corroborating evidence",
         "Visual documentation strongly encouraged: High-quality photographs, video footage, or field sketches with scale references",
-        "Geographic data: Provide precise coordinates, depth (if applicable), habitat description, and regional context",
-        "Species identification: Use scientific nomenclature, include identifying features, and reference field guides or taxonomic keys used"
+        "Geographic data: Provide coordinates and habitat description; depth and regional context optional but valuable",
+        "Species identification: Use scientific nomenclature and include identifying features; reference to field guides or taxonomic keys helpful but optional"
       ]
     },
     {
@@ -214,14 +215,17 @@ const AuthorGuidelines = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Download our manuscript template to ensure your submission meets all formatting requirements.
+                    Download our pre-formatted manuscript template with all formatting requirements already applied.
                   </p>
-                  <Button asChild variant="outline" className="w-full">
-                    <a href="/manuscript-template.txt" download="Marine_Notes_Journal_Template.txt">
+                  <Button asChild variant="outline" className="w-full mb-3">
+                    <a href="/manuscript-template.html" download="Marine_Notes_Journal_Template.html">
                       <FileText className="mr-2 h-4 w-4" />
-                      Download Template
+                      Download Template (HTML)
                     </a>
                   </Button>
+                  <p className="text-xs text-muted-foreground">
+                    Open in Microsoft Word and save as .docx. All formatting (12pt Times New Roman, double-spacing, 1-inch margins) is pre-applied.
+                  </p>
                 </CardContent>
               </Card>
 

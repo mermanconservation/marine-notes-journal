@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { FileText, Users, Globe, BookOpen, ArrowRight } from "lucide-react";
 import heroImage from "@/assets/hero-ocean.jpg";
+import articlesData from "@/data/articles.json";
 
 const Homepage = () => {
   const features = [
@@ -28,13 +29,16 @@ const Homepage = () => {
     }
   ];
 
-  const recentHighlights = [
-    {
-      title: "Coral Reef Restoration in the Caribbean: A Decade of Progress",
-      authors: "Smith, J.M., Rodriguez, A.C., Thompson, K.L.",
-      issue: "Volume 1, Issue 1 (2026)"
-    }
-  ];
+  // Get the latest manuscripts sorted by publication date
+  const recentHighlights = articlesData.articles
+    .sort((a, b) => new Date(b.publicationDate).getTime() - new Date(a.publicationDate).getTime())
+    .slice(0, 3)
+    .map(article => ({
+      doi: article.doi,
+      title: article.title,
+      authors: article.authors,
+      issue: `Volume ${article.volume}, Issue ${article.issue} (${new Date(article.publicationDate).getFullYear()})`
+    }));
 
   return (
     <div>
@@ -131,19 +135,21 @@ const Homepage = () => {
           </div>
           
           <div className="grid gap-6">
-            {recentHighlights.map((article, index) => (
-              <Card key={index} className="hover:shadow-soft transition-shadow">
+            {recentHighlights.map((article) => (
+              <Card key={article.doi} className="hover:shadow-soft transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-lg mb-2 text-foreground hover:text-primary transition-colors">
-                        {article.title}
-                      </h3>
+                      <Link to={`/doi/${article.doi}`}>
+                        <h3 className="font-semibold text-lg mb-2 text-foreground hover:text-primary transition-colors">
+                          {article.title}
+                        </h3>
+                      </Link>
                       <p className="text-muted-foreground mb-2">{article.authors}</p>
                       <p className="text-sm text-accent font-medium">{article.issue}</p>
                     </div>
-                    <Button variant="ghost" size="sm">
-                      Read More
+                    <Button asChild variant="ghost" size="sm">
+                      <Link to={`/doi/${article.doi}`}>Read More</Link>
                     </Button>
                   </div>
                 </CardContent>

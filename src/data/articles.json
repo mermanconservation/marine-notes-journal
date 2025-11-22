@@ -21,6 +21,27 @@
         "socialShares": 0
       }
     }
+      {
+      "id": 2,
+      "doi": "MNJ-2026-002",
+      "title": "The Environmental Risks of a Floating LNG Terminal in the Pagasetic Gulf",
+      "authors": "Christos Taklis",
+      "orcidIds": [],
+      "type": "Technical Report / Risk Assessment",
+      "publicationDate": "2026-01-01",
+      "pdfUrl": "/manuscripts/2026/vol1-iss1The%20Environmental%20Risks%20of%20a%20Floating%20LNG%20Terminal%20in%20the%20Pagasetic%20Gulf.pdf",
+      "resolverUrl": "https://www.marinenotesjournal.com/doi/MNJ-2026-002",
+      "volume": "1",
+      "issue": "1",
+      "abstract": "This report assesses the environmental risks associated with the proposed floating liquefied natural gas terminal in the Pagasetic Gulf, an enclosed marine system in central Greece. The study is based on long term ecological monitoring by Merman Conservation, which includes systematic field observations of marine mammals, fish nurseries, seabirds, and seagrass habitats. The evidence shows that the project could alter the ecological balance of the gulf through increased underwater activity, thermal discharge, accidental fuel leakage, reduced water quality, and disturbance of sensitive breeding and feeding zones. Particular concern arises for resident dolphins, Posidonia oceanica seagrass meadows, and nursery grounds supporting commercial fisheries. The findings emphasize that the enclosed nature of the Pagasetic Gulf intensifies potential environmental impacts and supports the need for precautionary decision making and stronger conservation focused management before any industrial development proceeds.",
+      "metrics": {
+        "citations": 0,
+        "downloads": 0,
+        "views": 0,
+        "altmetricScore": 0,
+        "socialShares": 0
+      }
+    }
   ],
-  "nextSequence": 2
+  "nextSequence": 3
 }

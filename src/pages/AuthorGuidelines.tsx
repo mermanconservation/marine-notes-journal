@@ -92,13 +92,25 @@ const AuthorGuidelines = () => {
                     in all areas of marine science, with particular emphasis on conservation biology, 
                     ecology, oceanography, and sustainable resource management.
                   </p>
-                  <div className="bg-muted/30 p-4 rounded-lg">
-                    <h4 className="font-semibold mb-2">Peer Review Process</h4>
-                    <p className="text-sm text-muted-foreground">
-                      All submissions undergo rigorous double-blind peer review by international 
-                      experts in relevant fields. The editorial decision timeline is typically 
-                      4-12 weeks from submission.
-                    </p>
+                  <div className="bg-muted/30 p-4 rounded-lg space-y-3">
+                    <div>
+                      <h4 className="font-semibold mb-2">Peer Review Process</h4>
+                      <p className="text-sm text-muted-foreground">
+                        All submissions undergo rigorous double-blind peer review by international 
+                        experts in relevant fields. The editorial decision timeline is typically 
+                        4-12 weeks from submission.
+                      </p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold mb-2">AI Tools in Research</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Authors may use AI tools (e.g., ChatGPT, Grammarly, language editing software) 
+                        to improve readability and language quality. However, AI-generated content must 
+                        be thoroughly reviewed and verified by authors. All AI tool usage must be disclosed 
+                        in the manuscript's acknowledgments section. Authors remain fully responsible for 
+                        the accuracy, originality, and integrity of their work.
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

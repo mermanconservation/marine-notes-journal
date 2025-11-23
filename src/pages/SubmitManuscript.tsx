@@ -82,7 +82,7 @@ const SubmitManuscript = () => {
       }
 
       // Insert submission into database
-      const { data: submissionData, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('manuscript_submissions')
         .insert({
           title: formData.title,
@@ -97,40 +97,13 @@ const SubmitManuscript = () => {
           cover_letter: formData.coverLetter || null,
           copyright_agreed: true,
           file_paths: filePaths,
-        })
-        .select()
-        .single();
+        });
 
       if (insertError) throw insertError;
 
-      // Send email notification via FormSubmit
-      try {
-        const formSubmitData = new FormData();
-        formSubmitData.append('_subject', `New Manuscript Submission: ${formData.title}`);
-        formSubmitData.append('Submission ID', submissionData.id);
-        formSubmitData.append('Title', formData.title);
-        formSubmitData.append('Manuscript Type', formData.manuscriptType);
-        formSubmitData.append('Corresponding Author', formData.correspondingAuthor);
-        formSubmitData.append('Author Email', formData.email);
-        formSubmitData.append('Institution', formData.institution);
-        formSubmitData.append('Abstract', formData.abstract);
-        formSubmitData.append('Keywords', formData.keywords);
-        formSubmitData.append('All Authors', formData.authors);
-        if (formData.orcid) formSubmitData.append('ORCID', formData.orcid);
-        if (formData.coverLetter) formSubmitData.append('Cover Letter', formData.coverLetter);
-
-        await fetch('https://formsubmit.co/editor@marinenotesjournal.com', {
-          method: 'POST',
-          body: formSubmitData,
-        });
-      } catch (emailError) {
-        console.error('Email notification error:', emailError);
-        // Don't fail the submission if email fails
-      }
-
       toast({
         title: "Submission Successful!",
-        description: "Your manuscript has been submitted successfully. The editorial team has been notified by email.",
+        description: "Your manuscript has been submitted successfully. Our editorial team will review it shortly.",
       });
 
       // Reset form

@@ -82,7 +82,7 @@ const SubmitManuscript = () => {
       }
 
       // Insert submission into database
-      const { error: insertError } = await supabase
+      const { data: submissionData, error: insertError } = await supabase
         .from('manuscript_submissions')
         .insert({
           title: formData.title,
@@ -97,13 +97,34 @@ const SubmitManuscript = () => {
           cover_letter: formData.coverLetter || null,
           copyright_agreed: true,
           file_paths: filePaths,
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) throw insertError;
 
+      // Send email notification to editor
+      try {
+        await supabase.functions.invoke('notify-manuscript-submission', {
+          body: {
+            title: formData.title,
+            manuscript_type: formData.manuscriptType,
+            corresponding_author_name: formData.correspondingAuthor,
+            corresponding_author_email: formData.email,
+            corresponding_author_affiliation: formData.institution,
+            abstract: formData.abstract,
+            keywords: formData.keywords,
+            submission_id: submissionData.id,
+          },
+        });
+      } catch (emailError) {
+        console.error('Email notification error:', emailError);
+        // Don't fail the submission if email fails
+      }
+
       toast({
         title: "Submission Successful!",
-        description: "Your manuscript has been submitted successfully. Our editorial team will review it shortly.",
+        description: "Your manuscript has been submitted successfully. The editorial team has been notified by email.",
       });
 
       // Reset form

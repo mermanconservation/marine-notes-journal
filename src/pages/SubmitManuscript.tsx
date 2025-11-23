@@ -104,7 +104,7 @@ const SubmitManuscript = () => {
       // Send email notification via Web3Forms with attachments
       try {
         const emailFormData = new FormData();
-        emailFormData.append('access_key', 'YOUR_WEB3FORMS_ACCESS_KEY'); // Get free key at web3forms.com
+        emailFormData.append('access_key', '66173d98-9435-4548-90bd-fd9ae5ab78cf');
         emailFormData.append('subject', `New Manuscript Submission: ${formData.title}`);
         emailFormData.append('from_name', formData.correspondingAuthor);
         emailFormData.append('email', formData.email);

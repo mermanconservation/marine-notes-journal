@@ -117,7 +117,7 @@ const SubmitManuscript = () => {
         emailFormData.append('Files', filePaths.join(', '));
         emailFormData.append('Cover Letter', formData.coverLetter || 'Not provided');
 
-        await fetch('https://formsubmit.co/info@mermanconservation.co.uk', {
+        await fetch('https://formsubmit.co/editor@marinenotesjournal.com', {
           method: 'POST',
           body: emailFormData
         });

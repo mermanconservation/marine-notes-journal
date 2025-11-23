@@ -101,64 +101,30 @@ const SubmitManuscript = () => {
 
       if (insertError) throw insertError;
 
-      // Send email notification via formsubmit.co in a new window
+      // Send email notification via formsubmit.co in the background
       try {
-        const emailBody = `
-New Manuscript Submission
-
-Title: ${formData.title}
-Manuscript Type: ${formData.manuscriptType}
-Corresponding Author: ${formData.correspondingAuthor}
-Email: ${formData.email}
-Institution: ${formData.institution}
-ORCID: ${formData.orcid || 'Not provided'}
-All Authors: ${formData.authors}
-
-Abstract: ${formData.abstract}
-
-Keywords: ${formData.keywords}
-
-Files: ${filePaths.join(', ')}
-
-Cover Letter: ${formData.coverLetter || 'Not provided'}
-        `.trim();
-
-        // Create a form and submit it in a new window
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = 'https://formsubmit.co/editor@marinenotesjournal.com';
-        form.target = '_blank';
+        const emailFormData = new FormData();
+        emailFormData.append('_subject', `New Manuscript Submission: ${formData.title}`);
+        emailFormData.append('Title', formData.title);
+        emailFormData.append('Manuscript Type', formData.manuscriptType);
+        emailFormData.append('Corresponding Author', formData.correspondingAuthor);
+        emailFormData.append('Email', formData.email);
+        emailFormData.append('Institution', formData.institution);
+        emailFormData.append('ORCID', formData.orcid || 'Not provided');
+        emailFormData.append('All Authors', formData.authors);
+        emailFormData.append('Abstract', formData.abstract);
+        emailFormData.append('Keywords', formData.keywords);
+        emailFormData.append('Cover Letter', formData.coverLetter || 'Not provided');
         
-        const fields = {
-          '_subject': `New Manuscript Submission: ${formData.title}`,
-          'Title': formData.title,
-          'Manuscript Type': formData.manuscriptType,
-          'Corresponding Author': formData.correspondingAuthor,
-          'Email': formData.email,
-          'Institution': formData.institution,
-          'ORCID': formData.orcid || 'Not provided',
-          'All Authors': formData.authors,
-          'Abstract': formData.abstract,
-          'Keywords': formData.keywords,
-          'Files': filePaths.join(', '),
-          'Cover Letter': formData.coverLetter || 'Not provided'
-        };
-
-        Object.entries(fields).forEach(([key, value]) => {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = key;
-          input.value = value;
-          form.appendChild(input);
+        // Attach actual files
+        selectedFiles.forEach((file, index) => {
+          emailFormData.append(`attachment${index + 1}`, file);
         });
 
-        document.body.appendChild(form);
-        form.submit();
-        document.body.removeChild(form);
-
-        // Also create mailto link as backup
-        const mailtoLink = `mailto:editor@marinenotesjournal.com?subject=${encodeURIComponent(`New Manuscript Submission: ${formData.title}`)}&body=${encodeURIComponent(emailBody)}`;
-        window.open(mailtoLink);
+        await fetch('https://formsubmit.co/editor@marinenotesjournal.com', {
+          method: 'POST',
+          body: emailFormData,
+        });
         
       } catch (emailError) {
         console.error('Email notification error:', emailError);
@@ -217,9 +183,9 @@ Cover Letter: ${formData.coverLetter || 'Not provided'}
       const filesArray = Array.from(e.target.files);
       setSelectedFiles(prev => [...prev, ...filesArray]);
       
-      // Auto-fill from first PDF file
+      // Auto-fill from first PDF file (but not title)
       const firstPdf = filesArray.find(file => file.type === 'application/pdf');
-      if (firstPdf && !formData.title) {
+      if (firstPdf) {
         toast({
           title: "Parsing PDF",
           description: "Extracting information from your manuscript...",
@@ -229,21 +195,15 @@ Cover Letter: ${formData.coverLetter || 'Not provided'}
           // Use a simple text extraction approach
           const text = await firstPdf.text();
           
-          // Try to extract title (usually first substantial line)
-          const lines = text.split('\n').filter(line => line.trim().length > 10);
-          if (lines.length > 0) {
-            handleInputChange("title", lines[0].trim().substring(0, 200));
-          }
-          
           // Try to extract abstract
           const abstractMatch = text.match(/abstract[:\s]+(.*?)(?=\n\n|\nintroduction|keywords)/is);
-          if (abstractMatch) {
+          if (abstractMatch && !formData.abstract) {
             handleInputChange("abstract", abstractMatch[1].trim().substring(0, 500));
           }
           
           // Try to extract keywords
           const keywordsMatch = text.match(/keywords?[:\s]+(.*?)(?=\n\n|\nintroduction)/is);
-          if (keywordsMatch) {
+          if (keywordsMatch && !formData.keywords) {
             handleInputChange("keywords", keywordsMatch[1].trim().substring(0, 200));
           }
           

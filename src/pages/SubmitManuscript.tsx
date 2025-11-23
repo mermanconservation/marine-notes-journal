@@ -101,26 +101,65 @@ const SubmitManuscript = () => {
 
       if (insertError) throw insertError;
 
-      // Send email notification via formsubmit.co
+      // Send email notification via formsubmit.co in a new window
       try {
-        const emailFormData = new FormData();
-        emailFormData.append('_subject', `New Manuscript Submission: ${formData.title}`);
-        emailFormData.append('Title', formData.title);
-        emailFormData.append('Manuscript Type', formData.manuscriptType);
-        emailFormData.append('Corresponding Author', formData.correspondingAuthor);
-        emailFormData.append('Email', formData.email);
-        emailFormData.append('Institution', formData.institution);
-        emailFormData.append('ORCID', formData.orcid || 'Not provided');
-        emailFormData.append('All Authors', formData.authors);
-        emailFormData.append('Abstract', formData.abstract);
-        emailFormData.append('Keywords', formData.keywords);
-        emailFormData.append('Files', filePaths.join(', '));
-        emailFormData.append('Cover Letter', formData.coverLetter || 'Not provided');
+        const emailBody = `
+New Manuscript Submission
 
-        await fetch('https://formsubmit.co/editor@marinenotesjournal.com', {
-          method: 'POST',
-          body: emailFormData
+Title: ${formData.title}
+Manuscript Type: ${formData.manuscriptType}
+Corresponding Author: ${formData.correspondingAuthor}
+Email: ${formData.email}
+Institution: ${formData.institution}
+ORCID: ${formData.orcid || 'Not provided'}
+All Authors: ${formData.authors}
+
+Abstract: ${formData.abstract}
+
+Keywords: ${formData.keywords}
+
+Files: ${filePaths.join(', ')}
+
+Cover Letter: ${formData.coverLetter || 'Not provided'}
+        `.trim();
+
+        // Create a form and submit it in a new window
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = 'https://formsubmit.co/editor@marinenotesjournal.com';
+        form.target = '_blank';
+        
+        const fields = {
+          '_subject': `New Manuscript Submission: ${formData.title}`,
+          'Title': formData.title,
+          'Manuscript Type': formData.manuscriptType,
+          'Corresponding Author': formData.correspondingAuthor,
+          'Email': formData.email,
+          'Institution': formData.institution,
+          'ORCID': formData.orcid || 'Not provided',
+          'All Authors': formData.authors,
+          'Abstract': formData.abstract,
+          'Keywords': formData.keywords,
+          'Files': filePaths.join(', '),
+          'Cover Letter': formData.coverLetter || 'Not provided'
+        };
+
+        Object.entries(fields).forEach(([key, value]) => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = value;
+          form.appendChild(input);
         });
+
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+
+        // Also create mailto link as backup
+        const mailtoLink = `mailto:editor@marinenotesjournal.com?subject=${encodeURIComponent(`New Manuscript Submission: ${formData.title}`)}&body=${encodeURIComponent(emailBody)}`;
+        window.open(mailtoLink);
+        
       } catch (emailError) {
         console.error('Email notification error:', emailError);
         // Don't throw - submission already succeeded
@@ -173,10 +212,49 @@ const SubmitManuscript = () => {
     }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
       setSelectedFiles(prev => [...prev, ...filesArray]);
+      
+      // Auto-fill from first PDF file
+      const firstPdf = filesArray.find(file => file.type === 'application/pdf');
+      if (firstPdf && !formData.title) {
+        toast({
+          title: "Parsing PDF",
+          description: "Extracting information from your manuscript...",
+        });
+        
+        try {
+          // Use a simple text extraction approach
+          const text = await firstPdf.text();
+          
+          // Try to extract title (usually first substantial line)
+          const lines = text.split('\n').filter(line => line.trim().length > 10);
+          if (lines.length > 0) {
+            handleInputChange("title", lines[0].trim().substring(0, 200));
+          }
+          
+          // Try to extract abstract
+          const abstractMatch = text.match(/abstract[:\s]+(.*?)(?=\n\n|\nintroduction|keywords)/is);
+          if (abstractMatch) {
+            handleInputChange("abstract", abstractMatch[1].trim().substring(0, 500));
+          }
+          
+          // Try to extract keywords
+          const keywordsMatch = text.match(/keywords?[:\s]+(.*?)(?=\n\n|\nintroduction)/is);
+          if (keywordsMatch) {
+            handleInputChange("keywords", keywordsMatch[1].trim().substring(0, 200));
+          }
+          
+          toast({
+            title: "Information Extracted",
+            description: "Please review and adjust the auto-filled fields.",
+          });
+        } catch (error) {
+          console.error('PDF parsing error:', error);
+        }
+      }
     }
   };
 
@@ -424,10 +502,27 @@ const SubmitManuscript = () => {
                 {/* Copyright Agreement */}
                 <Card className="border-accent/50">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
-                      Copyright Transfer Agreement *
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2">
+                        <FileText className="h-5 w-5" />
+                        Copyright Transfer Agreement *
+                      </CardTitle>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setCopyrightData(prev => ({
+                          ...prev,
+                          originalWork: true,
+                          noConflict: true,
+                          transferRights: true,
+                          creativeCommons: true
+                        }))}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Check All
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     <div className="bg-muted/30 p-4 rounded-lg space-y-2 text-sm">

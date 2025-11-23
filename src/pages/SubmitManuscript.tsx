@@ -101,32 +101,32 @@ const SubmitManuscript = () => {
 
       if (insertError) throw insertError;
 
-      // Send email notification via Web3Forms with attachments
+      // Send email notification via Resend with attachments
       try {
         const emailFormData = new FormData();
-        emailFormData.append('access_key', '66173d98-9435-4548-90bd-fd9ae5ab78cf');
-        emailFormData.append('subject', `New Manuscript Submission: ${formData.title}`);
-        emailFormData.append('from_name', formData.correspondingAuthor);
-        emailFormData.append('email', formData.email);
-        emailFormData.append('Title', formData.title);
-        emailFormData.append('Manuscript_Type', formData.manuscriptType);
-        emailFormData.append('Institution', formData.institution);
-        emailFormData.append('ORCID', formData.orcid || 'Not provided');
-        emailFormData.append('All_Authors', formData.authors);
-        emailFormData.append('Abstract', formData.abstract);
-        emailFormData.append('Keywords', formData.keywords);
-        emailFormData.append('Cover_Letter', formData.coverLetter || 'Not provided');
+        emailFormData.append('title', formData.title);
+        emailFormData.append('manuscript_type', formData.manuscriptType);
+        emailFormData.append('abstract', formData.abstract);
+        emailFormData.append('keywords', formData.keywords);
+        emailFormData.append('corresponding_author_name', formData.correspondingAuthor);
+        emailFormData.append('corresponding_author_email', formData.email);
+        emailFormData.append('corresponding_author_affiliation', formData.institution);
+        emailFormData.append('corresponding_author_orcid', formData.orcid);
+        emailFormData.append('all_authors', formData.authors);
+        emailFormData.append('cover_letter', formData.coverLetter || '');
         
-        // Attach actual files
+        // Attach all files
         selectedFiles.forEach((file) => {
-          emailFormData.append('attachment', file);
+          emailFormData.append('files', file);
         });
 
-        await fetch('https://api.web3forms.com/submit', {
-          method: 'POST',
+        const { error: emailError } = await supabase.functions.invoke('send-manuscript-email', {
           body: emailFormData,
         });
-        
+
+        if (emailError) {
+          console.error('Email notification failed:', emailError);
+        }
       } catch (emailError) {
         console.error('Email notification error:', emailError);
         // Don't throw - submission already succeeded

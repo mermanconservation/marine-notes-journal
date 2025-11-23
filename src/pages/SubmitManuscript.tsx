@@ -101,6 +101,31 @@ const SubmitManuscript = () => {
 
       if (insertError) throw insertError;
 
+      // Send email notification via formsubmit.co
+      try {
+        const emailFormData = new FormData();
+        emailFormData.append('_subject', `New Manuscript Submission: ${formData.title}`);
+        emailFormData.append('Title', formData.title);
+        emailFormData.append('Manuscript Type', formData.manuscriptType);
+        emailFormData.append('Corresponding Author', formData.correspondingAuthor);
+        emailFormData.append('Email', formData.email);
+        emailFormData.append('Institution', formData.institution);
+        emailFormData.append('ORCID', formData.orcid || 'Not provided');
+        emailFormData.append('All Authors', formData.authors);
+        emailFormData.append('Abstract', formData.abstract);
+        emailFormData.append('Keywords', formData.keywords);
+        emailFormData.append('Files', filePaths.join(', '));
+        emailFormData.append('Cover Letter', formData.coverLetter || 'Not provided');
+
+        await fetch('https://formsubmit.co/info@mermanconservation.co.uk', {
+          method: 'POST',
+          body: emailFormData
+        });
+      } catch (emailError) {
+        console.error('Email notification error:', emailError);
+        // Don't throw - submission already succeeded
+      }
+
       toast({
         title: "Submission Successful!",
         description: "Your manuscript has been submitted successfully. Our editorial team will review it shortly.",

@@ -9,15 +9,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Upload, FileText, AlertCircle, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const SubmitManuscript = () => {
   const { toast } = useToast();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
     correspondingAuthor: "",
     email: "",
     institution: "",
+    orcid: "",
     authors: "",
     abstract: "",
     keywords: "",
@@ -34,7 +37,7 @@ const SubmitManuscript = () => {
     creativeCommons: false
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validate copyright agreement
@@ -52,53 +55,90 @@ const SubmitManuscript = () => {
       return;
     }
 
-    // Create email content
-    const filesText = selectedFiles.length > 0 
-      ? `\n\nFiles to be sent separately:\n${selectedFiles.map(f => f.name).join('\n')}`
-      : '\n\nNo files attached. Author will send files separately.';
+    if (selectedFiles.length === 0) {
+      toast({
+        title: "No Files Selected",
+        description: "Please upload at least one manuscript file.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    const emailBody = `
-NEW MANUSCRIPT SUBMISSION
+    setIsSubmitting(true);
 
-Title: ${formData.title}
-Type: ${formData.manuscriptType}
+    try {
+      // Upload files to storage
+      const filePaths: string[] = [];
+      const timestamp = Date.now();
 
-CORRESPONDING AUTHOR:
-Name: ${formData.correspondingAuthor}
-Email: ${formData.email}
-Institution: ${formData.institution}
+      for (const file of selectedFiles) {
+        const filePath = `${timestamp}-${file.name}`;
+        const { error: uploadError } = await supabase.storage
+          .from('manuscripts')
+          .upload(filePath, file);
 
-ALL AUTHORS:
-${formData.authors}
+        if (uploadError) throw uploadError;
+        filePaths.push(filePath);
+      }
 
-ABSTRACT:
-${formData.abstract}
+      // Insert submission into database
+      const { error: insertError } = await supabase
+        .from('manuscript_submissions')
+        .insert({
+          title: formData.title,
+          manuscript_type: formData.manuscriptType,
+          abstract: formData.abstract,
+          keywords: formData.keywords,
+          corresponding_author_name: formData.correspondingAuthor,
+          corresponding_author_email: formData.email,
+          corresponding_author_affiliation: formData.institution,
+          corresponding_author_orcid: formData.orcid || null,
+          all_authors: formData.authors,
+          cover_letter: formData.coverLetter || null,
+          copyright_agreed: true,
+          file_paths: filePaths,
+        });
 
-KEYWORDS:
-${formData.keywords}
+      if (insertError) throw insertError;
 
-COVER LETTER:
-${formData.coverLetter || 'N/A'}
+      toast({
+        title: "Submission Successful!",
+        description: "Your manuscript has been submitted successfully. Our editorial team will review it shortly.",
+      });
 
-${filesText}
+      // Reset form
+      setFormData({
+        title: "",
+        correspondingAuthor: "",
+        email: "",
+        institution: "",
+        orcid: "",
+        authors: "",
+        abstract: "",
+        keywords: "",
+        manuscriptType: "",
+        coverLetter: ""
+      });
+      setCopyrightData({
+        authorSignature: "",
+        date: new Date().toISOString().split('T')[0],
+        originalWork: false,
+        noConflict: false,
+        transferRights: false,
+        creativeCommons: false
+      });
+      setSelectedFiles([]);
 
-COPYRIGHT AGREEMENT:
-✓ Original work, not published elsewhere
-✓ All authors approved, no conflicts of interest
-✓ Copyright transferred to Marine Notes Journal
-✓ Creative Commons CC BY 4.0 License
-Signed by: ${copyrightData.authorSignature}
-Date: ${copyrightData.date}
-    `.trim();
-
-    const mailtoLink = `mailto:editor@marinenotesjournal.com?subject=Manuscript Submission: ${encodeURIComponent(formData.title)}&body=${encodeURIComponent(emailBody)}`;
-    
-    window.location.href = mailtoLink;
-    
-    toast({
-      title: "Opening Email Client",
-      description: "Your submission will open in your email client. Please attach your manuscript files and send.",
-    });
+    } catch (error: any) {
+      console.error('Submission error:', error);
+      toast({
+        title: "Submission Failed",
+        description: error.message || "There was an error submitting your manuscript. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -251,6 +291,18 @@ Date: ${copyrightData.date}
                         placeholder="University/Research Institute"
                         className="mt-2"
                         required
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="orcid">ORCID iD (Optional)</Label>
+                      <Input
+                        id="orcid"
+                        name="orcid"
+                        value={formData.orcid}
+                        onChange={(e) => handleInputChange("orcid", e.target.value)}
+                        placeholder="0000-0000-0000-0000"
+                        className="mt-2"
                       />
                     </div>
 
@@ -440,8 +492,8 @@ Date: ${copyrightData.date}
                   </CardContent>
                 </Card>
 
-                <Button type="submit" size="lg" className="w-full bg-gradient-ocean">
-                  Submit Manuscript
+                <Button type="submit" size="lg" className="w-full bg-gradient-ocean" disabled={isSubmitting}>
+                  {isSubmitting ? "Submitting..." : "Submit Manuscript"}
                 </Button>
                 <p className="text-xs text-center text-muted-foreground">
                   Submission will open your email client. Please attach your manuscript files and send.

@@ -103,19 +103,25 @@ const SubmitManuscript = () => {
 
       if (insertError) throw insertError;
 
-      // Send email notification to editor
+      // Send email notification via FormSubmit
       try {
-        await supabase.functions.invoke('notify-manuscript-submission', {
-          body: {
-            title: formData.title,
-            manuscript_type: formData.manuscriptType,
-            corresponding_author_name: formData.correspondingAuthor,
-            corresponding_author_email: formData.email,
-            corresponding_author_affiliation: formData.institution,
-            abstract: formData.abstract,
-            keywords: formData.keywords,
-            submission_id: submissionData.id,
-          },
+        const formSubmitData = new FormData();
+        formSubmitData.append('_subject', `New Manuscript Submission: ${formData.title}`);
+        formSubmitData.append('Submission ID', submissionData.id);
+        formSubmitData.append('Title', formData.title);
+        formSubmitData.append('Manuscript Type', formData.manuscriptType);
+        formSubmitData.append('Corresponding Author', formData.correspondingAuthor);
+        formSubmitData.append('Author Email', formData.email);
+        formSubmitData.append('Institution', formData.institution);
+        formSubmitData.append('Abstract', formData.abstract);
+        formSubmitData.append('Keywords', formData.keywords);
+        formSubmitData.append('All Authors', formData.authors);
+        if (formData.orcid) formSubmitData.append('ORCID', formData.orcid);
+        if (formData.coverLetter) formSubmitData.append('Cover Letter', formData.coverLetter);
+
+        await fetch('https://formsubmit.co/editor@marinenotesjournal.com', {
+          method: 'POST',
+          body: formSubmitData,
         });
       } catch (emailError) {
         console.error('Email notification error:', emailError);

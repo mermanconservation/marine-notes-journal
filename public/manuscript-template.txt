@@ -110,11 +110,107 @@ FORMATTING INSTRUCTIONS:
   * Research Articles: 8,000 words
   * Review Articles: 10,000 words
   * Short Communications: 3,000 words
+  * Technical Reports / Risk Assessments: 8,000 words
   * Conservation News: 2,000 words
   * Field Notes: 1,500 words
   * Observational Reports: 3,000 words
   * Case Studies: 5,000 words
   * Methodology Papers: 6,000 words
+
+====================================
+
+SPECIAL GUIDELINES FOR TECHNICAL REPORTS / RISK ASSESSMENTS:
+
+TECHNICAL REPORT / RISK ASSESSMENT FORMAT:
+
+FIRST PAGE:
+[TITLE OF TECHNICAL REPORT/RISK ASSESSMENT]
+
+Authors:
+[First Author Name]¹*, [Second Author Name]², [Third Author Name]¹
+
+Affiliations:
+¹ [Department, Institution, City, Country]
+² [Department, Institution, City, Country]
+
+*Corresponding author: [email@institution.edu]
+
+ORCID IDs:
+[First Author]: 0000-0000-0000-0000
+[Second Author]: 0000-0000-0000-0000
+
+ABSTRACT
+[250 words maximum. Provide a concise summary of the technical issue, assessment approach, key findings, and main recommendations.]
+
+Keywords: [keyword 1]; [keyword 2]; [keyword 3]; [keyword 4]; [keyword 5]
+
+====================================
+
+MAIN DOCUMENT STRUCTURE:
+
+1. EXECUTIVE SUMMARY
+   [Brief overview of the entire report - problem, approach, key findings, recommendations]
+   [Keep to 1-2 pages maximum]
+
+2. BACKGROUND AND CONTEXT
+   [Describe the technical issue, environmental concern, or situation requiring assessment]
+   [Include relevant regulatory framework and policy context]
+   [Provide geographic and ecological setting]
+
+3. OBJECTIVES AND SCOPE
+   [Clearly state the purpose of the technical report or risk assessment]
+   [Define the boundaries and limitations of the assessment]
+
+4. TECHNICAL ASSESSMENT / RISK ANALYSIS
+   4.1 Assessment Methodology
+       [Describe the approach, frameworks, and tools used]
+       [Reference relevant standards and protocols]
+   
+   4.2 Data Sources and Analysis
+       [Describe data collection methods and sources]
+       [Include environmental parameters assessed]
+   
+   4.3 Risk Identification and Characterization
+       [For risk assessments: identify hazards and exposure pathways]
+       [For technical reports: describe technical parameters and conditions]
+   
+   4.4 Impact Assessment
+       [Evaluate potential environmental, ecological, or technical impacts]
+       [Include quantitative and qualitative analyses]
+
+5. FINDINGS
+   [Present key findings organized by theme or risk category]
+   [Include tables, figures, and maps as needed]
+   [Highlight critical issues and uncertainties]
+
+6. RECOMMENDATIONS
+   6.1 Immediate Actions
+       [Short-term recommendations and interventions]
+   
+   6.2 Long-term Strategies
+       [Strategic recommendations for sustainable solutions]
+   
+   6.3 Monitoring and Follow-up
+       [Recommended monitoring programs and indicators]
+
+7. CONCLUSIONS
+   [Summarize the main findings and their implications]
+   [Highlight the significance for management and policy]
+
+ACKNOWLEDGMENTS
+[Acknowledge funding sources, stakeholder consultations, and data providers]
+
+CONFLICT OF INTEREST
+[Declare any conflicts of interest or state "The authors declare no conflicts of interest."]
+
+REFERENCES
+[Format references according to journal style]
+
+APPENDICES (if applicable)
+Appendix A: Detailed Technical Data
+Appendix B: Maps and Spatial Information
+Appendix C: Consultation Records
+Appendix D: Supporting Documents
 
 ====================================
 

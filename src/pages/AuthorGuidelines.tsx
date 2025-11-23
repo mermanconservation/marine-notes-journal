@@ -13,6 +13,7 @@ const AuthorGuidelines = () => {
         "Research Articles: Original research (max 8,000 words)",
         "Review Articles: Comprehensive reviews (max 10,000 words)",
         "Short Communications: Brief reports (max 3,000 words)",
+        "Technical Reports / Risk Assessments: Comprehensive assessments of environmental risks and technical analyses of marine infrastructure projects and conservation challenges (max 5,000 words)",
         "Conservation News: Updates, reports, and announcements on current conservation issues from the last 6 months (max 2,000 words)",
         "Field Notes: Brief descriptions of marine observations, species sightings, behavioral observations, or environmental conditions from field work (max 1,500 words)",
         "Observational Reports: Detailed accounts of specific marine phenomena, unusual events, or field observations requiring documentation (max 3,000 words)",

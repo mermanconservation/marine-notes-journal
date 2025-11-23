@@ -20,14 +20,14 @@
         "altmetricScore": 0,
         "socialShares": 0
       }
-    }
-      {
+    },
+    {
       "id": 2,
       "doi": "MNJ-2026-002",
       "title": "The Environmental Risks of a Floating LNG Terminal in the Pagasetic Gulf",
       "authors": "Christos Taklis",
       "orcidIds": [],
-      "type": "Short Communication",
+      "type": "Technical Report / Risk Assessment",
       "publicationDate": "2026-01-01",
       "pdfUrl": "/manuscripts/2026/vol1-iss1The%20Environmental%20Risks%20of%20a%20Floating%20LNG%20Terminal%20in%20the%20Pagasetic%20Gulf.pdf",
       "resolverUrl": "https://www.marinenotesjournal.com/doi/MNJ-2026-002",

@@ -169,6 +169,7 @@ Date: ${copyrightData.date}
                           <SelectItem value="research-article">Research Article</SelectItem>
                           <SelectItem value="review">Review Article</SelectItem>
                           <SelectItem value="short-communication">Short Communication</SelectItem>
+                          <SelectItem value="technical-report">Technical Report / Risk Assessment</SelectItem>
                           <SelectItem value="field-notes">Field Notes</SelectItem>
                           <SelectItem value="observational-reports">Observational Reports</SelectItem>
                           <SelectItem value="conservation-news">Conservation News</SelectItem>

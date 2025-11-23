@@ -14,7 +14,63 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      manuscript_submissions: {
+        Row: {
+          abstract: string
+          all_authors: string
+          copyright_agreed: boolean
+          corresponding_author_affiliation: string
+          corresponding_author_email: string
+          corresponding_author_name: string
+          corresponding_author_orcid: string | null
+          cover_letter: string | null
+          created_at: string
+          file_paths: string[]
+          id: string
+          keywords: string
+          manuscript_type: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          abstract: string
+          all_authors: string
+          copyright_agreed?: boolean
+          corresponding_author_affiliation: string
+          corresponding_author_email: string
+          corresponding_author_name: string
+          corresponding_author_orcid?: string | null
+          cover_letter?: string | null
+          created_at?: string
+          file_paths: string[]
+          id?: string
+          keywords: string
+          manuscript_type: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          abstract?: string
+          all_authors?: string
+          copyright_agreed?: boolean
+          corresponding_author_affiliation?: string
+          corresponding_author_email?: string
+          corresponding_author_name?: string
+          corresponding_author_orcid?: string | null
+          cover_letter?: string | null
+          created_at?: string
+          file_paths?: string[]
+          id?: string
+          keywords?: string
+          manuscript_type?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

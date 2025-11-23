@@ -1,1 +1,4 @@
 project_id = "pkkyztgzodsrpgdhzghc"
+
+[functions.notify-manuscript-submission]
+verify_jwt = false

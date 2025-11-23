@@ -101,32 +101,31 @@ const SubmitManuscript = () => {
 
       if (insertError) throw insertError;
 
-      // Send email notification via Resend with attachments
+      // Send email notification via formsubmit.co in the background
       try {
         const emailFormData = new FormData();
-        emailFormData.append('title', formData.title);
-        emailFormData.append('manuscript_type', formData.manuscriptType);
-        emailFormData.append('abstract', formData.abstract);
-        emailFormData.append('keywords', formData.keywords);
-        emailFormData.append('corresponding_author_name', formData.correspondingAuthor);
-        emailFormData.append('corresponding_author_email', formData.email);
-        emailFormData.append('corresponding_author_affiliation', formData.institution);
-        emailFormData.append('corresponding_author_orcid', formData.orcid);
-        emailFormData.append('all_authors', formData.authors);
-        emailFormData.append('cover_letter', formData.coverLetter || '');
+        emailFormData.append('_subject', `New Manuscript Submission: ${formData.title}`);
+        emailFormData.append('Title', formData.title);
+        emailFormData.append('Manuscript Type', formData.manuscriptType);
+        emailFormData.append('Corresponding Author', formData.correspondingAuthor);
+        emailFormData.append('Email', formData.email);
+        emailFormData.append('Institution', formData.institution);
+        emailFormData.append('ORCID', formData.orcid || 'Not provided');
+        emailFormData.append('All Authors', formData.authors);
+        emailFormData.append('Abstract', formData.abstract);
+        emailFormData.append('Keywords', formData.keywords);
+        emailFormData.append('Cover Letter', formData.coverLetter || 'Not provided');
         
-        // Attach all files
-        selectedFiles.forEach((file) => {
-          emailFormData.append('files', file);
+        // Attach actual files
+        selectedFiles.forEach((file, index) => {
+          emailFormData.append(`attachment${index + 1}`, file);
         });
 
-        const { error: emailError } = await supabase.functions.invoke('send-manuscript-email', {
+        await fetch('https://formsubmit.co/editor@marinenotesjournal.com', {
+          method: 'POST',
           body: emailFormData,
         });
-
-        if (emailError) {
-          console.error('Email notification failed:', emailError);
-        }
+        
       } catch (emailError) {
         console.error('Email notification error:', emailError);
         // Don't throw - submission already succeeded

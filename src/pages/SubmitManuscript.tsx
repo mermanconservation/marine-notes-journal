@@ -101,27 +101,28 @@ const SubmitManuscript = () => {
 
       if (insertError) throw insertError;
 
-      // Send email notification via formsubmit.co in the background
+      // Send email notification via Web3Forms with attachments
       try {
         const emailFormData = new FormData();
-        emailFormData.append('_subject', `New Manuscript Submission: ${formData.title}`);
+        emailFormData.append('access_key', 'YOUR_WEB3FORMS_ACCESS_KEY'); // Get free key at web3forms.com
+        emailFormData.append('subject', `New Manuscript Submission: ${formData.title}`);
+        emailFormData.append('from_name', formData.correspondingAuthor);
+        emailFormData.append('email', formData.email);
         emailFormData.append('Title', formData.title);
-        emailFormData.append('Manuscript Type', formData.manuscriptType);
-        emailFormData.append('Corresponding Author', formData.correspondingAuthor);
-        emailFormData.append('Email', formData.email);
+        emailFormData.append('Manuscript_Type', formData.manuscriptType);
         emailFormData.append('Institution', formData.institution);
         emailFormData.append('ORCID', formData.orcid || 'Not provided');
-        emailFormData.append('All Authors', formData.authors);
+        emailFormData.append('All_Authors', formData.authors);
         emailFormData.append('Abstract', formData.abstract);
         emailFormData.append('Keywords', formData.keywords);
-        emailFormData.append('Cover Letter', formData.coverLetter || 'Not provided');
+        emailFormData.append('Cover_Letter', formData.coverLetter || 'Not provided');
         
         // Attach actual files
-        selectedFiles.forEach((file, index) => {
-          emailFormData.append(`attachment${index + 1}`, file);
+        selectedFiles.forEach((file) => {
+          emailFormData.append('attachment', file);
         });
 
-        await fetch('https://formsubmit.co/editor@marinenotesjournal.com', {
+        await fetch('https://api.web3forms.com/submit', {
           method: 'POST',
           body: emailFormData,
         });

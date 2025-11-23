@@ -116,9 +116,9 @@ const SubmitManuscript = () => {
         emailFormData.append('Keywords', formData.keywords);
         emailFormData.append('Cover Letter', formData.coverLetter || 'Not provided');
         
-        // Attach all files with the same field name for proper attachment handling
-        selectedFiles.forEach((file) => {
-          emailFormData.append('attachment', file, file.name);
+        // Attach actual files
+        selectedFiles.forEach((file, index) => {
+          emailFormData.append(`attachment${index + 1}`, file);
         });
 
         await fetch('https://formsubmit.co/editor@marinenotesjournal.com', {

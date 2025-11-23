@@ -95,10 +95,12 @@ const AuthorGuidelines = () => {
                   <div className="bg-muted/30 p-4 rounded-lg space-y-3">
                     <div>
                       <h4 className="font-semibold mb-2">Peer Review Process</h4>
-                      <p className="text-sm text-muted-foreground">
-                        All submissions undergo rigorous double-blind peer review by international 
-                        experts in relevant fields. The editorial decision timeline is typically 
-                        4-12 weeks from submission.
+                      <p className="text-sm text-muted-foreground mb-2">
+                        All submissions are first evaluated by automated AI expert tools that assess 
+                        methodology, statistical rigor, literature coverage, and scientific soundness. 
+                        Following AI-assisted screening, manuscripts undergo rigorous double-blind peer 
+                        review by international experts in relevant fields before editors make the final 
+                        decision. The editorial decision timeline is typically 4-12 weeks from submission.
                       </p>
                     </div>
                     <div>

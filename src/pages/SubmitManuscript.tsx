@@ -126,7 +126,7 @@ const SubmitManuscript = () => {
           formspreeData.append('manuscript_files', file);
         });
 
-        await fetch('https://formspree.io/f/YOUR_FORM_ID', {
+        await fetch('https://formspree.io/f/xldkergb', {
           method: 'POST',
           body: formspreeData,
           headers: {

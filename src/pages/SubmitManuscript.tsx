@@ -101,27 +101,31 @@ const SubmitManuscript = () => {
 
       if (insertError) throw insertError;
 
-      // Send email notification with attachments via edge function
+      // Send email notification via formsubmit.co in the background
       try {
-        const { error: emailError } = await supabase.functions.invoke('send-submission-email', {
-          body: {
-            title: formData.title,
-            manuscriptType: formData.manuscriptType,
-            correspondingAuthor: formData.correspondingAuthor,
-            email: formData.email,
-            institution: formData.institution,
-            orcid: formData.orcid,
-            authors: formData.authors,
-            abstract: formData.abstract,
-            keywords: formData.keywords,
-            coverLetter: formData.coverLetter,
-            filePaths: filePaths,
-          },
+        const emailFormData = new FormData();
+        emailFormData.append('_subject', `New Manuscript Submission: ${formData.title}`);
+        emailFormData.append('Title', formData.title);
+        emailFormData.append('Manuscript Type', formData.manuscriptType);
+        emailFormData.append('Corresponding Author', formData.correspondingAuthor);
+        emailFormData.append('Email', formData.email);
+        emailFormData.append('Institution', formData.institution);
+        emailFormData.append('ORCID', formData.orcid || 'Not provided');
+        emailFormData.append('All Authors', formData.authors);
+        emailFormData.append('Abstract', formData.abstract);
+        emailFormData.append('Keywords', formData.keywords);
+        emailFormData.append('Cover Letter', formData.coverLetter || 'Not provided');
+        
+        // Attach actual files
+        selectedFiles.forEach((file, index) => {
+          emailFormData.append(`attachment${index + 1}`, file);
         });
 
-        if (emailError) {
-          console.error('Email notification error:', emailError);
-        }
+        await fetch('https://formsubmit.co/marinenotesjournal@gmail.com', {
+          method: 'POST',
+          body: emailFormData,
+        });
+        
       } catch (emailError) {
         console.error('Email notification error:', emailError);
         // Don't throw - submission already succeeded

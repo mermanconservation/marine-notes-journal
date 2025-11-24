@@ -25,7 +25,7 @@ export type Database = {
           corresponding_author_orcid: string | null
           cover_letter: string | null
           created_at: string
-          file_paths: string[]
+          file_paths: string[] | null
           id: string
           keywords: string
           manuscript_type: string
@@ -43,7 +43,7 @@ export type Database = {
           corresponding_author_orcid?: string | null
           cover_letter?: string | null
           created_at?: string
-          file_paths: string[]
+          file_paths?: string[] | null
           id?: string
           keywords: string
           manuscript_type: string
@@ -61,7 +61,7 @@ export type Database = {
           corresponding_author_orcid?: string | null
           cover_letter?: string | null
           created_at?: string
-          file_paths?: string[]
+          file_paths?: string[] | null
           id?: string
           keywords?: string
           manuscript_type?: string

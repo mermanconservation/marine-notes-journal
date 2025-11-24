@@ -9,7 +9,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Upload, FileText, AlertCircle, CheckCircle, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -76,39 +75,7 @@ const SubmitManuscript = () => {
     setIsSubmitting(true);
 
     try {
-      // Upload files to storage
-      const filePaths: string[] = [];
-      const timestamp = Date.now();
-
-      for (const file of selectedFiles) {
-        const filePath = `${timestamp}-${file.name}`;
-        const { error: uploadError } = await supabase.storage
-          .from('manuscripts')
-          .upload(filePath, file);
-
-        if (uploadError) throw uploadError;
-        filePaths.push(filePath);
-      }
-
-      // Insert submission into database
-      const { error: insertError } = await supabase
-        .from('manuscript_submissions')
-        .insert({
-          title: formData.title,
-          manuscript_type: formData.manuscriptType,
-          abstract: formData.abstract,
-          keywords: formData.keywords,
-          corresponding_author_name: formData.correspondingAuthor,
-          corresponding_author_email: formData.email,
-          corresponding_author_affiliation: formData.institution,
-          corresponding_author_orcid: formData.orcid || null,
-          all_authors: formData.authors,
-          cover_letter: formData.coverLetter || null,
-          copyright_agreed: true,
-          file_paths: filePaths,
-        });
-
-      if (insertError) throw insertError;
+      // No file storage - files will be manually attached by user to email
 
       // Prepare email content with full submission details
       const filesList = selectedFiles.map(f => f.name).join('\n   - ');

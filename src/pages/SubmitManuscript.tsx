@@ -101,95 +101,143 @@ const SubmitManuscript = () => {
 
       if (insertError) throw insertError;
 
-      // Send email notification to journal via formsubmit.co in the background
-      try {
-        const emailFormData = new FormData();
-        emailFormData.append('_subject', `New Manuscript Submission: ${formData.title}`);
-        emailFormData.append('Title', formData.title);
-        emailFormData.append('Manuscript Type', formData.manuscriptType);
-        emailFormData.append('Corresponding Author', formData.correspondingAuthor);
-        emailFormData.append('Email', formData.email);
-        emailFormData.append('Institution', formData.institution);
-        emailFormData.append('ORCID', formData.orcid || 'Not provided');
-        emailFormData.append('All Authors', formData.authors);
-        emailFormData.append('Abstract', formData.abstract);
-        emailFormData.append('Keywords', formData.keywords);
-        emailFormData.append('Cover Letter', formData.coverLetter || 'Not provided');
-        
-        // Attach actual files
-        selectedFiles.forEach((file, index) => {
-          emailFormData.append(`attachment${index + 1}`, file);
-        });
+      // Generate HTML submission summary
+      const filesList = selectedFiles.map(f => f.name).join(', ');
+      const htmlContent = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Manuscript Submission - ${formData.title}</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 20px; line-height: 1.6; }
+    h1 { color: #1a5490; border-bottom: 3px solid #1a5490; padding-bottom: 10px; }
+    h2 { color: #2c5f8d; margin-top: 30px; }
+    .field { margin: 15px 0; }
+    .label { font-weight: bold; color: #555; }
+    .value { margin-left: 20px; }
+    .section { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0; }
+    .files { background: #e8f4f8; padding: 15px; border-radius: 5px; border-left: 4px solid #1a5490; }
+  </style>
+</head>
+<body>
+  <h1>Manuscript Submission to Marine Notes Journal</h1>
+  <p><strong>Submission Date:</strong> ${new Date().toLocaleString()}</p>
+  
+  <div class="section">
+    <h2>Manuscript Information</h2>
+    <div class="field">
+      <div class="label">Title:</div>
+      <div class="value">${formData.title}</div>
+    </div>
+    <div class="field">
+      <div class="label">Manuscript Type:</div>
+      <div class="value">${formData.manuscriptType}</div>
+    </div>
+    <div class="field">
+      <div class="label">Abstract:</div>
+      <div class="value">${formData.abstract}</div>
+    </div>
+    <div class="field">
+      <div class="label">Keywords:</div>
+      <div class="value">${formData.keywords}</div>
+    </div>
+  </div>
 
-        await fetch('https://formsubmit.co/marinenotesjournal@gmail.com', {
-          method: 'POST',
-          body: emailFormData,
-        });
-        
-      } catch (emailError) {
-        console.error('Email notification error:', emailError);
-        // Don't throw - submission already succeeded
+  <div class="section">
+    <h2>Author Information</h2>
+    <div class="field">
+      <div class="label">Corresponding Author:</div>
+      <div class="value">${formData.correspondingAuthor}</div>
+    </div>
+    <div class="field">
+      <div class="label">Email:</div>
+      <div class="value">${formData.email}</div>
+    </div>
+    <div class="field">
+      <div class="label">Institution:</div>
+      <div class="value">${formData.institution}</div>
+    </div>
+    <div class="field">
+      <div class="label">ORCID:</div>
+      <div class="value">${formData.orcid || 'Not provided'}</div>
+    </div>
+    <div class="field">
+      <div class="label">All Authors:</div>
+      <div class="value" style="white-space: pre-wrap;">${formData.authors}</div>
+    </div>
+  </div>
+
+  ${formData.coverLetter ? `
+  <div class="section">
+    <h2>Cover Letter</h2>
+    <div style="white-space: pre-wrap;">${formData.coverLetter}</div>
+  </div>
+  ` : ''}
+
+  <div class="files">
+    <h2>Submitted Files</h2>
+    <p>${filesList}</p>
+    <p><em>Note: Manuscript files should be attached separately to the email.</em></p>
+  </div>
+
+  <div class="section">
+    <h2>Copyright Agreement</h2>
+    <p>✓ Author confirms this is original work</p>
+    <p>✓ No conflicts of interest</p>
+    <p>✓ Rights transferred to Marine Notes Journal</p>
+    <p>✓ Creative Commons License accepted</p>
+    <p><strong>Signature:</strong> ${copyrightData.authorSignature}</p>
+    <p><strong>Date:</strong> ${copyrightData.date}</p>
+  </div>
+</body>
+</html>
+      `;
+
+      // Download HTML summary
+      const htmlBlob = new Blob([htmlContent], { type: 'text/html' });
+      const htmlUrl = URL.createObjectURL(htmlBlob);
+      const htmlLink = document.createElement('a');
+      htmlLink.href = htmlUrl;
+      htmlLink.download = `manuscript-submission-${timestamp}.html`;
+      document.body.appendChild(htmlLink);
+      htmlLink.click();
+      document.body.removeChild(htmlLink);
+      URL.revokeObjectURL(htmlUrl);
+
+      // Download all manuscript files
+      for (const file of selectedFiles) {
+        const fileUrl = URL.createObjectURL(file);
+        const fileLink = document.createElement('a');
+        fileLink.href = fileUrl;
+        fileLink.download = file.name;
+        document.body.appendChild(fileLink);
+        fileLink.click();
+        document.body.removeChild(fileLink);
+        URL.revokeObjectURL(fileUrl);
       }
 
-      // Send confirmation email to the author
-      try {
-        const confirmationFormData = new FormData();
-        confirmationFormData.append('_subject', 'Manuscript Submission Confirmation - Marine Notes Journal');
-        confirmationFormData.append('_template', 'box');
-        
-        const filesList = selectedFiles.map(f => f.name).join(', ');
-        const summaryMessage = `
-Dear ${formData.correspondingAuthor},
+      // Open mailto with submission details
+      const emailSubject = encodeURIComponent(`New Manuscript Submission: ${formData.title}`);
+      const emailBody = encodeURIComponent(`Dear Editor,
 
-Thank you for submitting your manuscript to Marine Notes Journal. We have successfully received your submission.
-
-SUBMISSION SUMMARY:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Please find attached:
+1. Manuscript submission summary (HTML file)
+2. Manuscript files: ${filesList}
 
 Title: ${formData.title}
-
-Manuscript Type: ${formData.manuscriptType}
-
 Corresponding Author: ${formData.correspondingAuthor}
 Email: ${formData.email}
-Institution: ${formData.institution}
-ORCID: ${formData.orcid || 'Not provided'}
-
-All Authors:
-${formData.authors}
-
-Abstract:
-${formData.abstract}
-
-Keywords: ${formData.keywords}
-
-Submitted Files: ${filesList}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Our editorial team will review your submission and contact you within 2-4 weeks regarding the status of your manuscript.
-
-If you have any questions, please contact us at editor@marinenotesjournal.com
 
 Best regards,
-Marine Notes Journal Editorial Team
-        `;
-        
-        confirmationFormData.append('message', summaryMessage);
+${formData.correspondingAuthor}`);
 
-        await fetch(`https://formsubmit.co/${formData.email}`, {
-          method: 'POST',
-          body: confirmationFormData,
-        });
-        
-      } catch (confirmationError) {
-        console.error('Confirmation email error:', confirmationError);
-        // Don't throw - submission already succeeded
-      }
+      window.location.href = `mailto:editor@marinenotesjournal.com?subject=${emailSubject}&body=${emailBody}`;
+
 
       toast({
-        title: "Submission Successful!",
-        description: "Your manuscript has been submitted successfully. Our editorial team will review it shortly.",
+        title: "Submission Ready!",
+        description: "Files downloaded. Please attach them to the email that opened in your email client and send.",
       });
 
       // Reset form

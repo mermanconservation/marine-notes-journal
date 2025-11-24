@@ -103,8 +103,8 @@ const SubmitManuscript = () => {
 
       // Send submission to JotForm in the background
       try {
-        // JotForm form ID - replace with your actual form ID from https://www.jotform.com/
-        const JOTFORM_FORM_ID = 'YOUR_JOTFORM_ID'; // TODO: Replace with actual JotForm form ID
+        // JotForm form ID from https://form.jotform.com/253271617830052
+        const JOTFORM_FORM_ID = '253271617830052';
         
         const jotformData = new FormData();
         

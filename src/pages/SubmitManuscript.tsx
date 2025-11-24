@@ -101,7 +101,7 @@ const SubmitManuscript = () => {
 
       if (insertError) throw insertError;
 
-      // Send email notification via formsubmit.co in the background
+      // Send email notification to journal via formsubmit.co in the background
       try {
         const emailFormData = new FormData();
         emailFormData.append('_subject', `New Manuscript Submission: ${formData.title}`);
@@ -128,6 +128,62 @@ const SubmitManuscript = () => {
         
       } catch (emailError) {
         console.error('Email notification error:', emailError);
+        // Don't throw - submission already succeeded
+      }
+
+      // Send confirmation email to the author
+      try {
+        const confirmationFormData = new FormData();
+        confirmationFormData.append('_subject', 'Manuscript Submission Confirmation - Marine Notes Journal');
+        confirmationFormData.append('_template', 'box');
+        
+        const filesList = selectedFiles.map(f => f.name).join(', ');
+        const summaryMessage = `
+Dear ${formData.correspondingAuthor},
+
+Thank you for submitting your manuscript to Marine Notes Journal. We have successfully received your submission.
+
+SUBMISSION SUMMARY:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Title: ${formData.title}
+
+Manuscript Type: ${formData.manuscriptType}
+
+Corresponding Author: ${formData.correspondingAuthor}
+Email: ${formData.email}
+Institution: ${formData.institution}
+ORCID: ${formData.orcid || 'Not provided'}
+
+All Authors:
+${formData.authors}
+
+Abstract:
+${formData.abstract}
+
+Keywords: ${formData.keywords}
+
+Submitted Files: ${filesList}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Our editorial team will review your submission and contact you within 2-4 weeks regarding the status of your manuscript.
+
+If you have any questions, please contact us at editor@marinenotesjournal.com
+
+Best regards,
+Marine Notes Journal Editorial Team
+        `;
+        
+        confirmationFormData.append('message', summaryMessage);
+
+        await fetch(`https://formsubmit.co/${formData.email}`, {
+          method: 'POST',
+          body: confirmationFormData,
+        });
+        
+      } catch (confirmationError) {
+        console.error('Confirmation email error:', confirmationError);
         // Don't throw - submission already succeeded
       }
 

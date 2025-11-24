@@ -101,34 +101,38 @@ const SubmitManuscript = () => {
 
       if (insertError) throw insertError;
 
-      // Send email notification via formsubmit.co in the background
+      // Send submission to JotForm in the background
       try {
-        const emailFormData = new FormData();
-        emailFormData.append('_subject', `New Manuscript Submission: ${formData.title}`);
-        emailFormData.append('Title', formData.title);
-        emailFormData.append('Manuscript Type', formData.manuscriptType);
-        emailFormData.append('Corresponding Author', formData.correspondingAuthor);
-        emailFormData.append('Email', formData.email);
-        emailFormData.append('Institution', formData.institution);
-        emailFormData.append('ORCID', formData.orcid || 'Not provided');
-        emailFormData.append('All Authors', formData.authors);
-        emailFormData.append('Abstract', formData.abstract);
-        emailFormData.append('Keywords', formData.keywords);
-        emailFormData.append('Cover Letter', formData.coverLetter || 'Not provided');
+        // JotForm form ID - replace with your actual form ID from https://www.jotform.com/
+        const JOTFORM_FORM_ID = 'YOUR_JOTFORM_ID'; // TODO: Replace with actual JotForm form ID
         
-        // Attach actual files
+        const jotformData = new FormData();
+        
+        // Map fields to JotForm question IDs (you'll need to update these based on your form)
+        jotformData.append('q3_manuscriptTitle', formData.title);
+        jotformData.append('q4_manuscriptType', formData.manuscriptType);
+        jotformData.append('q5_correspondingAuthor', formData.correspondingAuthor);
+        jotformData.append('q6_emailAddress', formData.email);
+        jotformData.append('q7_institution', formData.institution);
+        jotformData.append('q8_orcidId', formData.orcid || 'Not provided');
+        jotformData.append('q9_allAuthors', formData.authors);
+        jotformData.append('q10_abstract', formData.abstract);
+        jotformData.append('q11_keywords', formData.keywords);
+        jotformData.append('q12_coverLetter', formData.coverLetter || 'Not provided');
+        
+        // Attach files (JotForm supports file uploads)
         selectedFiles.forEach((file, index) => {
-          emailFormData.append(`attachment${index + 1}`, file);
+          jotformData.append(`q13_manuscriptFiles${index}`, file);
         });
 
-        await fetch('https://formsubmit.co/editor@marinenotesjournal.com', {
+        await fetch(`https://submit.jotform.com/submit/${JOTFORM_FORM_ID}/`, {
           method: 'POST',
-          body: emailFormData,
+          body: jotformData,
         });
         
       } catch (emailError) {
-        console.error('Email notification error:', emailError);
-        // Don't throw - submission already succeeded
+        console.error('JotForm submission error:', emailError);
+        // Don't throw - database submission already succeeded
       }
 
       toast({

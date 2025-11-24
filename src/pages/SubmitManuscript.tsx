@@ -104,33 +104,38 @@ const SubmitManuscript = () => {
       
       const submissionId = data?.[0]?.id || 'N/A';
 
-      // Send email notification to journal via formsubmit.co in the background
+      // Send to journal with file attachments via Formspree
       try {
-        const emailFormData = new FormData();
-        emailFormData.append('_subject', `New Manuscript Submission: ${formData.title}`);
-        emailFormData.append('Title', formData.title);
-        emailFormData.append('Manuscript Type', formData.manuscriptType);
-        emailFormData.append('Corresponding Author', formData.correspondingAuthor);
-        emailFormData.append('Email', formData.email);
-        emailFormData.append('Institution', formData.institution);
-        emailFormData.append('ORCID', formData.orcid || 'Not provided');
-        emailFormData.append('All Authors', formData.authors);
-        emailFormData.append('Abstract', formData.abstract);
-        emailFormData.append('Keywords', formData.keywords);
-        emailFormData.append('Cover Letter', formData.coverLetter || 'Not provided');
+        const formspreeData = new FormData();
         
-        // Attach actual files
-        selectedFiles.forEach((file, index) => {
-          emailFormData.append(`attachment${index + 1}`, file);
+        // Add form fields
+        formspreeData.append('submission_id', submissionId);
+        formspreeData.append('title', formData.title);
+        formspreeData.append('manuscript_type', formData.manuscriptType);
+        formspreeData.append('corresponding_author', formData.correspondingAuthor);
+        formspreeData.append('email', formData.email);
+        formspreeData.append('institution', formData.institution);
+        formspreeData.append('orcid', formData.orcid || 'Not provided');
+        formspreeData.append('all_authors', formData.authors);
+        formspreeData.append('keywords', formData.keywords);
+        formspreeData.append('abstract', formData.abstract);
+        formspreeData.append('cover_letter', formData.coverLetter || 'Not provided');
+        
+        // Attach all manuscript files
+        selectedFiles.forEach((file) => {
+          formspreeData.append('manuscript_files', file);
         });
 
-        await fetch('https://formsubmit.co/marinenotesjournal@gmail.com', {
+        await fetch('https://formspree.io/f/YOUR_FORM_ID', {
           method: 'POST',
-          body: emailFormData,
+          body: formspreeData,
+          headers: {
+            'Accept': 'application/json'
+          }
         });
         
       } catch (emailError) {
-        console.error('Email notification error:', emailError);
+        console.error('Formspree submission error:', emailError);
         // Don't throw - submission already succeeded
       }
 

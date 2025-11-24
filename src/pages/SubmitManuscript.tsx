@@ -121,7 +121,7 @@ const SubmitManuscript = () => {
           emailFormData.append(`attachment${index + 1}`, file);
         });
 
-        await fetch('https://formsubmit.co/editor@marinenotesjournal.com', {
+        await fetch('https://formsubmit.co/marinenotesjournal@gmail.com', {
           method: 'POST',
           body: emailFormData,
         });

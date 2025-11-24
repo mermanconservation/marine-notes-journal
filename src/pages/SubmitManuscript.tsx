@@ -82,7 +82,7 @@ const SubmitManuscript = () => {
       }
 
       // Insert submission into database
-      const { data, error: insertError } = await supabase
+      const { error: insertError } = await supabase
         .from('manuscript_submissions')
         .insert({
           title: formData.title,
@@ -97,12 +97,9 @@ const SubmitManuscript = () => {
           cover_letter: formData.coverLetter || null,
           copyright_agreed: true,
           file_paths: filePaths,
-        })
-        .select();
+        });
 
       if (insertError) throw insertError;
-      
-      const submissionId = data?.[0]?.id || 'N/A';
 
       // Send email notification to journal via formsubmit.co in the background
       try {
@@ -149,8 +146,6 @@ Thank you for submitting your manuscript to Marine Notes Journal. We have succes
 SUBMISSION SUMMARY:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Submission ID: ${submissionId}
-
 Title: ${formData.title}
 
 Manuscript Type: ${formData.manuscriptType}
@@ -171,12 +166,6 @@ Keywords: ${formData.keywords}
 Submitted Files: ${filesList}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-TRACK YOUR SUBMISSION:
-You can track the status of your manuscript at any time by visiting:
-https://www.marinenotesjournal.com/track
-
-You will need your Submission ID and email address to access your submission status.
 
 Our editorial team will review your submission and contact you within 2-4 weeks regarding the status of your manuscript.
 

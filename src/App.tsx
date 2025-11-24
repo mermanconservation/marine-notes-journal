@@ -16,7 +16,6 @@ import NotFound from "./pages/NotFound";
 import DOIResolver from "./pages/DOIResolver";
 import DOISearch from "./pages/DOISearch";
 import CitationTracker from "./pages/CitationTracker";
-import TrackSubmission from "./pages/TrackSubmission";
 import Layout from "./components/Layout/Layout";
 
 const queryClient = new QueryClient();
@@ -40,7 +39,6 @@ const App = () => (
             <Route path="/doi/:doi" element={<DOIResolver />} />
             <Route path="/doi-search" element={<DOISearch />} />
             <Route path="/citation-tracker" element={<CitationTracker />} />
-            <Route path="/track" element={<TrackSubmission />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>

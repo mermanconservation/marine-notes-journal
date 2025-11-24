@@ -11,7 +11,6 @@ const Header = () => {
     { name: "Home", href: "/" },
     { name: "About", href: "/about" },
     { name: "Submit Manuscript", href: "/submit" },
-    { name: "Track Submission", href: "/track" },
     { name: "Author Guidelines", href: "/guidelines" },
     { name: "Editorial Board", href: "/editorial-board" },
     { name: "Archive", href: "/archive" },

@@ -99,7 +99,22 @@ Learn more: ${article.resolverUrl}
 
   const handleCopy = async (text: string, id: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      // Try modern clipboard API first
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback for older browsers or non-secure contexts
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      }
       setCopiedId(id);
       toast({
         title: "Copied to clipboard!",
@@ -107,9 +122,10 @@ Learn more: ${article.resolverUrl}
       });
       setTimeout(() => setCopiedId(null), 2000);
     } catch (err) {
+      // Final fallback - show the text for manual copying
       toast({
-        title: "Failed to copy",
-        description: "Please try again.",
+        title: "Copy not supported",
+        description: "Please select and copy the text manually.",
         variant: "destructive",
       });
     }

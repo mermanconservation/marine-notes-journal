@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Megaphone, Copy, Check } from "lucide-react";
+import { Megaphone, Copy, Check, ChevronDown, ChevronUp } from "lucide-react";
 import { Article } from "@/types/article";
 import { useToast } from "@/hooks/use-toast";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 interface PromotionAssistantProps {
   article: Article;
@@ -12,6 +13,7 @@ interface PromotionAssistantProps {
 
 export const PromotionAssistant = ({ article }: PromotionAssistantProps) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
   const generatePressRelease = () => {
@@ -118,123 +120,136 @@ Learn more: ${article.resolverUrl}
   const socialPosts = generateSocialMediaPosts();
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Megaphone className="h-5 w-5" />
-          AI Promotion Assistant
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="press" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="press">Press Release</TabsTrigger>
-            <TabsTrigger value="summary">Plain Summary</TabsTrigger>
-            <TabsTrigger value="social">Social Media</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="press" className="space-y-4">
-            <div className="relative">
-              <pre className="bg-muted p-4 rounded-lg text-sm whitespace-pre-wrap overflow-auto max-h-96">
-                {pressRelease}
-              </pre>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="absolute top-2 right-2"
-                onClick={() => handleCopy(pressRelease, "press")}
-              >
-                {copiedId === "press" ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="summary" className="space-y-4">
-            <div className="relative">
-              <pre className="bg-muted p-4 rounded-lg text-sm whitespace-pre-wrap overflow-auto max-h-96">
-                {plainSummary}
-              </pre>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="absolute top-2 right-2"
-                onClick={() => handleCopy(plainSummary, "summary")}
-              >
-                {copiedId === "summary" ? (
-                  <Check className="h-4 w-4" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="social" className="space-y-4">
-            <div className="space-y-4">
-              <div className="relative">
-                <h4 className="font-semibold mb-2">Twitter/X</h4>
-                <pre className="bg-muted p-4 rounded-lg text-sm whitespace-pre-wrap">
-                  {socialPosts.twitter}
-                </pre>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="absolute top-8 right-2"
-                  onClick={() => handleCopy(socialPosts.twitter, "twitter")}
-                >
-                  {copiedId === "twitter" ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <Card className="w-full">
+        <CollapsibleTrigger asChild>
+          <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Megaphone className="h-5 w-5" />
+                AI Promotion Assistant
               </div>
+              {isOpen ? (
+                <ChevronUp className="h-5 w-5 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+              )}
+            </CardTitle>
+          </CardHeader>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <CardContent>
+            <Tabs defaultValue="press" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="press">Press Release</TabsTrigger>
+                <TabsTrigger value="summary">Plain Summary</TabsTrigger>
+                <TabsTrigger value="social">Social Media</TabsTrigger>
+              </TabsList>
 
-              <div className="relative">
-                <h4 className="font-semibold mb-2">LinkedIn</h4>
-                <pre className="bg-muted p-4 rounded-lg text-sm whitespace-pre-wrap">
-                  {socialPosts.linkedin}
-                </pre>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="absolute top-8 right-2"
-                  onClick={() => handleCopy(socialPosts.linkedin, "linkedin")}
-                >
-                  {copiedId === "linkedin" ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
+              <TabsContent value="press" className="space-y-4">
+                <div className="relative">
+                  <pre className="bg-muted p-4 rounded-lg text-sm whitespace-pre-wrap overflow-auto max-h-96">
+                    {pressRelease}
+                  </pre>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="absolute top-2 right-2"
+                    onClick={() => handleCopy(pressRelease, "press")}
+                  >
+                    {copiedId === "press" ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </TabsContent>
 
-              <div className="relative">
-                <h4 className="font-semibold mb-2">Facebook</h4>
-                <pre className="bg-muted p-4 rounded-lg text-sm whitespace-pre-wrap">
-                  {socialPosts.facebook}
-                </pre>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  className="absolute top-8 right-2"
-                  onClick={() => handleCopy(socialPosts.facebook, "facebook")}
-                >
-                  {copiedId === "facebook" ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+              <TabsContent value="summary" className="space-y-4">
+                <div className="relative">
+                  <pre className="bg-muted p-4 rounded-lg text-sm whitespace-pre-wrap overflow-auto max-h-96">
+                    {plainSummary}
+                  </pre>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    className="absolute top-2 right-2"
+                    onClick={() => handleCopy(plainSummary, "summary")}
+                  >
+                    {copiedId === "summary" ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="social" className="space-y-4">
+                <div className="space-y-4">
+                  <div className="relative">
+                    <h4 className="font-semibold mb-2">Twitter/X</h4>
+                    <pre className="bg-muted p-4 rounded-lg text-sm whitespace-pre-wrap">
+                      {socialPosts.twitter}
+                    </pre>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="absolute top-8 right-2"
+                      onClick={() => handleCopy(socialPosts.twitter, "twitter")}
+                    >
+                      {copiedId === "twitter" ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+
+                  <div className="relative">
+                    <h4 className="font-semibold mb-2">LinkedIn</h4>
+                    <pre className="bg-muted p-4 rounded-lg text-sm whitespace-pre-wrap">
+                      {socialPosts.linkedin}
+                    </pre>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="absolute top-8 right-2"
+                      onClick={() => handleCopy(socialPosts.linkedin, "linkedin")}
+                    >
+                      {copiedId === "linkedin" ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+
+                  <div className="relative">
+                    <h4 className="font-semibold mb-2">Facebook</h4>
+                    <pre className="bg-muted p-4 rounded-lg text-sm whitespace-pre-wrap">
+                      {socialPosts.facebook}
+                    </pre>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="absolute top-8 right-2"
+                      onClick={() => handleCopy(socialPosts.facebook, "facebook")}
+                    >
+                      {copiedId === "facebook" ? (
+                        <Check className="h-4 w-4" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </CollapsibleContent>
+      </Card>
+    </Collapsible>
   );
 };

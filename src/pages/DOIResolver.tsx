@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Download, ArrowLeft, BookOpen, Eye, Share2, TrendingUp, Quote } from "lucide-react";
+import { FileText, Download, ArrowLeft, Quote } from "lucide-react";
 import articlesData from "@/data/articles.json";
 import type { Article } from "@/types/article";
 import { PromotionAssistant } from "@/components/PromotionAssistant";
@@ -97,49 +97,6 @@ const DOIResolver = () => {
             <h3 className="text-xl font-semibold mb-3">Abstract</h3>
             <p className="text-foreground leading-relaxed">{article.abstract}</p>
           </div>
-
-          {article.metrics && (
-            <div className="mb-6">
-              <h3 className="text-xl font-semibold mb-4">Citation & Impact Metrics</h3>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div className="bg-muted p-4 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <BookOpen className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">Citations</span>
-                  </div>
-                  <div className="text-2xl font-bold">{article.metrics.citations}</div>
-                </div>
-                <div className="bg-muted p-4 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Download className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">Downloads</span>
-                  </div>
-                  <div className="text-2xl font-bold">{article.metrics.downloads}</div>
-                </div>
-                <div className="bg-muted p-4 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Eye className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">Views</span>
-                  </div>
-                  <div className="text-2xl font-bold">{article.metrics.views}</div>
-                </div>
-                <div className="bg-muted p-4 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">Altmetric</span>
-                  </div>
-                  <div className="text-2xl font-bold">{article.metrics.altmetricScore}</div>
-                </div>
-                <div className="bg-muted p-4 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Share2 className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">Social Shares</span>
-                  </div>
-                  <div className="text-2xl font-bold">{article.metrics.socialShares}</div>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="mb-6 p-4 border rounded-lg bg-muted/50">
             <div className="flex items-center gap-2 mb-3">

@@ -12,7 +12,7 @@ export interface Article {
   title: string;
   authors: string;
   orcidIds?: string[];
-  type: "Research" | "Notes" | "Review" | "Case Study";
+  type: "Research" | "Notes" | "Review" | "Case Study" | "Conservation News" | "Technical Report / Risk Assessment";
   publicationDate: string;
   pdfUrl: string;
   resolverUrl: string;

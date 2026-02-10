@@ -2,17 +2,18 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Download, FileText, Quote } from "lucide-react";
-import articlesData from "@/data/articles.json";
 import type { Article } from "@/types/article";
 import { PromotionAssistant } from "@/components/PromotionAssistant";
 import { AuthorWithOrcid } from "@/components/AuthorWithOrcid";
+import { useArticles } from "@/hooks/useArticles";
 import volumeCover from "@/assets/volume-1-issue-1-cover.png";
 
 const IssueDetail = () => {
   const { volume, issue } = useParams<{ volume: string; issue: string }>();
   const navigate = useNavigate();
+  const { articles: allArticles } = useArticles();
 
-  const articles = articlesData.articles.filter(
+  const articles = allArticles.filter(
     (a) => a.volume.toString() === volume && a.issue.toString() === issue
   );
 

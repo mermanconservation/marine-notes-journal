@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      articles: {
+        Row: {
+          abstract: string
+          authors: string
+          created_at: string
+          doi: string
+          id: number
+          issue: string
+          orcid_ids: string[] | null
+          pdf_url: string | null
+          publication_date: string
+          resolver_url: string
+          title: string
+          type: string
+          volume: string
+        }
+        Insert: {
+          abstract: string
+          authors: string
+          created_at?: string
+          doi: string
+          id?: number
+          issue: string
+          orcid_ids?: string[] | null
+          pdf_url?: string | null
+          publication_date?: string
+          resolver_url: string
+          title: string
+          type: string
+          volume: string
+        }
+        Update: {
+          abstract?: string
+          authors?: string
+          created_at?: string
+          doi?: string
+          id?: number
+          issue?: string
+          orcid_ids?: string[] | null
+          pdf_url?: string | null
+          publication_date?: string
+          resolver_url?: string
+          title?: string
+          type?: string
+          volume?: string
+        }
+        Relationships: []
+      }
       manuscript_submissions: {
         Row: {
           abstract: string

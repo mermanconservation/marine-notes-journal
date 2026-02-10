@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { FileText, Users, Globe, BookOpen, ArrowRight } from "lucide-react";
 import heroImage from "@/assets/hero-ocean.jpg";
-import articlesData from "@/data/articles.json";
+import { useArticles } from "@/hooks/useArticles";
 
 const Homepage = () => {
+  const { articles } = useArticles();
   const features = [
     {
       icon: <Globe className="h-6 w-6" />,
@@ -30,7 +31,7 @@ const Homepage = () => {
   ];
 
   // Get the latest manuscripts sorted by publication date
-  const recentHighlights = articlesData.articles
+  const recentHighlights = articles
     .sort((a, b) => new Date(b.publicationDate).getTime() - new Date(a.publicationDate).getTime())
     .slice(0, 3)
     .map(article => ({

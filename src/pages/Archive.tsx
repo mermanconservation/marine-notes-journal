@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Download } from "lucide-react";
-import articlesData from "@/data/articles.json";
+import { useArticles } from "@/hooks/useArticles";
 
 const Archive = () => {
   const navigate = useNavigate();
+  const { articles } = useArticles();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
   const [selectedType, setSelectedType] = useState("");
@@ -17,11 +18,12 @@ const Archive = () => {
   const volumes = useMemo(() => {
     const volumeMap = new Map();
     
-    articlesData.articles.forEach(article => {
+    articles.forEach(article => {
       const volKey = `${article.volume}`;
       if (!volumeMap.has(volKey)) {
+        const pubYear = new Date(article.publicationDate).getFullYear();
         volumeMap.set(volKey, {
-          year: 2026, // Default year, can be extracted from publication date if needed
+          year: pubYear,
           volume: parseInt(article.volume),
           issues: new Map()
         });
@@ -49,12 +51,11 @@ const Archive = () => {
       });
     });
     
-    // Convert maps to arrays
     return Array.from(volumeMap.values()).map(vol => ({
       ...vol,
       issues: Array.from(vol.issues.values())
     }));
-  }, []);
+  }, [articles]);
 
   const years = ["2026"];
   const articleTypes = ["All Types", "Research Article", "Review Article", "Short Communication", "Case Study", "Field Notes", "Observational Reports", "Conservation News"];
@@ -63,19 +64,17 @@ const Archive = () => {
     return selectedYear === "" || volume.year.toString() === selectedYear;
   });
 
-  // Calculate statistics from actual article data
   const statistics = useMemo(() => {
-    const totalArticles = articlesData.articles.length;
-    const uniqueVolumes = new Set(articlesData.articles.map(a => a.volume)).size;
-    // Extract unique countries from author affiliations (placeholder - would need actual country data)
-    const estimatedCountries = Math.min(totalArticles * 2, 15); // Estimate: ~2 countries per article, max 15
+    const totalArticles = articles.length;
+    const uniqueVolumes = new Set(articles.map(a => a.volume)).size;
+    const uniqueIssues = new Set(articles.map(a => `${a.volume}-${a.issue}`)).size;
     
     return {
       totalArticles,
       uniqueVolumes,
-      estimatedCountries
+      uniqueIssues
     };
-  }, []);
+  }, [articles]);
 
   return (
     <div className="min-h-screen bg-background py-12">
@@ -216,8 +215,8 @@ const Archive = () => {
                   <div className="text-sm text-primary-foreground/80">Volumes</div>
                 </div>
                 <div>
-                  <div className="text-3xl font-bold mb-1">{statistics.estimatedCountries}</div>
-                  <div className="text-sm text-primary-foreground/80">Countries</div>
+                  <div className="text-3xl font-bold mb-1">{statistics.uniqueIssues}</div>
+                  <div className="text-sm text-primary-foreground/80">Issues</div>
                 </div>
                 <div>
                   <div className="text-3xl font-bold mb-1">2026</div>

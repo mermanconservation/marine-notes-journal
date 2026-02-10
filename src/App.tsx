@@ -15,6 +15,7 @@ import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 import DOIResolver from "./pages/DOIResolver";
 import DOISearch from "./pages/DOISearch";
+import EditorPanel from "./pages/EditorPanel";
 import Layout from "./components/Layout/Layout";
 
 const queryClient = new QueryClient();
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/doi/:doi" element={<DOIResolver />} />
             <Route path="/doi-search" element={<DOISearch />} />
+            <Route path="/editor" element={<EditorPanel />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>

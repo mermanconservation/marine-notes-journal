@@ -22,6 +22,18 @@ const AuthorGuidelines = () => {
       ]
     },
     {
+      title: "Conservation News",
+      items: [
+        "Conservation News articles must include an Abstract (up to 150 words) and 3–5 Keywords",
+        "The main text should be written in a free-form narrative style — there is no requirement to follow the IMRAD structure (Introduction, Methods, Results, Discussion)",
+        "Authors may organise the text as they see fit, using subheadings only where helpful for clarity",
+        "A clear Source of the News must be provided: cite the original report, press release, media article, institutional announcement, or direct field observation that the news item is based on",
+        "Conservation News should report on events, developments, or issues from the last 6 months",
+        "Maximum word count: 2,000 words (excluding abstract, keywords, and references)",
+        "Visual documentation (photographs, maps, infographics) is encouraged where available"
+      ]
+    },
+    {
       title: "Field Notes & Observational Reports",
       items: [
         "Field Notes: Document brief observations including date, location (GPS coordinates), environmental conditions, species identification, and behavior",

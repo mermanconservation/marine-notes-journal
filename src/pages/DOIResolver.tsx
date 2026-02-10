@@ -3,24 +3,25 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, Download, ArrowLeft, Quote } from "lucide-react";
-import articlesData from "@/data/articles.json";
 import type { Article } from "@/types/article";
 import { PromotionAssistant } from "@/components/PromotionAssistant";
 import { AuthorWithOrcid } from "@/components/AuthorWithOrcid";
+import { useArticles } from "@/hooks/useArticles";
 
 const DOIResolver = () => {
   const { doi } = useParams<{ doi: string }>();
   const navigate = useNavigate();
+  const { articles } = useArticles();
   const [article, setArticle] = useState<Article | null>(null);
 
   useEffect(() => {
-    if (doi) {
-      const found = articlesData.articles.find(
+    if (doi && articles.length > 0) {
+      const found = articles.find(
         (a) => a.doi.toLowerCase() === doi.toLowerCase()
       );
-      setArticle((found as Article) || null);
+      setArticle((found as unknown as Article) || null);
     }
-  }, [doi]);
+  }, [doi, articles]);
 
   if (!article) {
     return (

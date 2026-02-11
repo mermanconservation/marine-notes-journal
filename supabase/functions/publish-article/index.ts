@@ -81,6 +81,25 @@ Deno.serve(async (req) => {
       );
     }
 
+    if (action === "list-articles") {
+      const { data, error } = await supabase
+        .from("articles")
+        .select("*")
+        .order("id", { ascending: true });
+
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ articles: data }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     if (action === "publish") {
       const { data, error } = await supabase.from("articles").insert({
         doi: article.doi,
@@ -95,6 +114,32 @@ Deno.serve(async (req) => {
         issue: article.issue,
         abstract: article.abstract,
       }).select().single();
+
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ success: true, article: data }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (action === "update") {
+      const { data, error } = await supabase.from("articles").update({
+        title: article.title,
+        authors: article.authors,
+        orcid_ids: article.orcidIds || [],
+        type: article.type,
+        publication_date: article.publicationDate,
+        pdf_url: article.pdfUrl,
+        volume: article.volume,
+        issue: article.issue,
+        abstract: article.abstract,
+      }).eq("id", article.id).select().single();
 
       if (error) {
         return new Response(

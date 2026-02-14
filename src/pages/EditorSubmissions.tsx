@@ -323,23 +323,41 @@ const EditorSubmissions = () => {
 
                   <Separator />
 
-                  {/* Review history */}
-                  {(reviews[selectedSub.id] || []).length > 0 && (
-                    <div>
-                      <Label className="text-xs text-muted-foreground mb-2 block">Review History</Label>
-                      <div className="space-y-2 max-h-60 overflow-y-auto">
-                        {(reviews[selectedSub.id] || []).map(r => (
-                          <div key={r.id} className="bg-muted p-3 rounded-md text-sm">
-                            <div className="flex items-center gap-2 mb-1">
+                  {/* Submission Timeline */}
+                  <div>
+                    <Label className="text-xs text-muted-foreground mb-2 block">Submission Timeline</Label>
+                    <div className="relative pl-4 border-l-2 border-border space-y-3 max-h-60 overflow-y-auto">
+                      {/* Received entry */}
+                      <div className="relative">
+                        <div className="absolute -left-[calc(0.5rem+1px)] top-1 h-3 w-3 rounded-full bg-primary border-2 border-background" />
+                        <div className="ml-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">Received</Badge>
+                            <span className="text-xs text-muted-foreground">{new Date(selectedSub.created_at).toLocaleDateString()}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-0.5">Manuscript submitted</p>
+                        </div>
+                      </div>
+                      {/* Review entries in chronological order */}
+                      {[...(reviews[selectedSub.id] || [])].reverse().map(r => (
+                        <div key={r.id} className="relative">
+                          <div className={`absolute -left-[calc(0.5rem+1px)] top-1 h-3 w-3 rounded-full border-2 border-background ${
+                            r.action === 'accept' ? 'bg-green-500' :
+                            r.action === 'reject' ? 'bg-red-500' :
+                            r.action === 'request_revision' ? 'bg-orange-500' :
+                            'bg-blue-500'
+                          }`} />
+                          <div className="ml-2">
+                            <div className="flex items-center gap-2">
                               <Badge variant="outline" className="text-xs">{ACTION_LABELS[r.action] || r.action}</Badge>
                               <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</span>
                             </div>
-                            {r.comment && <p>{r.comment}</p>}
+                            {r.comment && <p className="text-sm mt-0.5">{r.comment}</p>}
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
+                  </div>
 
                   <Separator />
 

@@ -136,16 +136,17 @@ const EditorSubmissions = () => {
     setLoading(false);
   };
 
-  const performAction = async (action: string, newStatus?: string) => {
+  const performAction = async (action: string, newStatus?: string, overrideComment?: string) => {
     if (!selectedSub || !user) return;
     setActionLoading(true);
     try {
+      const commentToSave = overrideComment !== undefined ? overrideComment : (actionComment || null);
       // Insert review record
       const { error: reviewError } = await supabase.from("submission_reviews").insert({
         submission_id: selectedSub.id,
         reviewer_id: user.id,
         action,
-        comment: actionComment || null,
+        comment: commentToSave,
       });
       if (reviewError) throw reviewError;
 
@@ -488,9 +489,7 @@ const EditorSubmissions = () => {
                                 variant="outline"
                                 disabled={actionLoading}
                                 onClick={async () => {
-                                  setActionComment(aiReviewResult);
-                                  await performAction("note");
-                                  setActionComment("");
+                                  await performAction("note", undefined, aiReviewResult || undefined);
                                   toast({ title: "Saved", description: "AI review saved as a note for the author." });
                                 }}
                               >

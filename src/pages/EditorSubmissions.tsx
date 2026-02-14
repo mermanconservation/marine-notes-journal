@@ -16,6 +16,7 @@ import {
   LogOut, MessageSquare, UserCheck, Filter, ExternalLink, Bot, Lock,
 } from "lucide-react";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
+import { AiReviewNote, isAiReviewComment } from "@/components/AiReviewNote";
 
 const STATUS_OPTIONS = [
   { value: "pending", label: "Pending", color: "bg-yellow-100 text-yellow-800" },
@@ -349,7 +350,7 @@ const EditorSubmissions = () => {
                       </div>
                       {/* Review entries in chronological order */}
                       {[...(reviews[selectedSub.id] || [])].reverse().map(r => {
-                        const isAiReview = r.action === "note" && r.comment?.startsWith("**");
+                        const isAiReview = isAiReviewComment(r.comment);
                         return (
                           <div key={r.id} className="relative">
                             <div className={`absolute -left-[calc(0.5rem+1px)] top-1 h-3 w-3 rounded-full border-2 border-background ${
@@ -366,12 +367,7 @@ const EditorSubmissions = () => {
                               </div>
                               {r.comment && (
                                 isAiReview ? (
-                                  <div className="mt-1.5 p-2.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-sm whitespace-pre-wrap">
-                                    <div className="flex items-center gap-1.5 mb-1.5 text-xs font-medium text-blue-700 dark:text-blue-400">
-                                      <Bot className="h-3.5 w-3.5" /> AI Chief Editor Review
-                                    </div>
-                                    <div className="text-blue-900 dark:text-blue-200">{r.comment}</div>
-                                  </div>
+                                  <AiReviewNote comment={r.comment} />
                                 ) : (
                                   <p className="text-sm mt-0.5">{r.comment}</p>
                                 )
@@ -479,11 +475,9 @@ const EditorSubmissions = () => {
 
                         {/* AI Review Result */}
                         {aiReviewResult && (
-                          <div className="p-3 rounded-md bg-accent/50 border border-border text-sm whitespace-pre-wrap max-h-60 overflow-y-auto">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2 font-medium">
-                                <Bot className="h-4 w-4 text-primary" /> AI Chief Editor Review
-                              </div>
+                          <div className="max-h-60 overflow-y-auto">
+                            <AiReviewNote comment={aiReviewResult} />
+                            <div className="mt-2">
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -496,7 +490,6 @@ const EditorSubmissions = () => {
                                 <MessageSquare className="h-3 w-3 mr-1" /> Save as Note
                               </Button>
                             </div>
-                            {aiReviewResult}
                           </div>
                         )}
 

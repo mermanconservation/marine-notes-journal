@@ -66,6 +66,13 @@ const Footer = () => {
             © {new Date().getFullYear()} Marine Notes Journal. All rights reserved. 
             Licensed under Creative Commons Attribution 4.0
           </p>
+          <Link
+            to="/auth"
+            className="inline-block mt-2 text-xs text-primary-foreground/20 hover:text-primary-foreground/40 transition-colors"
+            title="Manuscript Portal"
+          >
+            •
+          </Link>
         </div>
       </div>
     </footer>

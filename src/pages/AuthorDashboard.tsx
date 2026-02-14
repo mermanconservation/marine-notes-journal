@@ -13,6 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Plus, FileText, Clock, CheckCircle, XCircle, RotateCcw, LogOut, Upload, Check, Bot } from "lucide-react";
+import { AiReviewNote, isAiReviewComment } from "@/components/AiReviewNote";
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
   pending: { label: "Pending Review", color: "bg-yellow-100 text-yellow-800", icon: Clock },
@@ -308,7 +309,7 @@ const AuthorDashboard = () => {
                                 </div>
                                 {/* Review entries in chronological order */}
                                 {[...subReviews].reverse().map((r) => {
-                                  const isAiReview = r.action === "note" && r.comment?.startsWith("**");
+                                  const isAiReview = isAiReviewComment(r.comment);
                                   return (
                                     <div key={r.id} className="relative">
                                       <div className={`absolute -left-[calc(0.5rem+1px)] top-1 h-3 w-3 rounded-full border-2 border-background ${
@@ -325,12 +326,7 @@ const AuthorDashboard = () => {
                                         </div>
                                         {r.comment && (
                                           isAiReview ? (
-                                            <div className="mt-1.5 p-2.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-sm whitespace-pre-wrap">
-                                              <div className="flex items-center gap-1.5 mb-1.5 text-xs font-medium text-blue-700 dark:text-blue-400">
-                                                <Bot className="h-3.5 w-3.5" /> AI Chief Editor Review
-                                              </div>
-                                              <div className="text-blue-900 dark:text-blue-200">{r.comment}</div>
-                                            </div>
+                                            <AiReviewNote comment={r.comment} />
                                           ) : (
                                             <p className="text-sm mt-0.5">{r.comment}</p>
                                           )

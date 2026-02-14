@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, FileText, Clock, CheckCircle, XCircle, RotateCcw, LogOut, Upload, Check } from "lucide-react";
+import { Loader2, Plus, FileText, Clock, CheckCircle, XCircle, RotateCcw, LogOut, Upload, Check, Bot } from "lucide-react";
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
   pending: { label: "Pending Review", color: "bg-yellow-100 text-yellow-800", icon: Clock },
@@ -307,23 +307,38 @@ const AuthorDashboard = () => {
                                   </div>
                                 </div>
                                 {/* Review entries in chronological order */}
-                                {[...subReviews].reverse().map((r) => (
-                                  <div key={r.id} className="relative">
-                                    <div className={`absolute -left-[calc(0.5rem+1px)] top-1 h-3 w-3 rounded-full border-2 border-background ${
-                                      r.action === 'accept' ? 'bg-green-500' :
-                                      r.action === 'reject' ? 'bg-red-500' :
-                                      r.action === 'request_revision' ? 'bg-orange-500' :
-                                      'bg-blue-500'
-                                    }`} />
-                                    <div className="ml-2">
-                                      <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className="text-xs">{r.action.replace(/_/g, " ")}</Badge>
-                                        <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
+                                {[...subReviews].reverse().map((r) => {
+                                  const isAiReview = r.action === "note" && r.comment?.startsWith("**");
+                                  return (
+                                    <div key={r.id} className="relative">
+                                      <div className={`absolute -left-[calc(0.5rem+1px)] top-1 h-3 w-3 rounded-full border-2 border-background ${
+                                        r.action === 'accept' ? 'bg-green-500' :
+                                        r.action === 'reject' ? 'bg-red-500' :
+                                        r.action === 'request_revision' ? 'bg-orange-500' :
+                                        r.action === 'unlock' ? 'bg-purple-500' :
+                                        'bg-blue-500'
+                                      }`} />
+                                      <div className="ml-2">
+                                        <div className="flex items-center gap-2">
+                                          <Badge variant="outline" className="text-xs">{r.action === 'unlock' ? 'Unlocked' : r.action.replace(/_/g, " ")}</Badge>
+                                          <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
+                                        </div>
+                                        {r.comment && (
+                                          isAiReview ? (
+                                            <div className="mt-1.5 p-2.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 text-sm whitespace-pre-wrap">
+                                              <div className="flex items-center gap-1.5 mb-1.5 text-xs font-medium text-blue-700 dark:text-blue-400">
+                                                <Bot className="h-3.5 w-3.5" /> AI Chief Editor Review
+                                              </div>
+                                              <div className="text-blue-900 dark:text-blue-200">{r.comment}</div>
+                                            </div>
+                                          ) : (
+                                            <p className="text-sm mt-0.5">{r.comment}</p>
+                                          )
+                                        )}
                                       </div>
-                                      {r.comment && <p className="text-sm mt-0.5">{r.comment}</p>}
                                     </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             </div>
                           </div>

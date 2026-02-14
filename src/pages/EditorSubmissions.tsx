@@ -31,6 +31,7 @@ const ACTION_LABELS: Record<string, string> = {
   accept: "Accepted",
   reject: "Rejected",
   assign_reviewer: "Reviewer Assigned",
+  unlock: "Unlocked",
 };
 
 interface Submission {
@@ -77,6 +78,9 @@ const EditorSubmissions = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [aiReviewLoading, setAiReviewLoading] = useState(false);
   const [aiReviewResult, setAiReviewResult] = useState<string | null>(null);
+  const [showUnlockDialog, setShowUnlockDialog] = useState(false);
+  const [unlockReason, setUnlockReason] = useState("");
+  const [unlockLoading, setUnlockLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -375,11 +379,69 @@ const EditorSubmissions = () => {
 
                     if (isFinalized) {
                       return (
-                        <div className="flex items-center gap-2 p-3 rounded-md bg-muted">
-                          <Lock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm text-muted-foreground">
-                            This submission has been {selectedSub.status}. No further actions available.
-                          </span>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 p-3 rounded-md bg-muted">
+                            <Lock className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              This submission has been {selectedSub.status}. No further actions available.
+                            </span>
+                          </div>
+                          {!showUnlockDialog ? (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs text-muted-foreground/50 hover:text-muted-foreground"
+                              onClick={() => setShowUnlockDialog(true)}
+                            >
+                              Unlock submission
+                            </Button>
+                          ) : (
+                            <div className="space-y-2 p-3 border border-destructive/30 rounded-md bg-destructive/5">
+                              <Label className="text-xs font-medium">Reason for unlocking (required)</Label>
+                              <Textarea
+                                value={unlockReason}
+                                onChange={e => setUnlockReason(e.target.value)}
+                                placeholder="Explain why this submission needs to be reopened..."
+                                rows={2}
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  disabled={!unlockReason.trim() || unlockLoading}
+                                  onClick={async () => {
+                                    setUnlockLoading(true);
+                                    try {
+                                      await supabase.from("submission_reviews").insert({
+                                        submission_id: selectedSub.id,
+                                        reviewer_id: user!.id,
+                                        action: "unlock",
+                                        comment: `Submission unlocked. Reason: ${unlockReason.trim()}`,
+                                      });
+                                      await supabase.from("manuscript_submissions")
+                                        .update({ status: "under_review", decision_date: null })
+                                        .eq("id", selectedSub.id);
+                                      toast({ title: "Unlocked", description: "Submission reopened for review." });
+                                      setShowUnlockDialog(false);
+                                      setUnlockReason("");
+                                      await loadSubmissions();
+                                      const { data: updated } = await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub.id).single();
+                                      if (updated) setSelectedSub(updated as Submission);
+                                    } catch (err: any) {
+                                      toast({ title: "Error", description: err.message, variant: "destructive" });
+                                    }
+                                    setUnlockLoading(false);
+                                  }}
+                                >
+                                  {unlockLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
+                                  Confirm Unlock
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => { setShowUnlockDialog(false); setUnlockReason(""); }}>
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       );
                     }
@@ -402,8 +464,23 @@ const EditorSubmissions = () => {
                         {/* AI Review Result */}
                         {aiReviewResult && (
                           <div className="p-3 rounded-md bg-accent/50 border border-border text-sm whitespace-pre-wrap max-h-60 overflow-y-auto">
-                            <div className="flex items-center gap-2 mb-2 font-medium">
-                              <Bot className="h-4 w-4 text-primary" /> AI Chief Editor Review
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center gap-2 font-medium">
+                                <Bot className="h-4 w-4 text-primary" /> AI Chief Editor Review
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                disabled={actionLoading}
+                                onClick={async () => {
+                                  setActionComment(aiReviewResult);
+                                  await performAction("note");
+                                  setActionComment("");
+                                  toast({ title: "Saved", description: "AI review saved as a note for the author." });
+                                }}
+                              >
+                                <MessageSquare className="h-3 w-3 mr-1" /> Save as Note
+                              </Button>
                             </div>
                             {aiReviewResult}
                           </div>
@@ -439,9 +516,6 @@ const EditorSubmissions = () => {
                                 });
                                 if (error) throw error;
                                 setAiReviewResult(data.review);
-                                // Also save as a review note
-                                await performAction("note", undefined);
-                                setActionComment("");
                               } catch (err: any) {
                                 toast({ title: "AI Review Failed", description: err.message, variant: "destructive" });
                               }

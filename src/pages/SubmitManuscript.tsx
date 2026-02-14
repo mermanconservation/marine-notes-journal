@@ -598,6 +598,31 @@ ${formData.correspondingAuthor}`;
 
             {/* Sidebar */}
             <div className="space-y-6">
+              <Card className="border-primary/50 bg-primary/5">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                    New: Automated Submission System
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground">
+                    Try our new manuscript portal for a streamlined submission experience with:
+                  </p>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• Track your submission status in real-time</li>
+                    <li>• Direct file uploads — no email needed</li>
+                    <li>• Receive editor feedback instantly</li>
+                    <li>• Full submission history and timeline</li>
+                  </ul>
+                  <a href="/auth">
+                    <Button className="w-full mt-2" size="sm">
+                      Go to Manuscript Portal →
+                    </Button>
+                  </a>
+                </CardContent>
+              </Card>
+
               <Card className="bg-muted/30">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-lg">

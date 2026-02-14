@@ -20,6 +20,9 @@ const Footer = () => {
             <p className="text-sm text-primary-foreground/60">
               ISSN: - (Online)
             </p>
+            <p className="text-sm text-primary-foreground/60">
+              ISNI: 0000 0005 2970 8288
+            </p>
           </div>
 
           <div>

@@ -13,8 +13,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, FileText, Clock, CheckCircle, XCircle, RotateCcw,
-  LogOut, MessageSquare, UserCheck, Filter, ExternalLink,
+  LogOut, MessageSquare, UserCheck, Filter, ExternalLink, Bot, Lock,
 } from "lucide-react";
+import { supabase as supabaseClient } from "@/integrations/supabase/client";
 
 const STATUS_OPTIONS = [
   { value: "pending", label: "Pending", color: "bg-yellow-100 text-yellow-800" },
@@ -56,6 +57,7 @@ interface Submission {
 interface Review {
   id: string;
   submission_id: string;
+  reviewer_id: string;
   action: string;
   comment: string | null;
   created_at: string;
@@ -73,6 +75,8 @@ const EditorSubmissions = () => {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [actionComment, setActionComment] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+  const [aiReviewLoading, setAiReviewLoading] = useState(false);
+  const [aiReviewResult, setAiReviewResult] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -237,7 +241,7 @@ const EditorSubmissions = () => {
               filtered.map(sub => (
                 <button
                   key={sub.id}
-                  onClick={() => { setSelectedSub(sub); setActionComment(""); }}
+                  onClick={() => { setSelectedSub(sub); setActionComment(""); setAiReviewResult(null); }}
                   className={`w-full text-left p-4 rounded-lg border transition-colors hover:bg-accent/50 ${selectedSub?.id === sub.id ? "border-primary bg-accent/30" : "border-border bg-card"}`}
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
@@ -362,29 +366,105 @@ const EditorSubmissions = () => {
                   <Separator />
 
                   {/* Actions */}
-                  <div className="space-y-3">
-                    <Label className="text-xs text-muted-foreground">Editor Actions</Label>
-                    <Textarea
-                      value={actionComment}
-                      onChange={e => setActionComment(e.target.value)}
-                      placeholder="Add comment or note..."
-                      rows={3}
-                    />
-                    <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="outline" disabled={actionLoading} onClick={() => performAction("note")}>
-                        <MessageSquare className="h-3 w-3 mr-1" /> Add Note
-                      </Button>
-                      <Button size="sm" variant="outline" disabled={actionLoading} onClick={() => performAction("request_revision", "revisions_requested")} className="text-orange-600 border-orange-300 hover:bg-orange-50">
-                        <RotateCcw className="h-3 w-3 mr-1" /> Request Revision
-                      </Button>
-                      <Button size="sm" disabled={actionLoading} onClick={() => performAction("accept", "accepted")} className="bg-green-600 hover:bg-green-700 text-white">
-                        <CheckCircle className="h-3 w-3 mr-1" /> Accept
-                      </Button>
-                      <Button size="sm" variant="destructive" disabled={actionLoading} onClick={() => performAction("reject", "rejected")}>
-                        <XCircle className="h-3 w-3 mr-1" /> Reject
-                      </Button>
-                    </div>
-                  </div>
+                  {(() => {
+                    const isFinalized = selectedSub.status === "accepted" || selectedSub.status === "rejected";
+                    const subReviews = reviews[selectedSub.id] || [];
+                    const hasDecisionByOther = subReviews.some(
+                      r => (r.action === "accept" || r.action === "reject") && r.reviewer_id !== user?.id
+                    );
+
+                    if (isFinalized) {
+                      return (
+                        <div className="flex items-center gap-2 p-3 rounded-md bg-muted">
+                          <Lock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            This submission has been {selectedSub.status}. No further actions available.
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    if (hasDecisionByOther) {
+                      return (
+                        <div className="flex items-center gap-2 p-3 rounded-md bg-muted">
+                          <Lock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            Another editor has already made a decision on this submission.
+                          </span>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-3">
+                        <Label className="text-xs text-muted-foreground">Editor Actions</Label>
+
+                        {/* AI Review Result */}
+                        {aiReviewResult && (
+                          <div className="p-3 rounded-md bg-accent/50 border border-border text-sm whitespace-pre-wrap max-h-60 overflow-y-auto">
+                            <div className="flex items-center gap-2 mb-2 font-medium">
+                              <Bot className="h-4 w-4 text-primary" /> AI Chief Editor Review
+                            </div>
+                            {aiReviewResult}
+                          </div>
+                        )}
+
+                        <Textarea
+                          value={actionComment}
+                          onChange={e => setActionComment(e.target.value)}
+                          placeholder="Add comment or note..."
+                          rows={3}
+                        />
+                        <div className="flex flex-wrap gap-2">
+                          <Button size="sm" variant="outline" disabled={actionLoading} onClick={() => performAction("note")}>
+                            <MessageSquare className="h-3 w-3 mr-1" /> Add Note
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={aiReviewLoading || actionLoading}
+                            onClick={async () => {
+                              setAiReviewLoading(true);
+                              setAiReviewResult(null);
+                              try {
+                                const { data, error } = await supabaseClient.functions.invoke("ai-review", {
+                                  body: {
+                                    title: selectedSub.title,
+                                    abstract: selectedSub.abstract,
+                                    keywords: selectedSub.keywords,
+                                    manuscriptType: selectedSub.manuscript_type,
+                                    authors: selectedSub.all_authors,
+                                    coverLetter: selectedSub.cover_letter,
+                                  },
+                                });
+                                if (error) throw error;
+                                setAiReviewResult(data.review);
+                                // Also save as a review note
+                                await performAction("note", undefined);
+                                setActionComment("");
+                              } catch (err: any) {
+                                toast({ title: "AI Review Failed", description: err.message, variant: "destructive" });
+                              }
+                              setAiReviewLoading(false);
+                            }}
+                            className="text-primary border-primary/30 hover:bg-primary/10"
+                          >
+                            {aiReviewLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Bot className="h-3 w-3 mr-1" />}
+                            AI Chief Editor
+                          </Button>
+                          <Button size="sm" variant="outline" disabled={actionLoading} onClick={() => performAction("request_revision", "revisions_requested")} className="text-orange-600 border-orange-300 hover:bg-orange-50">
+                            <RotateCcw className="h-3 w-3 mr-1" /> Request Revision
+                          </Button>
+                          <Button size="sm" disabled={actionLoading} onClick={() => performAction("accept", "accepted")} className="bg-green-600 hover:bg-green-700 text-white">
+                            <CheckCircle className="h-3 w-3 mr-1" /> Accept
+                          </Button>
+                          <Button size="sm" variant="destructive" disabled={actionLoading} onClick={() => performAction("reject", "rejected")}>
+                            <XCircle className="h-3 w-3 mr-1" /> Reject
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </CardContent>
               </Card>
             ) : (

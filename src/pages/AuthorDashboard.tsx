@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, FileText, Clock, CheckCircle, XCircle, RotateCcw, LogOut, Upload } from "lucide-react";
+import { Loader2, Plus, FileText, Clock, CheckCircle, XCircle, RotateCcw, LogOut, Upload, Check } from "lucide-react";
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
   pending: { label: "Pending Review", color: "bg-yellow-100 text-yellow-800", icon: Clock },
@@ -81,6 +81,11 @@ const AuthorDashboard = () => {
     orcid: "",
     allAuthors: "",
     coverLetter: "",
+    copyrightOriginal: false,
+    copyrightApproved: false,
+    copyrightTransfer: false,
+    copyrightCC: false,
+    copyrightSignature: "",
   });
 
   useEffect(() => {
@@ -142,6 +147,16 @@ const AuthorDashboard = () => {
       return;
     }
 
+    if (!form.copyrightOriginal || !form.copyrightApproved || !form.copyrightTransfer || !form.copyrightCC) {
+      toast({ title: "Copyright Agreement Required", description: "Please agree to all copyright transfer terms", variant: "destructive" });
+      return;
+    }
+
+    if (!form.copyrightSignature.trim()) {
+      toast({ title: "Signature Required", description: "Please provide your electronic signature", variant: "destructive" });
+      return;
+    }
+
     setSubmitting(true);
     try {
       // Upload files to storage if any
@@ -176,7 +191,7 @@ const AuthorDashboard = () => {
       if (error) throw error;
 
       toast({ title: "Submitted!", description: "Your manuscript has been submitted for review." });
-      setForm({ title: "", manuscriptType: "", abstract: "", keywords: "", authorName: form.authorName, authorEmail: form.authorEmail, affiliation: form.affiliation, orcid: form.orcid, allAuthors: "", coverLetter: "" });
+      setForm({ title: "", manuscriptType: "", abstract: "", keywords: "", authorName: form.authorName, authorEmail: form.authorEmail, affiliation: form.affiliation, orcid: form.orcid, allAuthors: "", coverLetter: "", copyrightOriginal: false, copyrightApproved: false, copyrightTransfer: false, copyrightCC: false, copyrightSignature: "" });
       setSelectedFiles([]);
       setActiveTab("my-submissions");
       await loadSubmissions();
@@ -401,6 +416,84 @@ const AuthorDashboard = () => {
                   <div className="space-y-2">
                     <Label>Cover Letter (optional)</Label>
                     <Textarea value={form.coverLetter} onChange={e => setForm({ ...form, coverLetter: e.target.value })} rows={4} />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Copyright Transfer Agreement *</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setForm({ ...form, copyrightOriginal: true, copyrightApproved: true, copyrightTransfer: true, copyrightCC: true })}
+                  >
+                    <Check className="h-4 w-4 mr-2" /> Check All
+                  </Button>
+
+                  <p className="text-sm text-muted-foreground">By submitting this manuscript, I/we confirm:</p>
+
+                  <div className="space-y-3">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.copyrightOriginal}
+                        onChange={e => setForm({ ...form, copyrightOriginal: e.target.checked })}
+                        className="mt-1 h-4 w-4 rounded border-border"
+                      />
+                      <span className="text-sm">This manuscript is original work and has not been published elsewhere, nor is it currently under consideration for publication elsewhere.</span>
+                    </label>
+
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.copyrightApproved}
+                        onChange={e => setForm({ ...form, copyrightApproved: e.target.checked })}
+                        className="mt-1 h-4 w-4 rounded border-border"
+                      />
+                      <span className="text-sm">All authors have reviewed and approved the manuscript and there are no conflicts of interest to declare.</span>
+                    </label>
+
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.copyrightTransfer}
+                        onChange={e => setForm({ ...form, copyrightTransfer: e.target.checked })}
+                        className="mt-1 h-4 w-4 rounded border-border"
+                      />
+                      <span className="text-sm">I/we transfer copyright of this manuscript to Marine Notes Journal upon acceptance for publication.</span>
+                    </label>
+
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={form.copyrightCC}
+                        onChange={e => setForm({ ...form, copyrightCC: e.target.checked })}
+                        className="mt-1 h-4 w-4 rounded border-border"
+                      />
+                      <span className="text-sm">I/we agree to publish this work under a Creative Commons Attribution 4.0 International License (CC BY 4.0).</span>
+                    </label>
+                  </div>
+
+                  <Separator />
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Full Name (Electronic Signature) *</Label>
+                      <Input
+                        value={form.copyrightSignature}
+                        onChange={e => setForm({ ...form, copyrightSignature: e.target.value })}
+                        placeholder="Type your full name"
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Date</Label>
+                      <Input value={new Date().toLocaleDateString()} disabled />
+                    </div>
                   </div>
                 </CardContent>
               </Card>

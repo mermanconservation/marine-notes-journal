@@ -244,8 +244,11 @@ Deno.serve(async (req) => {
     }
 
     if (action === "update") {
-      if (!article?.id || typeof article.id !== "number") {
+      if (article?.id == null || typeof article.id !== "number") {
         return errorResponse("Invalid article ID", 400);
+      }
+      if (article.id < 0) {
+        return errorResponse("Static articles cannot be edited through the database", 400);
       }
       const validation = validateArticle(article, false);
       if (!validation.valid) return errorResponse(validation.error!, 400);
@@ -266,7 +269,8 @@ Deno.serve(async (req) => {
       const { data, error } = await supabase.from("articles")
         .update(updatePayload)
         .eq("id", article.id)
-        .select().single();
+        .select()
+        .maybeSingle();
 
       if (error) {
         const mapped = mapDbError(error);

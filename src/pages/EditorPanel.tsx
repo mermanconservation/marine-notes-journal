@@ -33,6 +33,7 @@ interface DbArticle {
   volume: string;
   issue: string;
   abstract: string;
+  is_static?: boolean;
 }
 
 const EditorPanel = () => {
@@ -250,7 +251,10 @@ const EditorPanel = () => {
                     onClick={() => selectArticleForEdit(a)}
                     className={`w-full text-left p-3 rounded-md border transition-colors hover:bg-accent ${editingId === a.id ? "border-primary bg-accent" : "border-border"}`}
                   >
-                    <div className="font-medium text-sm">{a.doi}</div>
+                    <div className="font-medium text-sm flex items-center gap-2">
+                      {a.doi}
+                      {a.is_static && <span className="text-xs bg-muted px-1.5 py-0.5 rounded text-muted-foreground">static</span>}
+                    </div>
                     <div className="text-sm text-muted-foreground truncate">{a.title}</div>
                   </button>
                 ))}

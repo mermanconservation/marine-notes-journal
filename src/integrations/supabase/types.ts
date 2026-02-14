@@ -66,6 +66,7 @@ export type Database = {
         Row: {
           abstract: string
           all_authors: string
+          assigned_reviewer_id: string | null
           copyright_agreed: boolean
           corresponding_author_affiliation: string
           corresponding_author_email: string
@@ -73,6 +74,7 @@ export type Database = {
           corresponding_author_orcid: string | null
           cover_letter: string | null
           created_at: string
+          decision_date: string | null
           file_paths: string[] | null
           id: string
           keywords: string
@@ -80,10 +82,12 @@ export type Database = {
           status: string
           title: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           abstract: string
           all_authors: string
+          assigned_reviewer_id?: string | null
           copyright_agreed?: boolean
           corresponding_author_affiliation: string
           corresponding_author_email: string
@@ -91,6 +95,7 @@ export type Database = {
           corresponding_author_orcid?: string | null
           cover_letter?: string | null
           created_at?: string
+          decision_date?: string | null
           file_paths?: string[] | null
           id?: string
           keywords: string
@@ -98,10 +103,12 @@ export type Database = {
           status?: string
           title: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           abstract?: string
           all_authors?: string
+          assigned_reviewer_id?: string | null
           copyright_agreed?: boolean
           corresponding_author_affiliation?: string
           corresponding_author_email?: string
@@ -109,6 +116,7 @@ export type Database = {
           corresponding_author_orcid?: string | null
           cover_letter?: string | null
           created_at?: string
+          decision_date?: string | null
           file_paths?: string[] | null
           id?: string
           keywords?: string
@@ -116,8 +124,44 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
+      }
+      submission_reviews: {
+        Row: {
+          action: string
+          comment: string | null
+          created_at: string
+          id: string
+          reviewer_id: string
+          submission_id: string
+        }
+        Insert: {
+          action: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          reviewer_id: string
+          submission_id: string
+        }
+        Update: {
+          action?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          reviewer_id?: string
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submission_reviews_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "manuscript_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

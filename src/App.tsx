@@ -19,6 +19,7 @@ import EditorPanel from "./pages/EditorPanel";
 import Auth from "./pages/Auth";
 import AuthorDashboard from "./pages/AuthorDashboard";
 import EditorSubmissions from "./pages/EditorSubmissions";
+import AdminPanel from "./pages/AdminPanel";
 import Layout from "./components/Layout/Layout";
 
 const queryClient = new QueryClient();
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/submissions" element={<AuthorDashboard />} />
             <Route path="/editor-submissions" element={<EditorSubmissions />} />
+            <Route path="/admin-panel" element={<AdminPanel />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>

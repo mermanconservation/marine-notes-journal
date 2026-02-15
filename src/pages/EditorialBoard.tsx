@@ -34,6 +34,13 @@ const EditorialBoard = () => {
       location: "London, UK",
       expertise: ["Ecology"],
       email: "editor@marinenotesjournal.com"
+    },
+    {
+      name: "Oliver Taylor",
+      affiliation: "",
+      location: "Southampton, UK",
+      expertise: ["Marine Conservation", "Policy"],
+      email: "editor@marinenotesjournal.com"
     }
   ];
 

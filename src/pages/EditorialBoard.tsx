@@ -39,7 +39,7 @@ const EditorialBoard = () => {
       name: "Oliver Taylor",
       affiliation: "",
       location: "Southampton, UK",
-      expertise: ["Marine Conservation", "Policy"],
+      expertise: ["Marine Conservation & Policy"],
       email: "editor@marinenotesjournal.com"
     }
   ];

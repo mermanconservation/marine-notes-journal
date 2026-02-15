@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,6 +33,7 @@ interface UserRole {
   user_id: string;
   role: string;
   created_at: string;
+  email?: string;
 }
 
 interface SubmissionStats {
@@ -81,8 +83,16 @@ const AdminPanel = () => {
     const [{ data: requests }, { data: roles }, { data: submissions }] = await Promise.all([
       supabase.from("unlock_requests").select("*").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("*").order("created_at", { ascending: false }),
-      supabase.from("manuscript_submissions").select("id, title, status"),
+      supabase.from("manuscript_submissions").select("id, title, status, user_id, corresponding_author_email"),
     ]);
+
+    // Build email map: user_id -> email
+    const emailMap = new Map<string, string>();
+    (submissions || []).forEach((s: any) => {
+      if (s.user_id && s.corresponding_author_email) {
+        emailMap.set(s.user_id, s.corresponding_author_email);
+      }
+    });
 
     // Enrich unlock requests with submission titles
     const submissionMap = new Map((submissions || []).map((s: any) => [s.id, s.title]));
@@ -91,7 +101,13 @@ const AdminPanel = () => {
       submission_title: submissionMap.get(r.submission_id) || "Unknown",
     }));
     setUnlockRequests(enrichedRequests);
-    setUserRoles((roles as UserRole[]) || []);
+
+    // Enrich roles with emails
+    const enrichedRoles = ((roles as UserRole[]) || []).map(r => ({
+      ...r,
+      email: emailMap.get(r.user_id) || undefined,
+    }));
+    setUserRoles(enrichedRoles);
 
     // Compute stats
     const allSubs = submissions || [];
@@ -426,22 +442,50 @@ const AdminPanel = () => {
                 {userRoles.map(role => (
                   <div key={role.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
-                      <p className="text-sm font-mono">{role.user_id.slice(0, 8)}...</p>
-                      <p className="text-xs text-muted-foreground">Since {new Date(role.created_at).toLocaleDateString()}</p>
+                      {role.email ? (
+                        <p className="text-sm">{role.email}</p>
+                      ) : (
+                        <p className="text-sm font-mono">{role.user_id.slice(0, 8)}...</p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        {role.email && <span className="font-mono">{role.user_id.slice(0, 8)}... · </span>}
+                        Since {new Date(role.created_at).toLocaleDateString()}
+                      </p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={role.role === "admin" ? "default" : "secondary"}>
                         {role.role}
                       </Badge>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
-                        disabled={actionLoading === role.id}
-                        onClick={() => handleRemoveRole(role.id)}
-                      >
-                        {actionLoading === role.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            disabled={actionLoading === role.id}
+                          >
+                            {actionLoading === role.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Remove Role</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to remove the <strong>{role.role}</strong> role from{" "}
+                              <strong>{role.email || role.user_id.slice(0, 8) + "..."}</strong>? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={() => handleRemoveRole(role.id)}
+                            >
+                              Remove
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </div>
                 ))}

@@ -554,9 +554,12 @@ const EditorSubmissions = () => {
                           <Button size="sm" disabled={actionLoading} onClick={() => performAction("accept", "accepted")} className="bg-green-600 hover:bg-green-700 text-white">
                             <CheckCircle className="h-3 w-3 mr-1" /> Accept
                           </Button>
-                          <Button size="sm" variant="destructive" disabled={actionLoading} onClick={() => performAction("reject", "rejected")}>
+                          <Button size="sm" variant="destructive" disabled={actionLoading || !actionComment.trim()} onClick={() => performAction("reject", "rejected")} title={!actionComment.trim() ? "Please write a reason for rejection" : ""}>
                             <XCircle className="h-3 w-3 mr-1" /> Reject
                           </Button>
+                          {!actionComment.trim() && (
+                            <p className="w-full text-xs text-destructive mt-1">A reason is required to reject a manuscript.</p>
+                          )}
                         </div>
                       </div>
                     );

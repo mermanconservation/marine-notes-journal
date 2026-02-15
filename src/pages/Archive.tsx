@@ -64,6 +64,23 @@ const Archive = () => {
     return selectedYear === "" || volume.year.toString() === selectedYear;
   });
 
+  // Immediate search results
+  const searchResults = useMemo(() => {
+    const hasSearch = searchTerm.trim().length > 0;
+    const hasType = selectedType.length > 0;
+    if (!hasSearch && !hasType) return [];
+
+    const term = searchTerm.toLowerCase();
+    return articles.filter(article => {
+      const matchesSearch = !hasSearch || 
+        article.title.toLowerCase().includes(term) ||
+        article.authors.toLowerCase().includes(term) ||
+        article.abstract?.toLowerCase().includes(term);
+      const matchesType = !hasType || article.type === selectedType;
+      return matchesSearch && matchesType;
+    });
+  }, [articles, searchTerm, selectedType]);
+
   const statistics = useMemo(() => {
     const totalArticles = articles.length;
     const uniqueVolumes = new Set(articles.map(a => a.volume)).size;
@@ -130,6 +147,46 @@ const Archive = () => {
               </div>
             </CardContent>
           </Card>
+
+          {/* Immediate Search Results */}
+          {searchResults.length > 0 && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="text-lg">
+                  {searchResults.length} {searchResults.length === 1 ? "result" : "results"} found
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {searchResults.map((article, idx) => (
+                    <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-xs font-medium px-2 py-1 bg-primary/10 text-primary rounded">
+                            {article.type}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            Vol. {article.volume}, Issue {article.issue}
+                          </span>
+                        </div>
+                        <h4 className="font-medium text-sm mb-1">{article.title}</h4>
+                        <p className="text-xs text-muted-foreground">{article.authors}</p>
+                      </div>
+                      {article.pdfUrl && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => window.open(article.pdfUrl!, '_blank', 'noopener,noreferrer')}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Archive Content */}
           <div className="space-y-8">

@@ -328,7 +328,7 @@ const AuthorDashboard = () => {
                                           isAiReview ? (
                                             <AiReviewNote comment={r.comment} />
                                           ) : (
-                                            <p className="text-sm mt-0.5">{r.comment}</p>
+                                            <p className={`text-sm mt-0.5 ${r.action === 'reject' ? 'bg-destructive/10 text-destructive border border-destructive/20 rounded-md p-2' : ''}`}>{r.comment}</p>
                                           )
                                         )}
                                       </div>

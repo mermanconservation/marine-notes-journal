@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Mail, MapPin } from "lucide-react";
+import { Mail, MapPin, Shield, UserCheck, FileText } from "lucide-react";
 import marineIcon from "@/assets/marine-notes-icon.png";
 
 const Footer = () => {
@@ -44,6 +44,17 @@ const Footer = () => {
               <Link to="/doi-search" className="block text-primary-foreground/80 hover:text-primary-foreground transition-colors">
                 DOI Lookup
               </Link>
+              <div className="flex items-center gap-3 mt-3 pt-3 border-t border-primary-foreground/20">
+                <Link to="/admin-panel" className="text-primary-foreground/50 hover:text-primary-foreground transition-colors" title="Admin Panel">
+                  <Shield className="h-4 w-4" />
+                </Link>
+                <Link to="/submissions" className="text-primary-foreground/50 hover:text-primary-foreground transition-colors" title="Author Dashboard">
+                  <UserCheck className="h-4 w-4" />
+                </Link>
+                <Link to="/editor-submissions" className="text-primary-foreground/50 hover:text-primary-foreground transition-colors" title="Editor Dashboard">
+                  <FileText className="h-4 w-4" />
+                </Link>
+              </div>
             </nav>
           </div>
 

@@ -4,13 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Loader2, Shield, LogOut, CheckCircle, XCircle, Lock, Unlock, Users, FileText,
+  Loader2, Shield, LogOut, CheckCircle, XCircle, Lock, Unlock, Users, FileText, UserPlus, Trash2, BarChart3,
 } from "lucide-react";
 
 interface UnlockRequest {
@@ -23,6 +24,7 @@ interface UnlockRequest {
   decision_comment: string | null;
   created_at: string;
   decided_at: string | null;
+  submission_title?: string;
 }
 
 interface UserRole {
@@ -30,6 +32,14 @@ interface UserRole {
   user_id: string;
   role: string;
   created_at: string;
+}
+
+interface SubmissionStats {
+  total: number;
+  pending: number;
+  under_review: number;
+  accepted: number;
+  rejected: number;
 }
 
 const AdminPanel = () => {
@@ -42,6 +52,10 @@ const AdminPanel = () => {
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [decisionComments, setDecisionComments] = useState<Record<string, string>>({});
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [newRoleEmail, setNewRoleEmail] = useState("");
+  const [newRoleType, setNewRoleType] = useState<string>("editor");
+  const [addingRole, setAddingRole] = useState(false);
+  const [stats, setStats] = useState<SubmissionStats>({ total: 0, pending: 0, under_review: 0, accepted: 0, rejected: 0 });
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -64,12 +78,31 @@ const AdminPanel = () => {
 
   const loadData = async () => {
     setLoading(true);
-    const [{ data: requests }, { data: roles }] = await Promise.all([
+    const [{ data: requests }, { data: roles }, { data: submissions }] = await Promise.all([
       supabase.from("unlock_requests").select("*").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("*").order("created_at", { ascending: false }),
+      supabase.from("manuscript_submissions").select("id, title, status"),
     ]);
-    setUnlockRequests((requests as UnlockRequest[]) || []);
+
+    // Enrich unlock requests with submission titles
+    const submissionMap = new Map((submissions || []).map((s: any) => [s.id, s.title]));
+    const enrichedRequests = ((requests as UnlockRequest[]) || []).map(r => ({
+      ...r,
+      submission_title: submissionMap.get(r.submission_id) || "Unknown",
+    }));
+    setUnlockRequests(enrichedRequests);
     setUserRoles((roles as UserRole[]) || []);
+
+    // Compute stats
+    const allSubs = submissions || [];
+    setStats({
+      total: allSubs.length,
+      pending: allSubs.filter((s: any) => s.status === "pending").length,
+      under_review: allSubs.filter((s: any) => s.status === "under_review").length,
+      accepted: allSubs.filter((s: any) => s.status === "accepted").length,
+      rejected: allSubs.filter((s: any) => s.status === "rejected").length,
+    });
+
     setLoading(false);
   };
 
@@ -77,8 +110,6 @@ const AdminPanel = () => {
     setActionLoading(request.id);
     try {
       const comment = decisionComments[request.id] || null;
-      
-      // Update the unlock request
       await supabase.from("unlock_requests").update({
         status: approved ? "approved" : "denied",
         decided_by: user!.id,
@@ -87,7 +118,6 @@ const AdminPanel = () => {
       }).eq("id", request.id);
 
       if (approved) {
-        // Actually unlock the submission
         await supabase.from("submission_reviews").insert({
           submission_id: request.submission_id,
           reviewer_id: user!.id,
@@ -107,6 +137,65 @@ const AdminPanel = () => {
           : "The unlock request has been denied.",
       });
       setDecisionComments(prev => ({ ...prev, [request.id]: "" }));
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setActionLoading(null);
+  };
+
+  const handleAddRole = async () => {
+    if (!newRoleEmail.trim()) return;
+    setAddingRole(true);
+    try {
+      // Look up user by email via auth admin — we need to find user_id
+      // Since we can't query auth.users directly, we'll search manuscript_submissions for the email
+      const { data: subs } = await supabase
+        .from("manuscript_submissions")
+        .select("user_id")
+        .eq("corresponding_author_email", newRoleEmail.trim())
+        .limit(1);
+
+      let targetUserId: string | null = subs?.[0]?.user_id || null;
+
+      if (!targetUserId) {
+        toast({ title: "User not found", description: "No user found with that email. The user must have submitted at least one manuscript.", variant: "destructive" });
+        setAddingRole(false);
+        return;
+      }
+
+      // Check if role already exists
+      const { data: existing } = await supabase
+        .from("user_roles")
+        .select("id")
+        .eq("user_id", targetUserId)
+        .eq("role", newRoleType as any);
+
+      if (existing && existing.length > 0) {
+        toast({ title: "Role exists", description: "This user already has this role.", variant: "destructive" });
+        setAddingRole(false);
+        return;
+      }
+
+      await supabase.from("user_roles").insert({
+        user_id: targetUserId,
+        role: newRoleType as any,
+      });
+
+      toast({ title: "Role Added", description: `${newRoleType} role assigned successfully.` });
+      setNewRoleEmail("");
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setAddingRole(false);
+  };
+
+  const handleRemoveRole = async (roleId: string) => {
+    setActionLoading(roleId);
+    try {
+      await supabase.from("user_roles").delete().eq("id", roleId);
+      toast({ title: "Role Removed", description: "The role has been removed." });
       await loadData();
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -148,13 +237,47 @@ const AdminPanel = () => {
             <Shield className="h-7 w-7 text-primary" />
             <div>
               <h1 className="font-academic text-3xl font-semibold">Admin Panel</h1>
-              <p className="text-muted-foreground text-sm mt-1">Manage unlock requests and user roles</p>
+              <p className="text-muted-foreground text-sm mt-1">Manage unlock requests, roles, and system overview</p>
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={signOut}>
             <LogOut className="h-4 w-4 mr-2" /> Sign Out
           </Button>
         </div>
+
+        {/* Submission Stats */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <BarChart3 className="h-5 w-5" />
+              Submission Overview
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <div className="text-center p-3 bg-muted/50 rounded-lg">
+                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-xs text-muted-foreground">Total</p>
+              </div>
+              <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                <p className="text-2xl font-bold text-yellow-700">{stats.pending}</p>
+                <p className="text-xs text-muted-foreground">Pending</p>
+              </div>
+              <div className="text-center p-3 bg-blue-50 rounded-lg">
+                <p className="text-2xl font-bold text-blue-700">{stats.under_review}</p>
+                <p className="text-xs text-muted-foreground">Under Review</p>
+              </div>
+              <div className="text-center p-3 bg-green-50 rounded-lg">
+                <p className="text-2xl font-bold text-green-700">{stats.accepted}</p>
+                <p className="text-xs text-muted-foreground">Accepted</p>
+              </div>
+              <div className="text-center p-3 bg-red-50 rounded-lg">
+                <p className="text-2xl font-bold text-red-700">{stats.rejected}</p>
+                <p className="text-xs text-muted-foreground">Rejected</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Pending Unlock Requests */}
         <Card className="mb-6">
@@ -176,7 +299,7 @@ const AdminPanel = () => {
                   <div key={req.id} className="p-4 border rounded-lg space-y-3">
                     <div className="flex items-start justify-between">
                       <div>
-                        <p className="text-sm font-medium">Submission: <span className="font-mono text-xs">{req.submission_id.slice(0, 8)}...</span></p>
+                        <p className="text-sm font-medium">{req.submission_title}</p>
                         <p className="text-xs text-muted-foreground">Requested: {new Date(req.created_at).toLocaleString()}</p>
                       </div>
                       <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
@@ -235,7 +358,7 @@ const AdminPanel = () => {
                 {resolvedRequests.map(req => (
                   <div key={req.id} className="p-3 border rounded-lg flex items-start justify-between">
                     <div>
-                      <p className="text-sm font-medium">Submission: <span className="font-mono text-xs">{req.submission_id.slice(0, 8)}...</span></p>
+                      <p className="text-sm font-medium">{req.submission_title}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">Reason: {req.reason}</p>
                       {req.decision_comment && (
                         <p className="text-xs text-muted-foreground mt-0.5">Admin: {req.decision_comment}</p>
@@ -253,6 +376,39 @@ const AdminPanel = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Add Role */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <UserPlus className="h-5 w-5" />
+              Add User Role
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Input
+                placeholder="User email (must have a submission)"
+                value={newRoleEmail}
+                onChange={e => setNewRoleEmail(e.target.value)}
+                className="flex-1"
+              />
+              <Select value={newRoleType} onValueChange={setNewRoleType}>
+                <SelectTrigger className="w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="editor">Editor</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button onClick={handleAddRole} disabled={addingRole || !newRoleEmail.trim()}>
+                {addingRole ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <UserPlus className="h-4 w-4 mr-1" />}
+                Add Role
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* User Roles */}
         <Card>
@@ -273,9 +429,20 @@ const AdminPanel = () => {
                       <p className="text-sm font-mono">{role.user_id.slice(0, 8)}...</p>
                       <p className="text-xs text-muted-foreground">Since {new Date(role.created_at).toLocaleDateString()}</p>
                     </div>
-                    <Badge variant={role.role === "admin" ? "default" : "secondary"}>
-                      {role.role}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={role.role === "admin" ? "default" : "secondary"}>
+                        {role.role}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        disabled={actionLoading === role.id}
+                        onClick={() => handleRemoveRole(role.id)}
+                      >
+                        {actionLoading === role.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>

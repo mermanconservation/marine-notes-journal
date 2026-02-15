@@ -58,7 +58,7 @@ const Archive = () => {
   }, [articles]);
 
   const years = ["2026"];
-  const articleTypes = ["All Types", "Research Article", "Review Article", "Short Communication", "Case Study", "Field Notes", "Observational Reports", "Conservation News"];
+  const articleTypes = ["All Types", "Research Article", "Review Article", "Short Communication", "Case Study", "Technical Report", "Risk Assessment", "Field Notes", "Observational Reports", "Conservation News"];
 
   const filteredVolumes = volumes.filter(volume => {
     return selectedYear === "" || volume.year.toString() === selectedYear;
@@ -131,11 +131,12 @@ const Archive = () => {
                       ))}
                     </SelectContent>
                   </Select>
-                  <Select value={selectedType} onValueChange={setSelectedType}>
+                  <Select value={selectedType} onValueChange={(v) => setSelectedType(v === "all" ? "" : v)}>
                     <SelectTrigger className="w-48">
                       <SelectValue placeholder="All Types" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
                       {articleTypes.filter(type => type !== "All Types").map(type => (
                         <SelectItem key={type} value={type}>
                           {type}

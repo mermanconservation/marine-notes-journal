@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { BookOpen, Mail, MapPin } from "lucide-react";
+import { Mail, MapPin } from "lucide-react";
+import marineIcon from "@/assets/marine-notes-icon.png";
 
 const Footer = () => {
   return (
@@ -8,7 +9,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-2">
             <div className="flex items-center space-x-2 mb-4">
-              <BookOpen className="h-8 w-8" />
+              <img src={marineIcon} alt="Marine Notes Journal" className="h-8 w-8" />
               <span className="font-academic font-semibold text-xl">
                 Marine Notes Journal
               </span>
@@ -39,6 +40,9 @@ const Footer = () => {
               </Link>
               <Link to="/archive" className="block text-primary-foreground/80 hover:text-primary-foreground transition-colors">
                 Archive
+              </Link>
+              <Link to="/doi-search" className="block text-primary-foreground/80 hover:text-primary-foreground transition-colors">
+                DOI Lookup
               </Link>
             </nav>
           </div>

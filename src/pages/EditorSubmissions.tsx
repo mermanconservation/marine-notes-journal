@@ -82,6 +82,7 @@ const EditorSubmissions = () => {
   const [showUnlockDialog, setShowUnlockDialog] = useState(false);
   const [unlockReason, setUnlockReason] = useState("");
   const [unlockLoading, setUnlockLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -94,6 +95,7 @@ const EditorSubmissions = () => {
   const checkEditorRole = async () => {
     const { data } = await supabase.rpc("has_role", { _user_id: user!.id, _role: "editor" });
     const { data: adminData } = await supabase.rpc("has_role", { _user_id: user!.id, _role: "admin" });
+    setIsAdmin(!!adminData);
     if (data || adminData) {
       setIsEditor(true);
       await loadSubmissions();
@@ -398,22 +400,24 @@ const EditorSubmissions = () => {
                               This submission has been {selectedSub.status}. No further actions available.
                             </span>
                           </div>
-                          {!showUnlockDialog ? (
+                        {!showUnlockDialog ? (
                             <Button
                               size="sm"
                               variant="ghost"
                               className="text-xs text-muted-foreground/50 hover:text-muted-foreground"
                               onClick={() => setShowUnlockDialog(true)}
                             >
-                              Unlock submission
+                              {isAdmin ? "Unlock submission" : "Request unlock"}
                             </Button>
                           ) : (
                             <div className="space-y-2 p-3 border border-destructive/30 rounded-md bg-destructive/5">
-                              <Label className="text-xs font-medium">Reason for unlocking (required)</Label>
+                              <Label className="text-xs font-medium">
+                                {isAdmin ? "Reason for unlocking (required)" : "Reason for unlock request (required)"}
+                              </Label>
                               <Textarea
                                 value={unlockReason}
                                 onChange={e => setUnlockReason(e.target.value)}
-                                placeholder="Explain why this submission needs to be reopened..."
+                                placeholder={isAdmin ? "Explain why this submission needs to be reopened..." : "Explain why this submission should be unlocked. An admin will review your request..."}
                                 rows={2}
                               />
                               <div className="flex gap-2">
@@ -424,16 +428,27 @@ const EditorSubmissions = () => {
                                   onClick={async () => {
                                     setUnlockLoading(true);
                                     try {
-                                      await supabase.from("submission_reviews").insert({
-                                        submission_id: selectedSub.id,
-                                        reviewer_id: user!.id,
-                                        action: "unlock",
-                                        comment: `Submission unlocked. Reason: ${unlockReason.trim()}`,
-                                      });
-                                      await supabase.from("manuscript_submissions")
-                                        .update({ status: "under_review", decision_date: null })
-                                        .eq("id", selectedSub.id);
-                                      toast({ title: "Unlocked", description: "Submission reopened for review." });
+                                      if (isAdmin) {
+                                        // Admin can directly unlock
+                                        await supabase.from("submission_reviews").insert({
+                                          submission_id: selectedSub.id,
+                                          reviewer_id: user!.id,
+                                          action: "unlock",
+                                          comment: `Submission unlocked by admin. Reason: ${unlockReason.trim()}`,
+                                        });
+                                        await supabase.from("manuscript_submissions")
+                                          .update({ status: "under_review", decision_date: null })
+                                          .eq("id", selectedSub.id);
+                                        toast({ title: "Unlocked", description: "Submission reopened for review." });
+                                      } else {
+                                        // Editor submits unlock request for admin approval
+                                        await supabase.from("unlock_requests").insert({
+                                          submission_id: selectedSub.id,
+                                          requested_by: user!.id,
+                                          reason: unlockReason.trim(),
+                                        });
+                                        toast({ title: "Request Sent", description: "Your unlock request has been sent to an admin for approval." });
+                                      }
                                       setShowUnlockDialog(false);
                                       setUnlockReason("");
                                       await loadSubmissions();
@@ -446,7 +461,7 @@ const EditorSubmissions = () => {
                                   }}
                                 >
                                   {unlockLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : null}
-                                  Confirm Unlock
+                                  {isAdmin ? "Confirm Unlock" : "Submit Request"}
                                 </Button>
                                 <Button size="sm" variant="outline" onClick={() => { setShowUnlockDialog(false); setUnlockReason(""); }}>
                                   Cancel

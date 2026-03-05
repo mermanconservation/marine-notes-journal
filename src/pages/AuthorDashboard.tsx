@@ -191,6 +191,18 @@ const AuthorDashboard = () => {
 
       if (error) throw error;
 
+      // Notify editor via email (fire-and-forget)
+      supabase.functions.invoke("notify-editor", {
+        body: {
+          title: form.title,
+          authorName: form.authorName,
+          authorEmail: form.authorEmail,
+          manuscriptType: form.manuscriptType,
+          abstract: form.abstract,
+          keywords: form.keywords,
+        },
+      }).catch((err) => console.error("Editor notification failed:", err));
+
       toast({ title: "Submitted!", description: "Your manuscript has been submitted for review." });
       setForm({ title: "", manuscriptType: "", abstract: "", keywords: "", authorName: form.authorName, authorEmail: form.authorEmail, affiliation: form.affiliation, orcid: form.orcid, allAuthors: "", coverLetter: "", copyrightOriginal: false, copyrightApproved: false, copyrightTransfer: false, copyrightCC: false, copyrightSignature: "" });
       setSelectedFiles([]);

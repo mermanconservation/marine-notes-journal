@@ -1257,13 +1257,30 @@ Pages: ${publishData.articleNumber}`}
                           const safeName = publishData.title.replace(/[^a-zA-Z0-9\s-]/g, "").replace(/\s+/g, "-").substring(0, 80);
                           const fileName = `${year}/vol${publishData.volume}-iss${publishData.issue}-${safeName}.pdf`;
                           
-                          const { error } = await supabase.storage
-                            .from("manuscripts")
-                            .upload(fileName, finalPdfFile, { contentType: "application/pdf", upsert: true });
-                          if (error) throw error;
+                          const passcode = prompt("Enter editor passcode to upload PDF:");
+                          if (!passcode) { setFinalPdfUploading(false); return; }
+
+                          const arrayBuffer = await finalPdfFile.arrayBuffer();
+                          const bytes = new Uint8Array(arrayBuffer);
+                          let binary = '';
+                          for (let i = 0; i < bytes.length; i++) {
+                            binary += String.fromCharCode(bytes[i]);
+                          }
+                          const fileData = btoa(binary);
+
+                          const response = await supabase.functions.invoke("publish-article", {
+                            body: {
+                              passcode,
+                              action: "upload-pdf",
+                              article: { fileName, fileData },
+                            },
+                          });
+
+                          if (response.error) throw new Error(response.error.message || "Upload failed");
+                          const result = response.data;
+                          if (result?.error) throw new Error(result.error);
                           
-                          const { data: urlData } = supabase.storage.from("manuscripts").getPublicUrl(fileName);
-                          setFinalPdfUrl(urlData.publicUrl);
+                          setFinalPdfUrl(result.url);
                           toast({ title: "Uploaded!", description: "Final publication PDF uploaded successfully." });
                         } catch (err: any) {
                           toast({ title: "Upload failed", description: err.message, variant: "destructive" });

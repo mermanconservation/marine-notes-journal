@@ -17,11 +17,7 @@ export const PromotionAssistant = ({ article }: PromotionAssistantProps) => {
   const { toast } = useToast();
 
   const generatePressRelease = () => {
-    const date = new Date(article.publicationDate).toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
+    const date = formatDateLong(article.publicationDate);
     
     return `FOR IMMEDIATE RELEASE
 

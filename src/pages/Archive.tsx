@@ -36,7 +36,7 @@ const Archive = () => {
         vol.issues.set(issueKey, {
           issue: parseInt(article.issue),
           title: "Issue " + article.issue,
-          date: new Date(article.publicationDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          date: formatMonthYear(article.publicationDate),
           articles: []
         });
       }

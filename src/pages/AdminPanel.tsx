@@ -449,7 +449,7 @@ const AdminPanel = () => {
                       )}
                       <p className="text-xs text-muted-foreground">
                         {role.email && <span className="font-mono">{role.user_id.slice(0, 8)}... · </span>}
-                        Since {new Date(role.created_at).toLocaleDateString()}
+                        Since {formatDate(role.created_at)}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">

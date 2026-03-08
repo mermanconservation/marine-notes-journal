@@ -443,7 +443,7 @@ const EditorSubmissions = () => {
                             <div className="ml-2">
                               <div className="flex items-center gap-2">
                                 <Badge variant="outline" className="text-xs">{ACTION_LABELS[r.action] || r.action}</Badge>
-                                <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</span>
+                                <span className="text-xs text-muted-foreground">{formatDateTime(r.created_at)}</span>
                               </div>
                               {r.comment && (
                                 isAiReview ? (

@@ -99,11 +99,7 @@ const DOIResolver = () => {
                   Volume {article.volume}, Issue {article.issue}
                 </span>
                 <span className="text-muted-foreground">
-                  Published: {new Date(article.publicationDate).toLocaleDateString('en-US', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })}
+                  Published: {formatDateLong(article.publicationDate)}
                 </span>
                 <span className="bg-accent text-accent-foreground px-2 py-1 rounded">
                   {article.type}

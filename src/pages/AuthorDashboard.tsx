@@ -546,7 +546,7 @@ const AuthorDashboard = () => {
                     </div>
                     <div className="space-y-2">
                       <Label>Date</Label>
-                      <Input value={new Date().toLocaleDateString()} disabled />
+                      <Input value={formatDate(new Date())} disabled />
                     </div>
                   </div>
                 </CardContent>

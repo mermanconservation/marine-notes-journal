@@ -1247,65 +1247,43 @@ Pages: ${publishData.articleNumber}`}
 
                 <Separator />
 
-                {/* Upload Final Publication PDF */}
+                {/* PDF Path for GitHub */}
                 <div className="space-y-2">
-                  <h3 className="font-semibold text-sm">Upload Final Publication PDF</h3>
-                  <p className="text-xs text-muted-foreground">Upload the finalized PDF with banner, footer, and formatting from the publishing app.</p>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="file"
-                      accept=".pdf"
-                      onChange={(e) => setFinalPdfFile(e.target.files?.[0] || null)}
-                      className="flex-1"
-                    />
-                    <Button
-                      size="sm"
-                      disabled={!finalPdfFile || finalPdfUploading}
-                      onClick={async () => {
-                        if (!finalPdfFile || !publishData) return;
-                        setFinalPdfUploading(true);
-                        try {
-                          const year = new Date(publishData.publicationDate).getFullYear();
-                          const safeName = publishData.title.replace(/[^a-zA-Z0-9\s-]/g, "").replace(/\s+/g, "-").substring(0, 80);
-                          const fileName = `${year}/vol${publishData.volume}-iss${publishData.issue}-${safeName}.pdf`;
-                          
-                          const passcode = prompt("Enter editor passcode to upload PDF:");
-                          if (!passcode) { setFinalPdfUploading(false); return; }
-
-                          const arrayBuffer = await finalPdfFile.arrayBuffer();
-                          const bytes = new Uint8Array(arrayBuffer);
-                          let binary = '';
-                          for (let i = 0; i < bytes.length; i++) {
-                            binary += String.fromCharCode(bytes[i]);
-                          }
-                          const fileData = btoa(binary);
-
-                          const response = await supabase.functions.invoke("publish-article", {
-                            body: {
-                              passcode,
-                              action: "upload-pdf",
-                              article: { fileName, fileData },
-                            },
-                          });
-
-                          if (response.error) throw new Error(response.error.message || "Upload failed");
-                          const result = response.data;
-                          if (result?.error) throw new Error(result.error);
-                          
-                          setFinalPdfUrl(result.url);
-                          toast({ title: "Uploaded!", description: "Final publication PDF uploaded successfully." });
-                        } catch (err: any) {
-                          toast({ title: "Upload failed", description: err.message, variant: "destructive" });
-                        }
-                        setFinalPdfUploading(false);
-                      }}
-                    >
-                      {finalPdfUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
-                      Upload
-                    </Button>
-                  </div>
+                  <h3 className="font-semibold text-sm">Publication PDF (GitHub)</h3>
+                  <p className="text-xs text-muted-foreground">
+                    The PDF path is auto-generated. Upload the finalized PDF to <code className="bg-muted px-1 rounded">public/manuscripts/{new Date(publishData.publicationDate).getFullYear()}/</code> on GitHub.
+                  </p>
+                  {(() => {
+                    const year = new Date(publishData.publicationDate).getFullYear();
+                    const safeName = publishData.title.replace(/[^a-zA-Z0-9\s-]/g, "").replace(/\s+/g, "-").substring(0, 80);
+                    const generatedPath = `/manuscripts/${year}/vol${publishData.volume}-iss${publishData.issue}-${safeName}.pdf`;
+                    return (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <code className="text-xs bg-muted p-2 rounded flex-1 break-all">{generatedPath}</code>
+                          <Button size="sm" variant="outline" onClick={() => {
+                            navigator.clipboard.writeText(generatedPath);
+                            toast({ title: "Copied!", description: "PDF path copied to clipboard." });
+                          }}>
+                            <Copy className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="w-full"
+                          onClick={() => {
+                            setFinalPdfUrl(generatedPath);
+                            toast({ title: "Path set!", description: "PDF path set for publishing. Remember to upload the file to GitHub." });
+                          }}
+                        >
+                          <CheckCircle className="h-3 w-3 mr-1" /> Use this PDF path
+                        </Button>
+                      </div>
+                    );
+                  })()}
                   {finalPdfUrl && (
-                    <p className="text-xs text-green-700">✅ Final PDF uploaded and ready for publishing.</p>
+                    <p className="text-xs text-green-700">✅ PDF path set: {finalPdfUrl}</p>
                   )}
                 </div>
 

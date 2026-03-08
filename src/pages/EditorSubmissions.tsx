@@ -212,23 +212,29 @@ const EditorSubmissions = () => {
     setPublishLoading(true);
     try {
       const meta = selectedSub.pipeline_results.prepared_metadata;
-      const { error } = await supabase.functions.invoke("publish-article", {
+      const passcode = prompt("Enter editor passcode to publish:");
+      if (!passcode) { setPublishLoading(false); return; }
+      const { data, error } = await supabase.functions.invoke("publish-article", {
         body: {
-          doi: meta.doi,
-          title: meta.title,
-          authors: meta.authors,
-          abstract: meta.abstract,
-          type: meta.type,
-          volume: meta.volume,
-          issue: meta.issue,
-          resolver_url: meta.resolver_url,
-          publication_date: meta.publication_date,
-          orcid_ids: meta.orcid_ids,
-          pdf_url: selectedSub.file_paths?.[0]
-            ? supabase.storage.from("manuscripts").getPublicUrl(selectedSub.file_paths[0]).data.publicUrl
-            : null,
+          passcode,
+          action: "publish",
+          article: {
+            doi: meta.doi,
+            title: meta.title,
+            authors: meta.authors,
+            abstract: meta.abstract,
+            type: meta.type,
+            volume: meta.volume,
+            issue: meta.issue,
+            publicationDate: meta.publication_date,
+            orcidIds: meta.orcid_ids || [],
+            pdfUrl: selectedSub.file_paths?.[0]
+              ? supabase.storage.from("manuscripts").getPublicUrl(selectedSub.file_paths[0]).data.publicUrl
+              : null,
+          },
         },
       });
+      if (data?.error) throw new Error(data.error);
       if (error) throw error;
       toast({ title: "Published!", description: `Article published with DOI: ${meta.doi}` });
       await loadSubmissions();

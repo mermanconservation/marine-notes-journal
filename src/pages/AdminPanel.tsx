@@ -380,7 +380,7 @@ const AdminPanel = () => {
                         <p className="text-xs text-muted-foreground mt-0.5">Admin: {req.decision_comment}</p>
                       )}
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {req.decided_at && new Date(req.decided_at).toLocaleString()}
+                        {req.decided_at && formatDateTime(req.decided_at)}
                       </p>
                     </div>
                     <Badge className={req.status === "approved" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>

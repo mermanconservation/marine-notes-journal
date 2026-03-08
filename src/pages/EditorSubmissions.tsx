@@ -286,7 +286,7 @@ const EditorSubmissions = () => {
                       >
                         <p className="text-sm font-medium line-clamp-2">{n.message}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(n.created_at).toLocaleString()}
+                          {formatDateTime(n.created_at)}
                         </p>
                       </button>
                     ))

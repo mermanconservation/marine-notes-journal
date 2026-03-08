@@ -127,11 +127,15 @@ const AdminPanel = () => {
 
     // Load published articles
     try {
-      const res = await supabase.functions.invoke("publish-article", {
-        body: { passcode: "Wildlifeuk2026", action: "list-articles" },
-      });
-      if (res.data?.articles) {
-        setPublishedArticles(res.data.articles.filter((a: any) => !a.is_static));
+      const code = editorPasscode || prompt("Enter editor passcode to load articles:");
+      if (code) {
+        if (!editorPasscode) setEditorPasscode(code);
+        const res = await supabase.functions.invoke("publish-article", {
+          body: { passcode: code, action: "list-articles" },
+        });
+        if (res.data?.articles) {
+          setPublishedArticles(res.data.articles.filter((a: any) => !a.is_static));
+        }
       }
     } catch {}
 

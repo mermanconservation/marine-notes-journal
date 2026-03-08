@@ -41,6 +41,9 @@ const Footer = () => {
               <Link to="/archive" className="block text-primary-foreground/80 hover:text-primary-foreground transition-colors">
                 Archive
               </Link>
+              <Link to="/promote" className="block text-primary-foreground/80 hover:text-primary-foreground transition-colors">
+                Promote
+              </Link>
               <Link to="/doi-search" className="block text-primary-foreground/80 hover:text-primary-foreground transition-colors">
                 DOI Lookup
               </Link>

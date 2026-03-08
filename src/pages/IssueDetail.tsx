@@ -135,7 +135,7 @@ const IssueDetail = () => {
                   <h3 className="text-lg font-semibold">How to Cite (APA Format)</h3>
                 </div>
                 <p className="font-mono text-sm leading-relaxed">
-                  {article.authors} ({new Date(article.publicationDate).getFullYear()}). {article.title}. <em>Marine Notes Journal</em>, <em>{article.volume}</em>({article.issue}). {article.doi}
+                  {article.authors} ({new Date(article.publicationDate).getFullYear()}). {article.title}. <em>Marine Notes Journal</em>, <em>{article.volume}</em>({article.issue}). {article.externalDoi ? `https://doi.org/${article.externalDoi}` : article.doi}
                 </p>
               </div>
 

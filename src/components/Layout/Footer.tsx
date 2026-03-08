@@ -45,7 +45,7 @@ const Footer = () => {
                 Promote
               </Link>
               <Link to="/doi-search" className="block text-primary-foreground/80 hover:text-primary-foreground transition-colors">
-                DOI Lookup
+                Article ID Lookup
               </Link>
               <div className="flex items-center gap-3 mt-3 pt-3 border-t border-primary-foreground/20">
                 <Link to="/admin-panel" className="text-primary-foreground/50 hover:text-primary-foreground transition-colors" title="Admin Panel">

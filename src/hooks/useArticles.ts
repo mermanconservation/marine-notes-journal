@@ -5,6 +5,7 @@ import articlesData from "@/data/articles.json";
 export interface UnifiedArticle {
   id: number;
   doi: string;
+  externalDoi?: string;
   title: string;
   authors: string;
   orcidIds?: string[];

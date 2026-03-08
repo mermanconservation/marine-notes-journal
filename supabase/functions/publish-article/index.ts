@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
         .upload(fileName, bytes, { contentType: "application/pdf", upsert: true });
 
       if (error) {
-        console.error("Storage error:", JSON.stringify(error));
+        console.error("Storage error:", { code: error?.statusCode, message: error?.message?.substring(0, 50) });
         return errorResponse("Failed to upload file", 500);
       }
 

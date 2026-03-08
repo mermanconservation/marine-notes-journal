@@ -514,7 +514,7 @@ const EditorSubmissions = () => {
                   {selectedSub.file_paths && selectedSub.file_paths.length > 0 && (
                     <div className="flex gap-2">
                       {selectedSub.file_paths.map((fp, i) => (
-                        <Button key={i} size="sm" variant="outline" onClick={() => downloadFile(fp)}>
+                        <Button key={i} size="sm" variant="outline" onClick={() => downloadFile(fp, selectedSub.user_id)}>
                           <Download className="h-3 w-3 mr-1" /> Download {fp.split("/").pop()}
                         </Button>
                       ))}

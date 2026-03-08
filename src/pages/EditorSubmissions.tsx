@@ -910,6 +910,151 @@ const EditorSubmissions = () => {
             )}
           </div>
         </div>
+
+        {/* Publish Modal */}
+        <Dialog open={showPublishModal} onOpenChange={setShowPublishModal}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>📋 Publish Article — Generate Banner & Data</DialogTitle>
+            </DialogHeader>
+            {publishData && (
+              <div className="space-y-5">
+                {/* Article Info */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Article Information</h3>
+                  <div className="grid grid-cols-2 gap-2 text-sm bg-muted p-3 rounded-md">
+                    <div><span className="text-muted-foreground">Title:</span> {publishData.title}</div>
+                    <div><span className="text-muted-foreground">Authors:</span> {publishData.authors}</div>
+                    <div><span className="text-muted-foreground">DOI:</span> {publishData.doi}</div>
+                    <div><span className="text-muted-foreground">Type:</span> {publishData.type}</div>
+                    <div><span className="text-muted-foreground">Volume:</span> {publishData.volume}</div>
+                    <div><span className="text-muted-foreground">Issue:</span> {publishData.issue}</div>
+                  </div>
+                </div>
+
+                {/* Dates */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Key Dates</h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="p-3 rounded-md border border-border bg-card text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Submitted</p>
+                      <p className="text-sm font-medium mt-1">{formatDate(publishData.submittedDate)}</p>
+                    </div>
+                    <div className="p-3 rounded-md border border-border bg-card text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Accepted</p>
+                      <p className="text-sm font-medium mt-1">{formatDate(publishData.acceptedDate)}</p>
+                    </div>
+                    <div className="p-3 rounded-md border border-border bg-card text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Published</p>
+                      <p className="text-sm font-medium mt-1">{publishData.publicationDate}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Banner Code for PDF Publishing App */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Banner Data (for PDF Publishing Editor)</h3>
+                  <div className="relative">
+                    <pre className="bg-muted p-3 rounded-md text-xs overflow-x-auto whitespace-pre-wrap border border-border font-mono">
+{`Marine Notes Journal
+Vol. ${publishData.volume}, Issue ${publishData.issue}, ${new Date(publishData.publicationDate).getFullYear()}
+DOI: ${publishData.doi}
+${publishData.type}
+
+Submitted: ${formatDate(publishData.submittedDate)}
+Accepted: ${formatDate(publishData.acceptedDate)}
+Published: ${publishData.publicationDate}`}
+                    </pre>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="absolute top-2 right-2"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`Marine Notes Journal\nVol. ${publishData.volume}, Issue ${publishData.issue}, ${new Date(publishData.publicationDate).getFullYear()}\nDOI: ${publishData.doi}\n${publishData.type}\n\nSubmitted: ${formatDate(publishData.submittedDate)}\nAccepted: ${formatDate(publishData.acceptedDate)}\nPublished: ${publishData.publicationDate}`);
+                        toast({ title: "Copied!", description: "Banner data copied to clipboard." });
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Footer Code */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Footer Code</h3>
+                  <div className="relative">
+                    <pre className="bg-muted p-3 rounded-md text-xs overflow-x-auto whitespace-pre-wrap border border-border font-mono">
+{`© ${new Date(publishData.publicationDate).getFullYear()} Marine Notes Journal. All rights reserved.
+${publishData.authors}. "${publishData.title}." Marine Notes Journal, Vol. ${publishData.volume}, Issue ${publishData.issue}, ${publishData.publicationDate}. DOI: ${publishData.doi}
+This is an open access article under the CC BY 4.0 license.
+Pages: ${publishData.articleNumber}`}
+                    </pre>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="absolute top-2 right-2"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`© ${new Date(publishData.publicationDate).getFullYear()} Marine Notes Journal. All rights reserved.\n${publishData.authors}. "${publishData.title}." Marine Notes Journal, Vol. ${publishData.volume}, Issue ${publishData.issue}, ${publishData.publicationDate}. DOI: ${publishData.doi}\nThis is an open access article under the CC BY 4.0 license.\nPages: ${publishData.articleNumber}`);
+                        toast({ title: "Copied!", description: "Footer code copied to clipboard." });
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* PDF URL if available */}
+                {publishData.pdfUrl && (
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-sm">Manuscript PDF</h3>
+                    <a href={publishData.pdfUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                      <Download className="h-4 w-4" /> Download manuscript PDF
+                    </a>
+                  </div>
+                )}
+
+                {/* Link to external PDF publishing app */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Open PDF Publishing Editor</h3>
+                  <a
+                    href="https://marine-journal-pdf-publishing.lovable.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="outline" className="w-full">
+                      <ExternalLink className="h-4 w-4 mr-2" /> Open PDF Publishing App
+                    </Button>
+                  </a>
+                  <p className="text-xs text-muted-foreground">
+                    Copy the banner data and footer code above, then use the PDF Publishing App to generate the final publication-ready PDF.
+                  </p>
+                </div>
+
+                <Separator />
+
+                {/* Publish to database */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Publish to Journal Database</h3>
+                  <p className="text-xs text-muted-foreground">Once the PDF is finalized in the publishing app, click below to register the article in the journal database.</p>
+                  <Button
+                    onClick={async () => {
+                      await publishArticle();
+                      setShowPublishModal(false);
+                    }}
+                    disabled={publishLoading}
+                    className="w-full"
+                  >
+                    {publishLoading ? (
+                      <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Publishing...</>
+                    ) : (
+                      <><Send className="h-4 w-4 mr-2" /> Confirm & Publish to Database</>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

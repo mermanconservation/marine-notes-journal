@@ -37,7 +37,9 @@ function validateArticle(article: any, requireDoi: boolean): { valid: boolean; e
   if (typeof article.authors !== "string" || article.authors.length < 2 || article.authors.length > 1000) {
     return { valid: false, error: "Authors must be between 2 and 1000 characters" };
   }
-  if (typeof article.type !== "string" || !ARTICLE_TYPES.includes(article.type)) {
+  const typeLower = (article.type || "").toLowerCase().trim();
+  const validType = ARTICLE_TYPES.some(t => t.toLowerCase() === typeLower);
+  if (typeof article.type !== "string" || !validType) {
     return { valid: false, error: "Invalid article type" };
   }
   if (typeof article.abstract !== "string" || article.abstract.length < 10 || article.abstract.length > 10000) {

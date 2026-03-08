@@ -83,6 +83,8 @@ const EditorSubmissions = () => {
   const [unlockReason, setUnlockReason] = useState("");
   const [unlockLoading, setUnlockLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");

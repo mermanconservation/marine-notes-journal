@@ -503,7 +503,7 @@ const EditorSubmissions = () => {
                         Run AI Review Pipeline
                       </Button>
                     </div>
-                  )
+                  )}
 
                   <Separator />
 

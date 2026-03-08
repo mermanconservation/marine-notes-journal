@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { timingSafeEqual } from "https://deno.land/std@0.224.0/crypto/timing_safe_equal.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,6 +22,14 @@ const ARTICLE_TYPES = [
 
 function stripHtml(str: string): string {
   return str.replace(/<[^>]*>/g, "").trim();
+}
+
+function constantTimeEqual(a: string, b: string): boolean {
+  const encoder = new TextEncoder();
+  const aBytes = encoder.encode(a);
+  const bBytes = encoder.encode(b);
+  if (aBytes.length !== bBytes.length) return false;
+  return timingSafeEqual(aBytes, bBytes);
 }
 
 function validateArticle(article: any, requireDoi: boolean): { valid: boolean; error?: string } {
@@ -83,7 +92,7 @@ function sanitizeArticle(article: any) {
 }
 
 function mapDbError(error: any): { message: string; status: number } {
-  console.error("Database error:", JSON.stringify(error));
+  console.error("Database error:", { code: error?.code, hint: error?.hint });
   const code = error?.code;
   if (code === "23505") return { message: "An article with this DOI already exists", status: 409 };
   if (code === "23502") return { message: "A required field is missing", status: 400 };
@@ -107,7 +116,7 @@ Deno.serve(async (req) => {
     const { passcode, article, action } = await req.json();
 
     const editorPasscode = Deno.env.get("EDITOR_PASSCODE");
-    if (!editorPasscode || passcode !== editorPasscode) {
+    if (!editorPasscode || typeof passcode !== "string" || !constantTimeEqual(passcode, editorPasscode)) {
       return errorResponse("Invalid passcode", 401);
     }
 
@@ -160,7 +169,7 @@ Deno.serve(async (req) => {
         .upload(fileName, bytes, { contentType: "application/pdf", upsert: true });
 
       if (error) {
-        console.error("Storage error:", JSON.stringify(error));
+        console.error("Storage error:", { code: error?.statusCode, message: error?.message?.substring(0, 50) });
         return errorResponse("Failed to upload file", 500);
       }
 
@@ -309,7 +318,7 @@ Deno.serve(async (req) => {
 
     return errorResponse("Unknown action", 400);
   } catch (err) {
-    console.error("Unhandled error:", err);
+    console.error("Unhandled error:", err instanceof Error ? err.message : "unknown");
     return errorResponse("An unexpected error occurred", 500);
   }
 });

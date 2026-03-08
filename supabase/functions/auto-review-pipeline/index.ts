@@ -252,42 +252,38 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
     const failedSteps = steps.filter((s) => !s.passed);
     const rejectionReasons = failedSteps.flatMap((s) => s.issues);
 
-    // Generate metadata if passed
-    let preparedMetadata: Record<string, unknown> | undefined;
-    if (allPassed) {
-      // Determine next DOI, volume, issue
-      const currentYear = new Date().getFullYear();
-      const volume = (currentYear - 2025).toString(); // Vol 1 = 2026, etc.
+    // Always generate metadata so editors can override and publish
+    const currentYear = new Date().getFullYear();
+    const volume = (currentYear - 2025).toString();
 
-      const { count } = await supabase
-        .from("articles")
-        .select("*", { count: "exact", head: true })
-        .eq("volume", volume);
+    const { count } = await supabase
+      .from("articles")
+      .select("*", { count: "exact", head: true })
+      .eq("volume", volume);
 
-      const articleNumber = (count || 0) + 1;
-      const issue = "1"; // Default to issue 1
-      const doi = `10.69882/mnj.${currentYear}.v${volume}i${issue}.${articleNumber}`;
+    const articleNumber = (count || 0) + 1;
+    const issue = "1";
+    const doi = `10.69882/mnj.${currentYear}.v${volume}i${issue}.${articleNumber}`;
 
-      preparedMetadata = {
-        doi,
-        volume,
-        issue,
-        title: sub.title,
-        authors: sub.all_authors,
-        abstract: sub.abstract,
-        type: sub.manuscript_type,
-        resolver_url: `https://marine-notes-journal.lovable.app/doi/${doi}`,
-        publication_date: new Date().toISOString().split("T")[0],
-        orcid_ids: sub.corresponding_author_orcid ? [sub.corresponding_author_orcid] : [],
-        pipeline_scores: {
-          scope: step1.score,
-          grammar: step2.score,
-          structure: step3.score,
-          originality: step4.score,
-          average: Math.round((step1.score + step2.score + step3.score + step4.score) / 4),
-        },
-      };
-    }
+    const preparedMetadata = {
+      doi,
+      volume,
+      issue,
+      title: sub.title,
+      authors: sub.all_authors,
+      abstract: sub.abstract,
+      type: sub.manuscript_type,
+      resolver_url: `https://marine-notes-journal.lovable.app/doi/${doi}`,
+      publication_date: new Date().toISOString().split("T")[0],
+      orcid_ids: sub.corresponding_author_orcid ? [sub.corresponding_author_orcid] : [],
+      pipeline_scores: {
+        scope: step1.score,
+        grammar: step2.score,
+        structure: step3.score,
+        originality: step4.score,
+        average: Math.round((step1.score + step2.score + step3.score + step4.score) / 4),
+      },
+    };
 
     const results: PipelineResults = {
       steps,

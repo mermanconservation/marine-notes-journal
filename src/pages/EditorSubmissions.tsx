@@ -1126,11 +1126,22 @@ const EditorSubmissions = () => {
                   <div className="grid grid-cols-2 gap-2 text-sm bg-muted p-3 rounded-md">
                     <div><span className="text-muted-foreground">Title:</span> {publishData.title}</div>
                     <div><span className="text-muted-foreground">Authors:</span> {publishData.authors}</div>
-                    <div><span className="text-muted-foreground">DOI:</span> {publishData.doi}</div>
+                    <div><span className="text-muted-foreground">Article ID:</span> {publishData.doi}</div>
                     <div><span className="text-muted-foreground">Type:</span> {publishData.type}</div>
                     <div><span className="text-muted-foreground">Volume:</span> {publishData.volume}</div>
                     <div><span className="text-muted-foreground">Issue:</span> {publishData.issue}</div>
                   </div>
+                </div>
+
+                {/* Optional External DOI */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">DOI (optional)</h3>
+                  <p className="text-xs text-muted-foreground">If this article has a registered DOI, enter it here (e.g., 10.1234/example).</p>
+                  <Input
+                    placeholder="e.g., 10.1234/example.2026"
+                    value={publishData.externalDoi || ""}
+                    onChange={(e) => setPublishData({ ...publishData, externalDoi: e.target.value })}
+                  />
                 </div>
 
                 {/* Dates */}

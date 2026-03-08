@@ -258,18 +258,40 @@ const EditorSubmissions = () => {
     setPublishLoading(false);
   };
 
-  const downloadFile = async (path: string) => {
+  const downloadFile = async (path: string, userId?: string | null) => {
+    const normalizePath = (value: string) => value.replace(/^\/+/, "").replace(/^manuscripts\//, "");
+    const baseName = path.split("/").pop() || "manuscript";
+
+    const candidates = new Set<string>([
+      normalizePath(path),
+      baseName,
+      userId ? `submissions/${userId}/${baseName}` : "",
+    ]);
+
     try {
-      const { data, error } = await supabase.storage.from("manuscripts").download(path);
-      if (error) throw error;
-      const url = URL.createObjectURL(data);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = path.split("/").pop() || "manuscript.pdf";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      if (userId) {
+        const { data: userFiles } = await supabase.storage.from("manuscripts").list(`submissions/${userId}`);
+        const matched = userFiles?.find((f) => f.name === baseName);
+        if (matched) candidates.add(`submissions/${userId}/${matched.name}`);
+      }
+
+      for (const candidate of candidates) {
+        if (!candidate) continue;
+        const { data, error } = await supabase.storage.from("manuscripts").download(candidate);
+        if (!error && data) {
+          const url = URL.createObjectURL(data);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = baseName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          return;
+        }
+      }
+
+      throw new Error(`File not found in storage: ${baseName}`);
     } catch (err: any) {
       toast({ title: "Download failed", description: err.message, variant: "destructive" });
     }
@@ -492,7 +514,7 @@ const EditorSubmissions = () => {
                   {selectedSub.file_paths && selectedSub.file_paths.length > 0 && (
                     <div className="flex gap-2">
                       {selectedSub.file_paths.map((fp, i) => (
-                        <Button key={i} size="sm" variant="outline" onClick={() => downloadFile(fp)}>
+                        <Button key={i} size="sm" variant="outline" onClick={() => downloadFile(fp, selectedSub.user_id)}>
                           <Download className="h-3 w-3 mr-1" /> Download {fp.split("/").pop()}
                         </Button>
                       ))}
@@ -1043,7 +1065,7 @@ Pages: ${publishData.articleNumber}`}
                   <div className="space-y-2">
                     <h3 className="font-semibold text-sm">Original Manuscript</h3>
                     {selectedSub.file_paths.map((fp, i) => (
-                      <Button key={i} size="sm" variant="outline" onClick={() => downloadFile(fp)}>
+                      <Button key={i} size="sm" variant="outline" onClick={() => downloadFile(fp, selectedSub.user_id)}>
                         <Download className="h-4 w-4 mr-2" /> Download {fp.split("/").pop()}
                       </Button>
                     ))}

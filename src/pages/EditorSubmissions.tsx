@@ -1170,7 +1170,7 @@ const EditorSubmissions = () => {
                     <pre className="bg-muted p-3 rounded-md text-xs overflow-x-auto whitespace-pre-wrap border border-border font-mono">
 {`Marine Notes Journal
 Vol. ${publishData.volume}, Issue ${publishData.issue}, ${new Date(publishData.publicationDate).getFullYear()}
-DOI: ${publishData.doi}
+Article ID: ${publishData.doi}${publishData.externalDoi ? `\nDOI: ${publishData.externalDoi}` : ''}
 ${publishData.type}
 
 Submitted: ${formatDate(publishData.submittedDate)}

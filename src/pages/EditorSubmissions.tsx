@@ -675,25 +675,38 @@ const EditorSubmissions = () => {
                               <p className="text-sm font-medium mb-2">
                                 {selectedSub.pipeline_status === 'passed' ? '📋 Article ready for publication' : '⚠️ Publish despite pipeline issues'}
                               </p>
-                              <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground mb-3">
-                                <span>DOI: {selectedSub.pipeline_results.prepared_metadata.doi}</span>
-                                <span>Vol {selectedSub.pipeline_results.prepared_metadata.volume}, Issue {selectedSub.pipeline_results.prepared_metadata.issue}</span>
-                                <span>Avg Score: {selectedSub.pipeline_results.prepared_metadata.pipeline_scores?.average}/100</span>
-                              </div>
                               {selectedSub.pipeline_status === 'failed' && (
-                                <p className="text-xs text-destructive mb-2">Publishing will override the AI recommendation. Make sure you've reviewed the flagged issues.</p>
+                                <p className="text-xs text-destructive mb-2">Publishing will override the AI recommendation.</p>
                               )}
                               <Button
-                                onClick={publishArticle}
-                                disabled={publishLoading}
+                                onClick={() => {
+                                  const meta = selectedSub.pipeline_results.prepared_metadata;
+                                  const pdfUrl = selectedSub.file_paths?.[0]
+                                    ? supabase.storage.from("manuscripts").getPublicUrl(selectedSub.file_paths[0]).data.publicUrl
+                                    : null;
+                                  
+                                  // Count existing articles in this volume/issue for page continuation
+                                  const volArticles = submissions.filter(s => 
+                                    s.pipeline_results?.prepared_metadata?.volume === meta.volume &&
+                                    s.pipeline_results?.prepared_metadata?.issue === meta.issue &&
+                                    s.status === 'accepted'
+                                  );
+
+                                  setPublishData({
+                                    ...meta,
+                                    pdfUrl,
+                                    submittedDate: selectedSub.created_at,
+                                    acceptedDate: selectedSub.decision_date || new Date().toISOString(),
+                                    approvedDate: new Date().toISOString(),
+                                    publicationDate: meta.publication_date || new Date().toISOString().split("T")[0],
+                                    articleNumber: volArticles.length + 1,
+                                  });
+                                  setShowPublishModal(true);
+                                }}
                                 className="w-full"
                                 variant={selectedSub.pipeline_status === 'failed' ? 'destructive' : 'default'}
                               >
-                                {publishLoading ? (
-                                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Publishing...</>
-                                ) : (
-                                  <><Send className="h-4 w-4 mr-2" /> Publish Article</>
-                                )}
+                                <Send className="h-4 w-4 mr-2" /> Prepare & Publish Article
                               </Button>
                             </div>
                           )}

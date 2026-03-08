@@ -324,7 +324,7 @@ const EditorSubmissions = () => {
     }
   };
 
-  const getFileUrl = (path: string) => {
+  const getFileUrl = async (path: string) => {
     // Use download URL for private bucket - editors are authenticated
     const { data } = await supabase.storage.from("manuscript-submissions").createSignedUrl(path, 3600);
     return data?.signedUrl || "";

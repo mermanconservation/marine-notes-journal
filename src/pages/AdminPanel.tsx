@@ -124,7 +124,44 @@ const AdminPanel = () => {
       rejected: allSubs.filter((s: any) => s.status === "rejected").length,
     });
 
+    // Load published articles
+    try {
+      const res = await supabase.functions.invoke("publish-article", {
+        body: { passcode: "Wildlifeuk2026", action: "list-articles" },
+      });
+      if (res.data?.articles) {
+        setPublishedArticles(res.data.articles.filter((a: any) => !a.is_static));
+      }
+    } catch {}
+
     setLoading(false);
+  };
+
+  const handleDeleteArticle = async (article: any) => {
+    if (deleteConfirmTitle !== article.title) {
+      toast({ title: "Title mismatch", description: "You must type the exact article title to confirm deletion.", variant: "destructive" });
+      return;
+    }
+    if (!deleteReason.trim()) {
+      toast({ title: "Reason required", description: "Please provide a reason for removing this article.", variant: "destructive" });
+      return;
+    }
+    setDeletingArticle(article.doi);
+    try {
+      const res = await supabase.functions.invoke("publish-article", {
+        body: { passcode: "Wildlifeuk2026", action: "delete", article: { doi: article.doi } },
+      });
+      if (res.error || res.data?.error) {
+        throw new Error(res.data?.error || "Failed to delete article");
+      }
+      toast({ title: "Article Removed", description: `"${article.title}" has been removed. Reason: ${deleteReason}` });
+      setDeleteReason("");
+      setDeleteConfirmTitle("");
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setDeletingArticle(null);
   };
 
   const handleUnlockDecision = async (request: UnlockRequest, approved: boolean) => {

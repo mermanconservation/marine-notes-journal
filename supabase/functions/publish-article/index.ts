@@ -24,6 +24,14 @@ function stripHtml(str: string): string {
   return str.replace(/<[^>]*>/g, "").trim();
 }
 
+function constantTimeEqual(a: string, b: string): boolean {
+  const encoder = new TextEncoder();
+  const aBytes = encoder.encode(a);
+  const bBytes = encoder.encode(b);
+  if (aBytes.length !== bBytes.length) return false;
+  return timingSafeEqual(aBytes, bBytes);
+}
+
 function validateArticle(article: any, requireDoi: boolean): { valid: boolean; error?: string } {
   if (!article || typeof article !== "object") return { valid: false, error: "Missing article data" };
 

@@ -252,7 +252,7 @@ const EditorSubmissions = () => {
       const result = await response.json();
       if (!response.ok || result.error) throw new Error(result.error || "Publish failed");
       
-      toast({ title: "Published!", description: `Article published with DOI: ${publishData.doi}` });
+      toast({ title: "Published!", description: `Article published with Article ID: ${publishData.doi}` });
       await loadSubmissions();
       const updated = (await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub!.id).single()).data;
       if (updated) setSelectedSub(updated as Submission);

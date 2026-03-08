@@ -242,6 +242,7 @@ Deno.serve(async (req) => {
         volume: clean.volume,
         issue: clean.issue,
         abstract: clean.abstract,
+        external_doi: clean.externalDoi,
       }).select().single();
 
       if (error) {

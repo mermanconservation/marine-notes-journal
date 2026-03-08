@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
 
       const { error } = await supabase.storage
         .from("manuscripts")
-        .upload(fileName, bytes, { contentType: "application/pdf", upsert: false });
+        .upload(fileName, bytes, { contentType: "application/pdf", upsert: true });
 
       if (error) {
         console.error("Storage error:", JSON.stringify(error));

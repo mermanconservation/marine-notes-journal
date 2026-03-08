@@ -414,6 +414,7 @@ const EditorSubmissions = () => {
                     {sub.pipeline_status === 'running' && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
                     {sub.pipeline_status === 'passed' && <Zap className="h-3 w-3 text-green-600" />}
                     {sub.pipeline_status === 'failed' && <Zap className="h-3 w-3 text-destructive" />}
+                    {sub.pipeline_status === 'editor_review' && <Zap className="h-3 w-3 text-yellow-600" />}
                   </div>
                 </button>
               ))

@@ -282,6 +282,19 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "delete") {
+      const { doi } = article || {};
+      if (!doi) return errorResponse("DOI is required", 400);
+      const { error } = await supabase.from("articles").delete().eq("doi", doi);
+      if (error) {
+        const mapped = mapDbError(error);
+        return errorResponse(mapped.message, mapped.status);
+      }
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return errorResponse("Unknown action", 400);
   } catch (err) {
     console.error("Unhandled error:", err);

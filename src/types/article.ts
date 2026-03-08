@@ -9,6 +9,7 @@ export interface ArticleMetrics {
 export interface Article {
   id: number;
   doi: string;
+  externalDoi?: string;
   title: string;
   authors: string;
   orcidIds?: string[];

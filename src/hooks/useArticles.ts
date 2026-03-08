@@ -5,6 +5,7 @@ import articlesData from "@/data/articles.json";
 export interface UnifiedArticle {
   id: number;
   doi: string;
+  externalDoi?: string;
   title: string;
   authors: string;
   orcidIds?: string[];
@@ -45,6 +46,7 @@ async function fetchDbArticles(): Promise<UnifiedArticle[]> {
   return data.map((a: any) => ({
     id: 1000 + a.id,
     doi: a.doi,
+    externalDoi: a.external_doi || undefined,
     title: a.title,
     authors: a.authors,
     orcidIds: a.orcid_ids || [],

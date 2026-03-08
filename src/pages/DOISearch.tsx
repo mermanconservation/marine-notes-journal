@@ -22,9 +22,9 @@ const DOISearch = () => {
     <div className="container mx-auto px-4 py-20">
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-3xl font-academic">DOI Lookup</CardTitle>
+          <CardTitle className="text-3xl font-academic">Article ID Lookup</CardTitle>
           <CardDescription>
-            Search for articles using their Digital Object Identifier (DOI)
+            Search for articles using their Article ID
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -32,13 +32,13 @@ const DOISearch = () => {
             <div>
               <Input
                 type="text"
-                placeholder="Enter DOI (e.g., MNJ-2026-001)"
+                placeholder="Enter Article ID (e.g., MNJ-2026-001)"
                 value={searchDOI}
                 onChange={(e) => setSearchDOI(e.target.value)}
                 className="text-lg"
               />
               <p className="text-sm text-muted-foreground mt-2">
-                You can enter just the DOI or paste the full resolver URL
+                You can enter just the Article ID or paste the full resolver URL
               </p>
             </div>
             <Button type="submit" size="lg" className="w-full">
@@ -48,7 +48,7 @@ const DOISearch = () => {
           </form>
 
           <div className="mt-8 pt-8 border-t">
-            <h3 className="font-semibold mb-4">Example DOIs:</h3>
+            <h3 className="font-semibold mb-4">Example Article IDs:</h3>
             <div className="space-y-2">
               {articlesData.articles.slice(0, 3).map((article) => (
                 <button

@@ -78,6 +78,7 @@ function sanitizeArticle(article: any) {
     orcidIds: (article.orcidIds || []).filter((id: string) => id.length > 0),
     doi: article.doi,
     pdfUrl: article.pdfUrl,
+    externalDoi: article.externalDoi || null,
   };
 }
 
@@ -241,6 +242,7 @@ Deno.serve(async (req) => {
         volume: clean.volume,
         issue: clean.issue,
         abstract: clean.abstract,
+        external_doi: clean.externalDoi,
       }).select().single();
 
       if (error) {

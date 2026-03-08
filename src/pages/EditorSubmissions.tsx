@@ -244,6 +244,7 @@ const EditorSubmissions = () => {
               publicationDate: publishData.publicationDate,
               orcidIds: publishData.orcid_ids || [],
               pdfUrl,
+              externalDoi: publishData.externalDoi || null,
             },
           }),
         }
@@ -251,7 +252,7 @@ const EditorSubmissions = () => {
       const result = await response.json();
       if (!response.ok || result.error) throw new Error(result.error || "Publish failed");
       
-      toast({ title: "Published!", description: `Article published with DOI: ${publishData.doi}` });
+      toast({ title: "Published!", description: `Article published with Article ID: ${publishData.doi}` });
       await loadSubmissions();
       const updated = (await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub!.id).single()).data;
       if (updated) setSelectedSub(updated as Submission);
@@ -1126,11 +1127,22 @@ const EditorSubmissions = () => {
                   <div className="grid grid-cols-2 gap-2 text-sm bg-muted p-3 rounded-md">
                     <div><span className="text-muted-foreground">Title:</span> {publishData.title}</div>
                     <div><span className="text-muted-foreground">Authors:</span> {publishData.authors}</div>
-                    <div><span className="text-muted-foreground">DOI:</span> {publishData.doi}</div>
+                    <div><span className="text-muted-foreground">Article ID:</span> {publishData.doi}</div>
                     <div><span className="text-muted-foreground">Type:</span> {publishData.type}</div>
                     <div><span className="text-muted-foreground">Volume:</span> {publishData.volume}</div>
                     <div><span className="text-muted-foreground">Issue:</span> {publishData.issue}</div>
                   </div>
+                </div>
+
+                {/* Optional External DOI */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">DOI (optional)</h3>
+                  <p className="text-xs text-muted-foreground">If this article has a registered DOI, enter it here (e.g., 10.1234/example).</p>
+                  <Input
+                    placeholder="e.g., 10.1234/example.2026"
+                    value={publishData.externalDoi || ""}
+                    onChange={(e) => setPublishData({ ...publishData, externalDoi: e.target.value })}
+                  />
                 </div>
 
                 {/* Dates */}
@@ -1159,7 +1171,7 @@ const EditorSubmissions = () => {
                     <pre className="bg-muted p-3 rounded-md text-xs overflow-x-auto whitespace-pre-wrap border border-border font-mono">
 {`Marine Notes Journal
 Vol. ${publishData.volume}, Issue ${publishData.issue}, ${new Date(publishData.publicationDate).getFullYear()}
-DOI: ${publishData.doi}
+Article ID: ${publishData.doi}${publishData.externalDoi ? `\nDOI: ${publishData.externalDoi}` : ''}
 ${publishData.type}
 
 Submitted: ${formatDate(publishData.submittedDate)}
@@ -1171,7 +1183,7 @@ Published: ${publishData.publicationDate}`}
                       variant="outline"
                       className="absolute top-2 right-2"
                       onClick={() => {
-                        navigator.clipboard.writeText(`Marine Notes Journal\nVol. ${publishData.volume}, Issue ${publishData.issue}, ${new Date(publishData.publicationDate).getFullYear()}\nDOI: ${publishData.doi}\n${publishData.type}\n\nSubmitted: ${formatDate(publishData.submittedDate)}\nAccepted: ${formatDate(publishData.acceptedDate)}\nPublished: ${publishData.publicationDate}`);
+                        navigator.clipboard.writeText(`Marine Notes Journal\nVol. ${publishData.volume}, Issue ${publishData.issue}, ${new Date(publishData.publicationDate).getFullYear()}\nArticle ID: ${publishData.doi}${publishData.externalDoi ? `\nDOI: ${publishData.externalDoi}` : ''}\n${publishData.type}\n\nSubmitted: ${formatDate(publishData.submittedDate)}\nAccepted: ${formatDate(publishData.acceptedDate)}\nPublished: ${publishData.publicationDate}`);
                         toast({ title: "Copied!", description: "Banner data copied to clipboard." });
                       }}
                     >
@@ -1186,7 +1198,7 @@ Published: ${publishData.publicationDate}`}
                   <div className="relative">
                     <pre className="bg-muted p-3 rounded-md text-xs overflow-x-auto whitespace-pre-wrap border border-border font-mono">
 {`© ${new Date(publishData.publicationDate).getFullYear()} Marine Notes Journal. All rights reserved.
-${publishData.authors}. "${publishData.title}." Marine Notes Journal, Vol. ${publishData.volume}, Issue ${publishData.issue}, ${publishData.publicationDate}. DOI: ${publishData.doi}
+${publishData.authors}. "${publishData.title}." Marine Notes Journal, Vol. ${publishData.volume}, Issue ${publishData.issue}, ${publishData.publicationDate}. ${publishData.externalDoi ? `DOI: ${publishData.externalDoi}` : `Article ID: ${publishData.doi}`}
 This is an open access article under the CC BY 4.0 license.
 Pages: ${publishData.articleNumber}`}
                     </pre>
@@ -1195,7 +1207,7 @@ Pages: ${publishData.articleNumber}`}
                       variant="outline"
                       className="absolute top-2 right-2"
                       onClick={() => {
-                        navigator.clipboard.writeText(`© ${new Date(publishData.publicationDate).getFullYear()} Marine Notes Journal. All rights reserved.\n${publishData.authors}. "${publishData.title}." Marine Notes Journal, Vol. ${publishData.volume}, Issue ${publishData.issue}, ${publishData.publicationDate}. DOI: ${publishData.doi}\nThis is an open access article under the CC BY 4.0 license.\nPages: ${publishData.articleNumber}`);
+                        navigator.clipboard.writeText(`© ${new Date(publishData.publicationDate).getFullYear()} Marine Notes Journal. All rights reserved.\n${publishData.authors}. "${publishData.title}." Marine Notes Journal, Vol. ${publishData.volume}, Issue ${publishData.issue}, ${publishData.publicationDate}. ${publishData.externalDoi ? `DOI: ${publishData.externalDoi}` : `Article ID: ${publishData.doi}`}\nThis is an open access article under the CC BY 4.0 license.\nPages: ${publishData.articleNumber}`);
                         toast({ title: "Copied!", description: "Footer code copied to clipboard." });
                       }}
                     >

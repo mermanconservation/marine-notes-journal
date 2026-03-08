@@ -30,11 +30,11 @@ const DOIResolver = () => {
       <div className="container mx-auto px-4 py-20">
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
-            <CardTitle className="text-2xl text-destructive">DOI Not Found</CardTitle>
+            <CardTitle className="text-2xl text-destructive">Article Not Found</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-6">
-              The DOI <span className="font-mono font-semibold">{doi}</span> was not found in our database.
+              The Article ID <span className="font-mono font-semibold">{doi}</span> was not found in our database.
             </p>
             <Button onClick={() => navigate("/archive")}>
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -114,9 +114,17 @@ const DOIResolver = () => {
           <div className="mb-6 p-4 bg-muted rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <FileText className="h-5 w-5 text-primary" />
-              <span className="font-semibold">DOI:</span>
+              <span className="font-semibold">Article ID:</span>
             </div>
             <code className="text-lg font-mono text-primary">{article.doi}</code>
+            {(article as any).externalDoi && (
+              <div className="mt-2">
+                <span className="font-semibold text-sm">DOI: </span>
+                <a href={`https://doi.org/${(article as any).externalDoi}`} target="_blank" rel="noopener noreferrer" className="text-primary underline font-mono text-sm">
+                  {(article as any).externalDoi}
+                </a>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground mt-2">
               Permanent link: {article.resolverUrl}
             </p>
@@ -133,7 +141,7 @@ const DOIResolver = () => {
               <h3 className="text-lg font-semibold">How to Cite (APA Format)</h3>
             </div>
             <p className="font-mono text-sm leading-relaxed">
-              {article.authors} ({new Date(article.publicationDate).getFullYear()}). {article.title}. <em>Marine Notes Journal</em>, <em>{article.volume}</em>({article.issue}). {article.doi}
+              {article.authors} ({new Date(article.publicationDate).getFullYear()}). {article.title}. <em>Marine Notes Journal</em>, <em>{article.volume}</em>({article.issue}). {(article as any).externalDoi ? `https://doi.org/${(article as any).externalDoi}` : article.doi}
             </p>
           </div>
 

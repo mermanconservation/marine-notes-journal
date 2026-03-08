@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, FileText, Clock, CheckCircle, XCircle, RotateCcw,
-  LogOut, MessageSquare, UserCheck, Filter, ExternalLink, Bot, Lock,
+  LogOut, MessageSquare, UserCheck, Filter, ExternalLink, Bot, Lock, Bell, BellDot,
 } from "lucide-react";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { AiReviewNote, isAiReviewComment } from "@/components/AiReviewNote";
@@ -83,6 +83,8 @@ const EditorSubmissions = () => {
   const [unlockReason, setUnlockReason] = useState("");
   const [unlockLoading, setUnlockLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -99,6 +101,7 @@ const EditorSubmissions = () => {
     if (data || adminData) {
       setIsEditor(true);
       await loadSubmissions();
+      await loadNotifications();
     } else {
       setIsEditor(false);
       setLoading(false);
@@ -137,6 +140,27 @@ const EditorSubmissions = () => {
       }
     }
     setLoading(false);
+  };
+
+  const loadNotifications = async () => {
+    const { data } = await supabase
+      .from("editor_notifications")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    setNotifications(data || []);
+  };
+
+  const markAsRead = async (id: string) => {
+    await supabase.from("editor_notifications").update({ is_read: true }).eq("id", id);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+  };
+
+  const markAllAsRead = async () => {
+    const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
+    if (unreadIds.length === 0) return;
+    await supabase.from("editor_notifications").update({ is_read: true }).in("id", unreadIds);
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
   };
 
   const performAction = async (action: string, newStatus?: string, overrideComment?: string) => {
@@ -217,9 +241,63 @@ const EditorSubmissions = () => {
             <h1 className="font-academic text-3xl font-semibold">Editor Dashboard</h1>
             <p className="text-muted-foreground text-sm mt-1">{submissions.length} total submissions</p>
           </div>
-          <Button variant="outline" size="sm" onClick={signOut}>
-            <LogOut className="h-4 w-4 mr-2" /> Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative"
+              >
+                {notifications.filter(n => !n.is_read).length > 0 ? (
+                  <BellDot className="h-4 w-4 text-destructive" />
+                ) : (
+                  <Bell className="h-4 w-4" />
+                )}
+                {notifications.filter(n => !n.is_read).length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    {notifications.filter(n => !n.is_read).length}
+                  </span>
+                )}
+              </Button>
+              {showNotifications && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+                  <div className="flex items-center justify-between p-3 border-b border-border">
+                    <span className="font-medium text-sm">Notifications</span>
+                    {notifications.filter(n => !n.is_read).length > 0 && (
+                      <Button variant="ghost" size="sm" className="text-xs h-6" onClick={markAllAsRead}>
+                        Mark all read
+                      </Button>
+                    )}
+                  </div>
+                  {notifications.length === 0 ? (
+                    <p className="p-4 text-sm text-muted-foreground text-center">No notifications</p>
+                  ) : (
+                    notifications.map(n => (
+                      <button
+                        key={n.id}
+                        onClick={() => {
+                          if (!n.is_read) markAsRead(n.id);
+                          const sub = submissions.find(s => s.id === n.submission_id);
+                          if (sub) { setSelectedSub(sub); setActionComment(""); setAiReviewResult(null); }
+                          setShowNotifications(false);
+                        }}
+                        className={`w-full text-left p-3 border-b border-border last:border-b-0 hover:bg-accent/50 transition-colors ${!n.is_read ? 'bg-accent/20' : ''}`}
+                      >
+                        <p className="text-sm font-medium line-clamp-2">{n.message}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(n.created_at).toLocaleString()}
+                        </p>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+            <Button variant="outline" size="sm" onClick={signOut}>
+              <LogOut className="h-4 w-4 mr-2" /> Sign Out
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}

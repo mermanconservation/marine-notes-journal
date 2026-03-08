@@ -62,6 +62,50 @@ export type Database = {
         }
         Relationships: []
       }
+      editor_notifications: {
+        Row: {
+          author_email: string
+          author_name: string
+          created_at: string
+          id: string
+          is_read: boolean
+          manuscript_type: string
+          message: string
+          submission_id: string | null
+          title: string
+        }
+        Insert: {
+          author_email: string
+          author_name: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          manuscript_type: string
+          message?: string
+          submission_id?: string | null
+          title: string
+        }
+        Update: {
+          author_email?: string
+          author_name?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          manuscript_type?: string
+          message?: string
+          submission_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "editor_notifications_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "manuscript_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       manuscript_submissions: {
         Row: {
           abstract: string

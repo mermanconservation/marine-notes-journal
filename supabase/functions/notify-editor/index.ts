@@ -41,7 +41,7 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "Marine Notes Journal <notifications@marinenotesjournal.com>",
+        from: "Marine Notes Journal <onboarding@resend.dev>",
         to: ["editor@marinenotesjournal.com"],
         subject: `New Submission: ${title}`,
         html: htmlBody,

@@ -172,7 +172,7 @@ const AuthorDashboard = () => {
         filePaths.push(path);
       }
 
-      const { error } = await supabase.from("manuscript_submissions").insert({
+      const { data: insertedSub, error } = await supabase.from("manuscript_submissions").insert({
         user_id: user.id,
         title: form.title,
         manuscript_type: form.manuscriptType,
@@ -187,9 +187,23 @@ const AuthorDashboard = () => {
         copyright_agreed: true,
         file_paths: filePaths,
         status: "pending",
-      });
+      }).select().single();
 
       if (error) throw error;
+
+      // In-app notification for editors
+      if (insertedSub) {
+        supabase.from("editor_notifications").insert({
+          submission_id: insertedSub.id,
+          title: form.title,
+          author_name: form.authorName,
+          author_email: form.authorEmail,
+          manuscript_type: form.manuscriptType,
+          message: `New ${form.manuscriptType} submission: "${form.title}" by ${form.authorName}`,
+        }).then(({ error: notifError }) => {
+          if (notifError) console.error("In-app notification failed:", notifError);
+        });
+      }
 
       // Notify editor via email (fire-and-forget)
       supabase.functions.invoke("notify-editor", {

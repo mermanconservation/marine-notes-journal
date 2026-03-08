@@ -101,6 +101,7 @@ const EditorSubmissions = () => {
     if (data || adminData) {
       setIsEditor(true);
       await loadSubmissions();
+      await loadNotifications();
     } else {
       setIsEditor(false);
       setLoading(false);

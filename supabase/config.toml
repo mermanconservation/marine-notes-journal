@@ -3,5 +3,8 @@ project_id = "pkkyztgzodsrpgdhzghc"
 [functions.publish-article]
 verify_jwt = false
 
+[functions.generate-promotion]
+verify_jwt = false
+
 [functions.auto-review-pipeline]
 verify_jwt = false

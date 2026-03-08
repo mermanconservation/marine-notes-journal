@@ -20,6 +20,7 @@ import Auth from "./pages/Auth";
 import AuthorDashboard from "./pages/AuthorDashboard";
 import EditorSubmissions from "./pages/EditorSubmissions";
 import AdminPanel from "./pages/AdminPanel";
+import Promote from "./pages/Promote";
 import Layout from "./components/Layout/Layout";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
             <Route path="/submissions" element={<AuthorDashboard />} />
             <Route path="/editor-submissions" element={<EditorSubmissions />} />
             <Route path="/admin-panel" element={<AdminPanel />} />
+            <Route path="/promote" element={<Promote />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>

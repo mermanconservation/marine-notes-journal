@@ -1197,7 +1197,7 @@ Published: ${publishData.publicationDate}`}
                   <div className="relative">
                     <pre className="bg-muted p-3 rounded-md text-xs overflow-x-auto whitespace-pre-wrap border border-border font-mono">
 {`© ${new Date(publishData.publicationDate).getFullYear()} Marine Notes Journal. All rights reserved.
-${publishData.authors}. "${publishData.title}." Marine Notes Journal, Vol. ${publishData.volume}, Issue ${publishData.issue}, ${publishData.publicationDate}. DOI: ${publishData.doi}
+${publishData.authors}. "${publishData.title}." Marine Notes Journal, Vol. ${publishData.volume}, Issue ${publishData.issue}, ${publishData.publicationDate}. ${publishData.externalDoi ? `DOI: ${publishData.externalDoi}` : `Article ID: ${publishData.doi}`}
 This is an open access article under the CC BY 4.0 license.
 Pages: ${publishData.articleNumber}`}
                     </pre>

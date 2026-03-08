@@ -1088,7 +1088,7 @@ Pages: ${publishData.articleNumber}`}
                   <div className="space-y-2">
                     <h3 className="font-semibold text-sm">Original Manuscript</h3>
                     {selectedSub.file_paths.map((fp, i) => (
-                      <Button key={i} size="sm" variant="outline" onClick={() => downloadFile(fp, selectedSub.user_id)}>
+                      <Button key={i} size="sm" variant="outline" onClick={() => downloadFile(fp, selectedSub.user_id, selectedSub)}>
                         <Download className="h-4 w-4 mr-2" /> Download {fp.split("/").pop()}
                       </Button>
                     ))}

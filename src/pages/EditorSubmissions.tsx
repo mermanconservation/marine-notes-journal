@@ -281,7 +281,7 @@ const EditorSubmissions = () => {
 
       for (const candidate of candidates) {
         if (!candidate) continue;
-        const { data, error } = await supabase.storage.from("manuscripts").download(candidate);
+        const { data, error } = await supabase.storage.from("manuscript-submissions").download(candidate);
         if (!error && data) {
           const url = URL.createObjectURL(data);
           const a = document.createElement("a");

@@ -94,8 +94,8 @@ const EditorSubmissions = () => {
   const [publishLoading, setPublishLoading] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [publishData, setPublishData] = useState<any>(null);
-  const [finalPdfFile, setFinalPdfFile] = useState<File | null>(null);
-  const [finalPdfUploading, setFinalPdfUploading] = useState(false);
+  const [finalPdfFile, setFinalPdfFile] = useState<File | null>(null); // kept for potential future use
+  const [finalPdfUploading, setFinalPdfUploading] = useState(false); // kept for potential future use
   const [finalPdfUrl, setFinalPdfUrl] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteConfirmTitle, setDeleteConfirmTitle] = useState("");

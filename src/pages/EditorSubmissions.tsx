@@ -1206,7 +1206,7 @@ Pages: ${publishData.articleNumber}`}
                       variant="outline"
                       className="absolute top-2 right-2"
                       onClick={() => {
-                        navigator.clipboard.writeText(`© ${new Date(publishData.publicationDate).getFullYear()} Marine Notes Journal. All rights reserved.\n${publishData.authors}. "${publishData.title}." Marine Notes Journal, Vol. ${publishData.volume}, Issue ${publishData.issue}, ${publishData.publicationDate}. DOI: ${publishData.doi}\nThis is an open access article under the CC BY 4.0 license.\nPages: ${publishData.articleNumber}`);
+                        navigator.clipboard.writeText(`© ${new Date(publishData.publicationDate).getFullYear()} Marine Notes Journal. All rights reserved.\n${publishData.authors}. "${publishData.title}." Marine Notes Journal, Vol. ${publishData.volume}, Issue ${publishData.issue}, ${publishData.publicationDate}. ${publishData.externalDoi ? `DOI: ${publishData.externalDoi}` : `Article ID: ${publishData.doi}`}\nThis is an open access article under the CC BY 4.0 license.\nPages: ${publishData.articleNumber}`);
                         toast({ title: "Copied!", description: "Footer code copied to clipboard." });
                       }}
                     >

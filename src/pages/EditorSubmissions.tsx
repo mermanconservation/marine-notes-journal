@@ -93,6 +93,9 @@ const EditorSubmissions = () => {
   const [publishLoading, setPublishLoading] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [publishData, setPublishData] = useState<any>(null);
+  const [finalPdfFile, setFinalPdfFile] = useState<File | null>(null);
+  const [finalPdfUploading, setFinalPdfUploading] = useState(false);
+  const [finalPdfUrl, setFinalPdfUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");

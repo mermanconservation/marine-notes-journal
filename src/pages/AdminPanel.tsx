@@ -153,8 +153,11 @@ const AdminPanel = () => {
     }
     setDeletingArticle(article.doi);
     try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) { setDeletingArticle(null); return; }
+      if (!editorPasscode) setEditorPasscode(code);
       const res = await supabase.functions.invoke("publish-article", {
-        body: { passcode: "Wildlifeuk2026", action: "delete", article: { doi: article.doi } },
+        body: { passcode: code, action: "delete", article: { doi: article.doi } },
       });
       if (res.error || res.data?.error) {
         throw new Error(res.data?.error || "Failed to delete article");

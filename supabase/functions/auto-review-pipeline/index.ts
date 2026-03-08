@@ -144,7 +144,16 @@ ${sub.cover_letter ? `Cover Letter: ${sub.cover_letter}` : ""}`;
       LOVABLE_API_KEY,
       `You are a scope reviewer for Marine Notes Journal — a peer-reviewed open-access journal on marine biology, ecology, conservation, and ocean sciences.
 
-Accepted manuscript types: Research Articles, Technical Reports / Risk Assessments, Field Notes, Observational Reports, Conservation News.
+Accepted manuscript types and their word limits:
+- Research Articles: Original research (max 8,000 words)
+- Review Articles: Comprehensive reviews (max 10,000 words)
+- Short Communications: Brief reports (max 3,000 words)
+- Technical Reports / Risk Assessments: Comprehensive assessments of environmental risks and technical analyses of marine infrastructure projects and conservation challenges (max 5,000 words)
+- Conservation News: Updates, reports, and announcements on current conservation issues from the last 6 months (max 2,000 words)
+- Field Notes: Brief descriptions of marine observations, species sightings, behavioral observations, or environmental conditions from field work (max 1,500 words)
+- Observational Reports: Detailed accounts of specific marine phenomena, unusual events, or field observations requiring documentation (max 3,000 words)
+- Case Studies: Specific case analyses (max 5,000 words)
+- Methodology Papers: New methods or techniques (max 6,000 words)
 
 Evaluate whether the submitted manuscript is within scope. Consider:
 - Is the topic related to marine/ocean sciences, biology, ecology, or conservation?
@@ -152,6 +161,7 @@ Evaluate whether the submitted manuscript is within scope. Consider:
 - Are the keywords relevant and appropriate?
 - Does the abstract describe work relevant to the journal's scope?
 - Does the manuscript type match the described content?
+- Is the selected manuscript type one of the accepted types listed above?
 
 Be strict: reject manuscripts clearly outside marine/ocean science scope. Pass manuscripts that have a reasonable connection to marine topics.`,
       manuscriptContext,
@@ -159,12 +169,10 @@ Be strict: reject manuscripts clearly outside marine/ocean science scope. Pass m
     );
     steps.push(step1);
 
-    // Continue all steps even if scope fails — editors may override
-
     // ── STEP 2: Grammar & Language Quality ──
     const step2 = await runAICheck(
       LOVABLE_API_KEY,
-      `You are a language quality reviewer for an academic journal. Evaluate the manuscript's writing quality based on the title, abstract, and keywords provided.
+      `You are a language quality reviewer for Marine Notes Journal. Evaluate the manuscript's writing quality based on the title, abstract, and keywords provided.
 
 Check for:
 - Grammar and spelling errors
@@ -172,6 +180,8 @@ Check for:
 - Sentence structure and readability
 - Proper scientific terminology usage
 - Abstract coherence and flow
+- Species names should be in italics at first mention (check if scientific names appear correctly formatted)
+- SI units should be used throughout
 
 Score strictly: below 60 should fail. Minor issues (a few typos) can still pass with warnings.`,
       manuscriptContext,
@@ -179,32 +189,139 @@ Score strictly: below 60 should fail. Minor issues (a few typos) can still pass 
     );
     steps.push(step2);
 
-    // ── STEP 3: Structure & Formatting ──
+    // ── STEP 3: Structure & Formatting Compliance ──
+    const structurePrompt = `You are a formatting and structure reviewer for Marine Notes Journal. Based on the manuscript metadata and PDF content (if available), evaluate compliance with the journal's author guidelines.
+
+GENERAL MANUSCRIPT STRUCTURE (required for most types):
+- Title page with author information and affiliations
+- Abstract (250 words max) with keywords (5 terms recommended, minimum 3)
+- Introduction with clear research objectives
+- Materials and Methods with sufficient detail for replication
+- Results presented clearly with appropriate figures/tables
+- Discussion interpreting findings and implications
+- Conclusions summarizing key findings
+- References in journal format
+- Supplementary materials (if applicable)
+
+FORMATTING REQUIREMENTS:
+- Double-spaced text throughout manuscript
+- 12-point Times New Roman or similar serif font
+- 1-inch margins on all sides
+- Line numbers for review process
+- Figures and tables embedded or submitted separately
+- High-resolution images (minimum 300 DPI)
+- SI units used throughout
+- Species names in italics at first mention
+
+TYPE-SPECIFIC RULES:
+
+**Conservation News:**
+- Abstract must be up to 150 words (NOT the standard 250)
+- Must include 3-5 keywords
+- Main text should be free-form narrative — NO requirement for IMRAD structure
+- Authors may organise text freely, using subheadings only where helpful
+- A clear Source of the News MUST be provided (original report, press release, media article, institutional announcement, or direct field observation)
+- Must report on events from the last 6 months
+- Max 2,000 words (excluding abstract, keywords, and references)
+- Visual documentation encouraged
+
+**Field Notes:**
+- Must include: date and location (GPS coordinates), environmental conditions, species identification (scientific names), and description of observation
+- Optional but encouraged: observer qualifications, observation duration, equipment used, witness accounts, corroborating evidence
+- Visual documentation strongly encouraged
+- Geographic data: coordinates and habitat description; depth and regional context optional but valuable
+- Species identification: use scientific nomenclature; include identifying features
+- Max 1,500 words
+
+**Observational Reports:**
+- Must include detailed methodology, observation period, geographic context, environmental parameters
+- Comparative analysis with existing literature expected
+- Same required elements as Field Notes plus more detail
+- Max 3,000 words
+
+**Research Articles:**
+- Must follow IMRAD structure (Introduction, Methods, Results, and Discussion)
+- Max 8,000 words
+
+**Review Articles:**
+- Comprehensive reviews of existing literature
+- Max 10,000 words
+
+**Short Communications:**
+- Brief reports of preliminary or limited findings
+- Max 3,000 words
+
+**Technical Reports / Risk Assessments:**
+- Should follow non-IMRAD structure: Executive Summary, Background and Context, Objectives and Scope, Technical Assessment / Risk Analysis, Findings, Recommendations, Conclusions
+- Max 5,000 words
+
+**Case Studies:**
+- Specific case analyses
+- Max 5,000 words
+
+**Methodology Papers:**
+- New methods or techniques
+- Max 6,000 words
+
+REFERENCE FORMAT:
+- Journal Articles: Author, Initials. (Year). Title. Journal Name, Volume(Issue), Pages.
+  Example: Smith, J.M., Anderson, K.L. (2024). Coral bleaching responses. Marine Notes Journal, 15(2), 45-62.
+- Books: Author. (Year). Title. Publisher, Location, Pages.
+- Book Chapters: Author. (Year). Chapter title. In: Book Title (Ed. Name). Publisher, Pages.
+
+Check all applicable rules for the given manuscript type. Flag any missing required elements.`;
+
+    const step3Messages = pdfBase64
+      ? `${manuscriptContext}\n\n[A PDF of the full manuscript has been provided for structural analysis.]`
+      : manuscriptContext;
+
     const step3 = await runAICheck(
       LOVABLE_API_KEY,
-      `You are a formatting reviewer for Marine Notes Journal. Based on the manuscript metadata, evaluate structural compliance.
-
-Rules by type:
-- Research Articles: Must follow IMRAD structure hints in abstract. Word limit ~8000.
-- Technical Reports / Risk Assessments: Should have Executive Summary, Technical Assessment sections. Word limit 8000.
-- Field Notes / Observational Reports: May include observer qualifications, duration, regional context.
-- Conservation News: Requires abstract, keywords, source. Flexible narrative formatting.
-
-Check:
-- Is the abstract of appropriate length (150-300 words)?
-- Are keywords provided (at least 3)?
-- Does the abstract structure match the manuscript type?
-- Is author information complete?
-- Is an affiliation provided?`,
-      manuscriptContext,
+      structurePrompt,
+      step3Messages,
       "structure_check",
     );
     steps.push(step3);
 
-    // ── STEP 4: Originality Assessment ──
+    // ── STEP 4: Ethical & Publication Compliance ──
     const step4 = await runAICheck(
       LOVABLE_API_KEY,
-      `You are an originality reviewer for an academic journal. Based on the title, abstract, and keywords, assess the likely originality of this work.
+      `You are an ethics and compliance reviewer for Marine Notes Journal. Based on the manuscript metadata, evaluate ethical compliance with the journal's guidelines.
+
+RESEARCH ETHICS requirements:
+- All animal research must comply with institutional and international guidelines
+- Field research permits and ethical approvals must be obtained
+- Conflicts of interest must be declared
+- Data sharing and availability statements required
+
+PUBLICATION ETHICS requirements:
+- Manuscripts must be original and not under consideration elsewhere
+- Proper attribution of all sources and collaborators
+- No plagiarism, data fabrication, or duplicate publication
+- Author contributions must be clearly stated
+
+Check (based on available metadata):
+- Does the abstract or cover letter mention ethical approvals where relevant (animal research, human subjects)?
+- Is there any indication of conflicts of interest declaration?
+- Does the cover letter confirm originality and exclusive submission?
+- Are author contributions mentioned?
+- Is a data availability statement implied or mentioned?
+- Are there any red flags suggesting plagiarism or AI-generated boilerplate text?
+
+ORCID IDs:
+- Authors are encouraged to provide ORCID identifiers
+- Check if ORCID ID is provided for the corresponding author
+
+Be lenient for Field Notes and Conservation News which may not require extensive ethics statements. Be stricter for Research Articles, Review Articles, and Case Studies.`,
+      manuscriptContext,
+      "ethics_check",
+    );
+    steps.push(step4);
+
+    // ── STEP 5: Originality Assessment ──
+    const step5 = await runAICheck(
+      LOVABLE_API_KEY,
+      `You are an originality reviewer for Marine Notes Journal. Based on the title, abstract, and keywords, assess the likely originality of this work.
 
 Consider:
 - Does the title suggest novel research or a generic/derivative topic?
@@ -212,17 +329,18 @@ Consider:
 - Are the keywords specific enough to indicate focused research?
 - Does the cover letter (if provided) explain the contribution?
 - Are there signs of AI-generated boilerplate text?
+- For Conservation News: is the news recent (last 6 months) and does it cite a clear source?
 
 Note: You cannot check against a plagiarism database. Provide your best assessment of originality based on the text quality and specificity. Be lenient — this is an indicative check, not a definitive one.`,
       manuscriptContext,
       "originality_check",
     );
-    steps.push(step4);
+    steps.push(step5);
 
-    // ── STEP 5: Reference Quality & Verification Check ──
+    // ── STEP 6: Reference Quality & Verification Check ──
     // Download the manuscript PDF to extract the references section
-    let pdfBase64: string | null = null;
-    if (sub.file_paths && sub.file_paths.length > 0) {
+    let pdfBase64ForRefs = pdfBase64;
+    if (!pdfBase64ForRefs && sub.file_paths && sub.file_paths.length > 0) {
       try {
         const filePath = sub.file_paths[0];
         const { data: fileData, error: dlError } = await supabase.storage
@@ -235,7 +353,7 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
           for (let i = 0; i < bytes.length; i++) {
             binary += String.fromCharCode(bytes[i]);
           }
-          pdfBase64 = btoa(binary);
+          pdfBase64ForRefs = btoa(binary);
           console.log("PDF downloaded for reference extraction, size:", bytes.length);
         } else {
           console.error("PDF download error:", dlError);
@@ -245,35 +363,37 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
       }
     }
 
-    // Extract references from the PDF using AI (multimodal — send PDF directly)
-    let extractedRefs: { doi?: string; url?: string; title?: string; authors?: string }[] = [];
+    // Extract references from the PDF using AI
+    let extractedRefs: { doi?: string; url?: string; title?: string; authors?: string; format_correct?: boolean }[] = [];
     try {
       const extractMessages: any[] = [
         {
           role: "system",
-          content: `You are a reference extraction tool. Extract ALL references from the References / Bibliography section at the end of the manuscript (after Conclusion or Acknowledgements). For each reference, extract the authors, title, DOI (if present), and any URLs. Return them as structured data. If no references section is found, return an empty array.`,
+          content: `You are a reference extraction tool. Extract ALL references from the References / Bibliography section at the end of the manuscript. For each reference, extract the authors, title, DOI (if present), any URLs, and whether the reference follows the journal's format:
+- Journal Articles: Author, Initials. (Year). Title. Journal, Volume(Issue), Pages.
+- Books: Author. (Year). Title. Publisher, Location, Pages.
+- Book Chapters: Author. (Year). Chapter. In: Book (Ed. Name). Publisher, Pages.
+If no references section is found, return an empty array.`,
         },
       ];
 
-      if (pdfBase64) {
-        // Send the actual PDF to Gemini for extraction
+      if (pdfBase64ForRefs) {
         extractMessages.push({
           role: "user",
           content: [
             {
               type: "text",
-              text: "Extract all references from the References/Bibliography section at the end of this manuscript PDF. For each reference, extract the author names, title of the work, DOI if listed, and any URLs.",
+              text: "Extract all references from the References/Bibliography section at the end of this manuscript PDF. For each reference, extract the author names, title, DOI if listed, URLs, and whether it follows the journal's reference format.",
             },
             {
               type: "image_url",
               image_url: {
-                url: `data:application/pdf;base64,${pdfBase64}`,
+                url: `data:application/pdf;base64,${pdfBase64ForRefs}`,
               },
             },
           ],
         });
       } else {
-        // Fallback: use metadata only
         extractMessages.push({
           role: "user",
           content: `No PDF available. Based on the manuscript metadata below, identify any references, citations, DOIs, or URLs mentioned:\n\n${manuscriptContext}`,
@@ -303,20 +423,26 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
                       items: {
                         type: "object",
                         properties: {
-                          doi: { type: "string", description: "DOI if mentioned (e.g., 10.1234/example)" },
+                          doi: { type: "string", description: "DOI if mentioned" },
                           url: { type: "string", description: "URL if mentioned (not DOI URLs)" },
                           title: { type: "string", description: "Title of the referenced work" },
                           authors: { type: "string", description: "Authors of the referenced work" },
+                          format_correct: { type: "boolean", description: "Whether reference follows journal format" },
                         },
                       },
-                      description: "List of extracted references from the References/Bibliography section.",
+                      description: "List of extracted references.",
                     },
                     total_references_found: {
                       type: "number",
-                      description: "Total number of references found in the section",
+                      description: "Total number of references found",
+                    },
+                    format_issues: {
+                      type: "array",
+                      items: { type: "string" },
+                      description: "List of specific formatting issues with references",
                     },
                   },
-                  required: ["references", "total_references_found"],
+                  required: ["references", "total_references_found", "format_issues"],
                   additionalProperties: false,
                 },
               },
@@ -326,12 +452,14 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
         }),
       });
 
+      let formatIssues: string[] = [];
       if (extractResponse.ok) {
         const extractData = await extractResponse.json();
         const extractCall = extractData.choices?.[0]?.message?.tool_calls?.[0];
         if (extractCall) {
           const args = JSON.parse(extractCall.function.arguments);
           extractedRefs = args.references || [];
+          formatIssues = args.format_issues || [];
           console.log(`Extracted ${extractedRefs.length} references (total found: ${args.total_references_found})`);
         }
       } else {
@@ -347,7 +475,6 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
     let failedCount = 0;
 
     for (const ref of extractedRefs.slice(0, 20)) {
-      // Verify DOI
       if (ref.doi) {
         const cleanDoi = ref.doi.replace(/^https?:\/\/doi\.org\//, "").trim();
         if (/^10\.\d{4,}\//.test(cleanDoi)) {
@@ -366,22 +493,20 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
 
               if (ref.title && actualTitle) {
                 const claimedTitle = ref.title.toLowerCase();
-                // Check for reasonable title overlap (at least 30 chars or significant portion)
                 const titleMatch = actualTitle.includes(claimedTitle.substring(0, Math.min(40, claimedTitle.length))) ||
                   claimedTitle.includes(actualTitle.substring(0, Math.min(40, actualTitle.length)));
                 if (titleMatch) {
                   verificationResults.push(`✅ DOI ${cleanDoi} verified — title: "${work.title[0]}" by ${actualAuthors}`);
                   verifiedCount++;
                 } else {
-                  verificationResults.push(`⚠️ DOI ${cleanDoi} exists but TITLE MISMATCH — manuscript claims: "${ref.title}" | actual DOI title: "${work.title[0]}" by ${actualAuthors}`);
+                  verificationResults.push(`⚠️ DOI ${cleanDoi} exists but TITLE MISMATCH — manuscript claims: "${ref.title}" | actual: "${work.title[0]}"`);
                   failedCount++;
                 }
               } else {
-                verificationResults.push(`✅ DOI ${cleanDoi} verified — "${work.title?.[0] || "unknown title"}" by ${actualAuthors || "unknown authors"}`);
+                verificationResults.push(`✅ DOI ${cleanDoi} verified — "${work.title?.[0] || "unknown"}" by ${actualAuthors || "unknown"}`);
                 verifiedCount++;
               }
 
-              // Also check author name overlap if available
               if (ref.authors && actualAuthors) {
                 const claimedFirstAuthor = ref.authors.split(",")[0].trim().toLowerCase();
                 const actualFirstAuthor = actualAuthors.split(",")[0].trim().toLowerCase();
@@ -391,7 +516,7 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
                 }
               }
             } else if (metaRes.status === 404) {
-              verificationResults.push(`❌ DOI ${cleanDoi} NOT FOUND — does not exist in Crossref database (claimed title: "${ref.title || "unknown"}")`);
+              verificationResults.push(`❌ DOI ${cleanDoi} NOT FOUND — does not exist in Crossref (claimed: "${ref.title || "unknown"}")`);
               failedCount++;
             } else {
               verificationResults.push(`⚠️ DOI ${cleanDoi} could not be verified (HTTP ${metaRes.status})`);
@@ -402,7 +527,6 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
         }
       }
 
-      // Verify URL (non-DOI)
       if (ref.url && !ref.url.includes("doi.org")) {
         try {
           const urlRes = await fetch(ref.url, {
@@ -432,31 +556,42 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
       ? `\n\n${refSummary}\n\nReference Verification Results (${verifiedCount} verified, ${failedCount} failed of ${extractedRefs.length} total):\n${verificationResults.join("\n")}`
       : `\n\n${refSummary}\nNo DOIs or URLs found to verify in the references.`;
 
-    const step5 = await runAICheck(
+    const step6 = await runAICheck(
       LOVABLE_API_KEY,
-      `You are a reference quality reviewer for Marine Notes Journal — a peer-reviewed open-access journal on marine biology, ecology, conservation, and ocean sciences.
+      `You are a reference quality reviewer for Marine Notes Journal.
 
-You have been provided with automated verification results from the manuscript's References/Bibliography section (extracted from the uploaded PDF). Assess the quality and integrity of the references.
+You have been provided with automated verification results from the manuscript's References/Bibliography section. Assess the quality and integrity of the references.
+
+REFERENCE FORMAT expected:
+- Journal Articles: Smith, J.M., Anderson, K.L. (2024). Coral bleaching responses to temperature stress in the Caribbean. Marine Notes Journal, 15(2), 45-62.
+- Books: Thompson, R.C. (2023). Marine Conservation Biology: Principles and Practice. Academic Press, London, 345 pp.
+- Book Chapters: Martinez, P.L., Chen, W. (2024). Deep-sea mining impacts. In: Ocean Resources and Sustainability (Ed. K. Johnson). Springer, pp. 123-145.
 
 Check for:
-- Were references found in the manuscript? If not, flag this as an issue.
+- Were references found in the manuscript? If not, flag this as an issue (except for Field Notes which may have fewer).
 - Do the DOIs resolve and match the claimed titles and authors?
-- Are there title or author mismatches between what the manuscript cites and what the DOI actually points to?
+- Are there title or author mismatches?
 - Are any DOIs non-existent (fabricated)?
 - Are any URLs broken or unreachable?
 - Is the number of references appropriate for the manuscript type?
-- Do the references appear relevant to the manuscript's topic (marine science)?
+- Do references follow the journal's reference format?
+- Are references relevant to the manuscript's topic?
+
+Expected reference counts by type:
+- Research Articles / Review Articles: 20+ references expected
+- Technical Reports: 10+ references expected
+- Short Communications / Case Studies: 10+ references
+- Observational Reports: 5+ references
+- Conservation News / Field Notes: fewer references acceptable
 
 Score guidelines:
-- 80-100: Most/all DOIs verified, titles and authors match, URLs work
-- 60-79: Some references verified but issues found (broken links, minor mismatches, some unverifiable)
-- Below 60: Multiple broken DOIs, title/author mismatches, fabricated references, or no references found for a manuscript type that requires them
-
-Be lenient for Field Notes and Observational Reports which may have fewer references. Be stricter for Research Articles and Review Articles.`,
+- 80-100: Most DOIs verified, proper format, adequate count
+- 60-79: Some issues (broken links, format inconsistencies)
+- Below 60: Fabricated references, major format issues, or missing references`,
       manuscriptContext + verificationSummary,
       "reference_check",
     );
-    steps.push(step5);
+    steps.push(step6);
 
     // ── Determine overall result ──
     // Threshold: ≥75 avg = auto-accept, 60-74 = editor_review, <60 = auto-reject
@@ -492,8 +627,9 @@ Be lenient for Field Notes and Observational Reports which may have fewer refere
         scope: steps[0].score,
         grammar: steps[1].score,
         structure: steps[2].score,
-        originality: steps[3].score,
-        references: steps[4].score,
+        ethics: steps[3].score,
+        originality: steps[4].score,
+        references: steps[5].score,
         average: avgScore,
       },
     };

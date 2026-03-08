@@ -1330,6 +1330,18 @@ Pages: ${publishData.articleNumber}`}
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Manuscript Formatter */}
+        {selectedSub && (
+          <ManuscriptFormatter
+            open={showFormatter}
+            onOpenChange={setShowFormatter}
+            submissionId={selectedSub.id}
+            title={selectedSub.title}
+            manuscriptType={selectedSub.manuscript_type}
+            authors={selectedSub.all_authors}
+          />
+        )}
       </div>
     </div>
   );

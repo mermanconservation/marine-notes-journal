@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { formatDateLong } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ArrowLeft, Download, FileText, Quote } from "lucide-react";
 import type { Article } from "@/types/article";
 import { PromotionAssistant } from "@/components/PromotionAssistant";

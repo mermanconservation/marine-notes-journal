@@ -207,6 +207,39 @@ const EditorSubmissions = () => {
     setActionLoading(false);
   };
 
+  const publishArticle = async () => {
+    if (!selectedSub?.pipeline_results?.prepared_metadata) return;
+    setPublishLoading(true);
+    try {
+      const meta = selectedSub.pipeline_results.prepared_metadata;
+      const { error } = await supabase.functions.invoke("publish-article", {
+        body: {
+          doi: meta.doi,
+          title: meta.title,
+          authors: meta.authors,
+          abstract: meta.abstract,
+          type: meta.type,
+          volume: meta.volume,
+          issue: meta.issue,
+          resolver_url: meta.resolver_url,
+          publication_date: meta.publication_date,
+          orcid_ids: meta.orcid_ids,
+          pdf_url: selectedSub.file_paths?.[0]
+            ? supabase.storage.from("manuscripts").getPublicUrl(selectedSub.file_paths[0]).data.publicUrl
+            : null,
+        },
+      });
+      if (error) throw error;
+      toast({ title: "Published!", description: `Article published with DOI: ${meta.doi}` });
+      await loadSubmissions();
+      const updated = (await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub.id).single()).data;
+      if (updated) setSelectedSub(updated as Submission);
+    } catch (err: any) {
+      toast({ title: "Publish failed", description: err.message, variant: "destructive" });
+    }
+    setPublishLoading(false);
+  };
+
   const getFileUrl = (path: string) => {
     const { data } = supabase.storage.from("manuscripts").getPublicUrl(path);
     return data.publicUrl;

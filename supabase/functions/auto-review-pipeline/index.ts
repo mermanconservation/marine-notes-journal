@@ -627,8 +627,9 @@ Score guidelines:
         scope: steps[0].score,
         grammar: steps[1].score,
         structure: steps[2].score,
-        originality: steps[3].score,
-        references: steps[4].score,
+        ethics: steps[3].score,
+        originality: steps[4].score,
+        references: steps[5].score,
         average: avgScore,
       },
     };

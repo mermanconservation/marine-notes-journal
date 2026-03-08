@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, FileText, Clock, CheckCircle, XCircle, RotateCcw,
   LogOut, MessageSquare, UserCheck, Filter, ExternalLink, Bot, Lock, Bell, BellDot,
-  Zap, Send, ChevronDown, Download, Copy, Play,
+  Zap, Send, ChevronDown, Download, Copy, Play, Upload,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
@@ -93,6 +93,9 @@ const EditorSubmissions = () => {
   const [publishLoading, setPublishLoading] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [publishData, setPublishData] = useState<any>(null);
+  const [finalPdfFile, setFinalPdfFile] = useState<File | null>(null);
+  const [finalPdfUploading, setFinalPdfUploading] = useState(false);
+  const [finalPdfUrl, setFinalPdfUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -210,43 +213,66 @@ const EditorSubmissions = () => {
     setActionLoading(false);
   };
 
-  const publishArticle = async () => {
-    if (!selectedSub?.pipeline_results?.prepared_metadata) return;
+  const publishArticle = async (finalPdfUrl?: string) => {
+    if (!publishData) return;
     setPublishLoading(true);
     try {
-      const meta = selectedSub.pipeline_results.prepared_metadata;
       const passcode = prompt("Enter editor passcode to publish:");
       if (!passcode) { setPublishLoading(false); return; }
-      const { data, error } = await supabase.functions.invoke("publish-article", {
-        body: {
-          passcode,
-          action: "publish",
-          article: {
-            doi: meta.doi,
-            title: meta.title,
-            authors: meta.authors,
-            abstract: meta.abstract,
-            type: meta.type,
-            volume: meta.volume,
-            issue: meta.issue,
-            publicationDate: meta.publication_date,
-            orcidIds: meta.orcid_ids || [],
-            pdfUrl: selectedSub.file_paths?.[0]
-              ? supabase.storage.from("manuscripts").getPublicUrl(selectedSub.file_paths[0]).data.publicUrl
-              : null,
-          },
-        },
-      });
-      if (data?.error) throw new Error(data.error);
-      if (error) throw error;
-      toast({ title: "Published!", description: `Article published with DOI: ${meta.doi}` });
+      
+      const pdfUrl = finalPdfUrl || publishData.pdfUrl;
+      
+      const response = await fetch(
+        `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/publish-article`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            passcode,
+            action: "publish",
+            article: {
+              doi: publishData.doi,
+              title: publishData.title,
+              authors: publishData.authors,
+              abstract: publishData.abstract,
+              type: publishData.type,
+              volume: publishData.volume,
+              issue: publishData.issue,
+              publicationDate: publishData.publicationDate,
+              orcidIds: publishData.orcid_ids || [],
+              pdfUrl,
+            },
+          }),
+        }
+      );
+      const result = await response.json();
+      if (!response.ok || result.error) throw new Error(result.error || "Publish failed");
+      
+      toast({ title: "Published!", description: `Article published with DOI: ${publishData.doi}` });
       await loadSubmissions();
-      const updated = (await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub.id).single()).data;
+      const updated = (await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub!.id).single()).data;
       if (updated) setSelectedSub(updated as Submission);
     } catch (err: any) {
       toast({ title: "Publish failed", description: err.message, variant: "destructive" });
     }
     setPublishLoading(false);
+  };
+
+  const downloadFile = async (path: string) => {
+    try {
+      const { data, error } = await supabase.storage.from("manuscripts").download(path);
+      if (error) throw error;
+      const url = URL.createObjectURL(data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = path.split("/").pop() || "manuscript.pdf";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast({ title: "Download failed", description: err.message, variant: "destructive" });
+    }
   };
 
   const getFileUrl = (path: string) => {
@@ -388,6 +414,7 @@ const EditorSubmissions = () => {
                     {sub.pipeline_status === 'running' && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
                     {sub.pipeline_status === 'passed' && <Zap className="h-3 w-3 text-green-600" />}
                     {sub.pipeline_status === 'failed' && <Zap className="h-3 w-3 text-destructive" />}
+                    {sub.pipeline_status === 'editor_review' && <Zap className="h-3 w-3 text-yellow-600" />}
                   </div>
                 </button>
               ))
@@ -465,11 +492,9 @@ const EditorSubmissions = () => {
                   {selectedSub.file_paths && selectedSub.file_paths.length > 0 && (
                     <div className="flex gap-2">
                       {selectedSub.file_paths.map((fp, i) => (
-                        <a key={i} href={getFileUrl(fp)} download target="_blank" rel="noopener noreferrer">
-                          <Button size="sm" variant="outline">
-                            <Download className="h-3 w-3 mr-1" /> Download {fp.split("/").pop()}
-                          </Button>
-                        </a>
+                        <Button key={i} size="sm" variant="outline" onClick={() => downloadFile(fp)}>
+                          <Download className="h-3 w-3 mr-1" /> Download {fp.split("/").pop()}
+                        </Button>
                       ))}
                     </div>
                   )}
@@ -566,6 +591,7 @@ const EditorSubmissions = () => {
                               selectedSub.pipeline_status === 'passed' ? 'bg-green-100 text-green-800' :
                               selectedSub.pipeline_status === 'failed' ? 'bg-red-100 text-red-800' :
                               selectedSub.pipeline_status === 'running' ? 'bg-blue-100 text-blue-800' :
+                              selectedSub.pipeline_status === 'editor_review' ? 'bg-yellow-100 text-yellow-800' :
                               'bg-muted text-muted-foreground'
                             }>
                               {selectedSub.pipeline_status === 'running' && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
@@ -671,12 +697,21 @@ const EditorSubmissions = () => {
 
                           {/* Publish section */}
                           {selectedSub.pipeline_results?.prepared_metadata && (
-                            <div className={`p-3 rounded-md border ${selectedSub.pipeline_status === 'failed' ? 'border-destructive/30 bg-destructive/5' : 'border-primary/30 bg-primary/5'}`}>
+                            <div className={`p-3 rounded-md border ${
+                              selectedSub.pipeline_status === 'failed' ? 'border-destructive/30 bg-destructive/5' :
+                              selectedSub.pipeline_status === 'editor_review' ? 'border-yellow-300 bg-yellow-50' :
+                              'border-primary/30 bg-primary/5'
+                            }`}>
                               <p className="text-sm font-medium mb-2">
-                                {selectedSub.pipeline_status === 'passed' ? '📋 Article ready for publication' : '⚠️ Publish despite pipeline issues'}
+                                {selectedSub.pipeline_status === 'passed' ? '📋 Article ready for publication' :
+                                 selectedSub.pipeline_status === 'editor_review' ? '⚠️ Score 60-74 — Editor review required' :
+                                 '⚠️ Publish despite pipeline issues'}
                               </p>
                               {selectedSub.pipeline_status === 'failed' && (
                                 <p className="text-xs text-destructive mb-2">Publishing will override the AI recommendation.</p>
+                              )}
+                              {selectedSub.pipeline_status === 'editor_review' && (
+                                <p className="text-xs text-yellow-700 mb-2">This manuscript scored between 60-74. Please review and decide whether to publish.</p>
                               )}
                               <Button
                                 onClick={() => {
@@ -1003,13 +1038,15 @@ Pages: ${publishData.articleNumber}`}
                   </div>
                 </div>
 
-                {/* PDF URL if available */}
-                {publishData.pdfUrl && (
+                {/* Download Original Manuscript */}
+                {selectedSub?.file_paths && selectedSub.file_paths.length > 0 && (
                   <div className="space-y-2">
-                    <h3 className="font-semibold text-sm">Manuscript PDF</h3>
-                    <a href={publishData.pdfUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
-                      <Download className="h-4 w-4" /> Download manuscript PDF
-                    </a>
+                    <h3 className="font-semibold text-sm">Original Manuscript</h3>
+                    {selectedSub.file_paths.map((fp, i) => (
+                      <Button key={i} size="sm" variant="outline" onClick={() => downloadFile(fp)}>
+                        <Download className="h-4 w-4 mr-2" /> Download {fp.split("/").pop()}
+                      </Button>
+                    ))}
                   </div>
                 )}
 
@@ -1032,14 +1069,68 @@ Pages: ${publishData.articleNumber}`}
 
                 <Separator />
 
+                {/* Upload Final Publication PDF */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Upload Final Publication PDF</h3>
+                  <p className="text-xs text-muted-foreground">Upload the finalized PDF with banner, footer, and formatting from the publishing app.</p>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => setFinalPdfFile(e.target.files?.[0] || null)}
+                      className="flex-1"
+                    />
+                    <Button
+                      size="sm"
+                      disabled={!finalPdfFile || finalPdfUploading}
+                      onClick={async () => {
+                        if (!finalPdfFile || !publishData) return;
+                        setFinalPdfUploading(true);
+                        try {
+                          const year = new Date(publishData.publicationDate).getFullYear();
+                          const safeName = publishData.title.replace(/[^a-zA-Z0-9\s-]/g, "").replace(/\s+/g, "-").substring(0, 80);
+                          const fileName = `${year}/vol${publishData.volume}-iss${publishData.issue}-${safeName}.pdf`;
+                          
+                          const { error } = await supabase.storage
+                            .from("manuscripts")
+                            .upload(fileName, finalPdfFile, { contentType: "application/pdf", upsert: true });
+                          if (error) throw error;
+                          
+                          const { data: urlData } = supabase.storage.from("manuscripts").getPublicUrl(fileName);
+                          setFinalPdfUrl(urlData.publicUrl);
+                          toast({ title: "Uploaded!", description: "Final publication PDF uploaded successfully." });
+                        } catch (err: any) {
+                          toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+                        }
+                        setFinalPdfUploading(false);
+                      }}
+                    >
+                      {finalPdfUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
+                      Upload
+                    </Button>
+                  </div>
+                  {finalPdfUrl && (
+                    <p className="text-xs text-green-700">✅ Final PDF uploaded and ready for publishing.</p>
+                  )}
+                </div>
+
+                <Separator />
+
                 {/* Publish to database */}
                 <div className="space-y-2">
                   <h3 className="font-semibold text-sm">Publish to Journal Database</h3>
-                  <p className="text-xs text-muted-foreground">Once the PDF is finalized in the publishing app, click below to register the article in the journal database.</p>
+                  <p className="text-xs text-muted-foreground">
+                    {finalPdfUrl 
+                      ? "Final PDF is ready. Click below to register the article with the uploaded PDF."
+                      : "You can publish now with the original manuscript, or upload the final PDF first."
+                    }
+                  </p>
                   <Button
                     onClick={async () => {
-                      await publishArticle();
+                      await publishArticle(finalPdfUrl || undefined);
                       setShowPublishModal(false);
+                      setFinalPdfFile(null);
+                      setFinalPdfUrl(null);
                     }}
                     disabled={publishLoading}
                     className="w-full"

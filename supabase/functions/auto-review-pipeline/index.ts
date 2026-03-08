@@ -220,7 +220,8 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
     steps.push(step4);
 
     // ── Determine overall result ──
-    const allPassed = steps.every((s) => s.passed);
+    // Threshold: ≥75 avg = auto-accept, 60-74 = editor_review, <60 = auto-reject
+    const avgScore = Math.round(steps.reduce((a, s) => a + s.score, 0) / steps.length);
     const failedSteps = steps.filter((s) => !s.passed);
     const rejectionReasons = failedSteps.flatMap((s) => s.issues);
 
@@ -249,50 +250,68 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
       publication_date: new Date().toISOString().split("T")[0],
       orcid_ids: sub.corresponding_author_orcid ? [sub.corresponding_author_orcid] : [],
       pipeline_scores: {
-        scope: step1.score,
-        grammar: step2.score,
-        structure: step3.score,
-        originality: step4.score,
-        average: Math.round((step1.score + step2.score + step3.score + step4.score) / 4),
+        scope: steps[0].score,
+        grammar: steps[1].score,
+        structure: steps[2].score,
+        originality: steps[3].score,
+        average: avgScore,
       },
     };
 
+    // Determine outcome based on average score thresholds
+    let pipelineStatus: string;
+    let newStatus: string;
+    let resultLabel: string;
+
+    if (avgScore >= 75) {
+      pipelineStatus = "passed";
+      newStatus = "accepted";
+      resultLabel = "ACCEPTED ✅";
+    } else if (avgScore >= 60) {
+      pipelineStatus = "editor_review";
+      newStatus = "under_review";
+      resultLabel = "EDITOR REVIEW REQUIRED ⚠️";
+    } else {
+      pipelineStatus = "failed";
+      newStatus = "rejected";
+      resultLabel = "REJECTED ❌";
+    }
+
     const results: PipelineResults = {
       steps,
-      overall_passed: allPassed,
+      overall_passed: avgScore >= 75,
       rejection_reasons: rejectionReasons,
       prepared_metadata: preparedMetadata,
     };
 
-    const newStatus = allPassed ? "accepted" : "rejected";
-
     await supabase
       .from("manuscript_submissions")
       .update({
-        pipeline_status: allPassed ? "passed" : "failed",
+        pipeline_status: pipelineStatus,
         pipeline_results: results,
         status: newStatus,
-        decision_date: new Date().toISOString(),
+        decision_date: avgScore < 60 ? new Date().toISOString() : null,
       })
       .eq("id", submission_id);
 
     // Record the review
-    const avgScore = Math.round(steps.reduce((a, s) => a + s.score, 0) / steps.length);
-    const reviewComment = `[AI AUTO-REVIEW PIPELINE]\n\n**Result: ${allPassed ? "PASSED ✅" : "REJECTED ❌"}** (Average Score: ${avgScore}/100)\n\n${steps
+    const reviewComment = `[AI AUTO-REVIEW PIPELINE]\n\n**Result: ${resultLabel}** (Average Score: ${avgScore}/100)\n\n${steps
       .map(
         (s) =>
           `### ${s.step.replace("_", " ").toUpperCase()}\n${s.passed ? "✅ Passed" : "❌ Failed"} — Score: ${s.score}/100\n${s.summary}${s.issues.length > 0 ? "\n\n**Issues:**\n" + s.issues.map((i) => `- ${i}`).join("\n") : ""}`,
       )
-      .join("\n\n---\n\n")}${allPassed ? "\n\n---\n\n**📋 Article prepared for editor approval. Click 'Publish' in the editor dashboard to make it live.**" : ""}`;
+      .join("\n\n---\n\n")}${avgScore >= 75 ? "\n\n---\n\n**📋 Article prepared for editor approval. Click 'Publish' in the editor dashboard to make it live.**" : avgScore >= 60 ? "\n\n---\n\n**⚠️ Score between 60-74. Requires editor review to accept or reject.**" : ""}`;
+
+    const reviewAction = avgScore >= 75 ? "accept" : avgScore >= 60 ? "note" : "reject";
 
     await supabase.from("submission_reviews").insert({
       submission_id,
       reviewer_id: "00000000-0000-0000-0000-000000000000",
-      action: allPassed ? "accept" : "reject",
+      action: reviewAction,
       comment: reviewComment,
     });
 
-    return new Response(JSON.stringify({ success: true, passed: allPassed, results }), {
+    return new Response(JSON.stringify({ success: true, passed: avgScore >= 75, results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

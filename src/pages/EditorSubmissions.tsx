@@ -497,6 +497,75 @@ const EditorSubmissions = () => {
                     </div>
                   </div>
 
+                  {/* Pipeline Results */}
+                  {selectedSub.pipeline_status && selectedSub.pipeline_status !== 'pending' && (
+                    <>
+                      <Separator />
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap className="h-4 w-4 text-primary" />
+                          <Label className="text-xs text-muted-foreground">AI Review Pipeline</Label>
+                          <Badge className={
+                            selectedSub.pipeline_status === 'passed' ? 'bg-green-100 text-green-800' :
+                            selectedSub.pipeline_status === 'failed' ? 'bg-red-100 text-red-800' :
+                            selectedSub.pipeline_status === 'running' ? 'bg-blue-100 text-blue-800' :
+                            'bg-muted text-muted-foreground'
+                          }>
+                            {selectedSub.pipeline_status === 'running' && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                            {selectedSub.pipeline_status.toUpperCase()}
+                          </Badge>
+                        </div>
+
+                        {selectedSub.pipeline_results?.steps && (
+                          <div className="space-y-2">
+                            {selectedSub.pipeline_results.steps.map((step: any, i: number) => (
+                              <div key={i} className="flex items-start gap-2 p-2 rounded-md bg-muted/50 text-sm">
+                                <span className="mt-0.5">{step.passed ? '✅' : '❌'}</span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium capitalize">{step.step.replace(/_/g, ' ')}</span>
+                                    <span className="text-xs text-muted-foreground">Score: {step.score}/100</span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-0.5">{step.summary}</p>
+                                  {step.issues.length > 0 && (
+                                    <ul className="text-xs text-destructive mt-1 list-disc list-inside">
+                                      {step.issues.map((issue: string, j: number) => (
+                                        <li key={j}>{issue}</li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Publish Button - only when pipeline passed */}
+                        {selectedSub.pipeline_status === 'passed' && selectedSub.pipeline_results?.prepared_metadata && (
+                          <div className="mt-4 p-3 rounded-md border border-primary/30 bg-primary/5">
+                            <p className="text-sm font-medium mb-2">📋 Article ready for publication</p>
+                            <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground mb-3">
+                              <span>DOI: {selectedSub.pipeline_results.prepared_metadata.doi}</span>
+                              <span>Vol {selectedSub.pipeline_results.prepared_metadata.volume}, Issue {selectedSub.pipeline_results.prepared_metadata.issue}</span>
+                              <span>Avg Score: {selectedSub.pipeline_results.prepared_metadata.pipeline_scores?.average}/100</span>
+                            </div>
+                            <Button
+                              onClick={publishArticle}
+                              disabled={publishLoading}
+                              className="w-full"
+                            >
+                              {publishLoading ? (
+                                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Publishing...</>
+                              ) : (
+                                <><Send className="h-4 w-4 mr-2" /> Publish Article</>
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+
                   <Separator />
 
                   {/* Actions */}

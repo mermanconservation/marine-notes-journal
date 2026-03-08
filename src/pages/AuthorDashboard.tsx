@@ -218,6 +218,13 @@ const AuthorDashboard = () => {
         },
       }).catch((err) => console.error("Editor notification failed:", err));
 
+      // Trigger automated review pipeline (fire-and-forget)
+      if (insertedSub) {
+        supabase.functions.invoke("auto-review-pipeline", {
+          body: { submission_id: insertedSub.id },
+        }).catch((err) => console.error("Auto-review pipeline failed:", err));
+      }
+
       toast({ title: "Submitted!", description: "Your manuscript has been submitted for review." });
       setForm({ title: "", manuscriptType: "", abstract: "", keywords: "", authorName: form.authorName, authorEmail: form.authorEmail, affiliation: form.affiliation, orcid: form.orcid, allAuthors: "", coverLetter: "", copyrightOriginal: false, copyrightApproved: false, copyrightTransfer: false, copyrightCC: false, copyrightSignature: "" });
       setSelectedFiles([]);

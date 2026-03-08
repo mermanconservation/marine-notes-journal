@@ -123,6 +123,8 @@ export type Database = {
           id: string
           keywords: string
           manuscript_type: string
+          pipeline_results: Json | null
+          pipeline_status: string
           status: string
           title: string
           updated_at: string
@@ -144,6 +146,8 @@ export type Database = {
           id?: string
           keywords: string
           manuscript_type: string
+          pipeline_results?: Json | null
+          pipeline_status?: string
           status?: string
           title: string
           updated_at?: string
@@ -165,6 +169,8 @@ export type Database = {
           id?: string
           keywords?: string
           manuscript_type?: string
+          pipeline_results?: Json | null
+          pipeline_status?: string
           status?: string
           title?: string
           updated_at?: string

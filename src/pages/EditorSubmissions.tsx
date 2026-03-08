@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, FileText, Clock, CheckCircle, XCircle, RotateCcw,
   LogOut, MessageSquare, UserCheck, Filter, ExternalLink, Bot, Lock, Bell, BellDot,
+  Zap, Send,
 } from "lucide-react";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { AiReviewNote, isAiReviewComment } from "@/components/AiReviewNote";
@@ -55,6 +56,8 @@ interface Submission {
   user_id: string | null;
   assigned_reviewer_id: string | null;
   decision_date: string | null;
+  pipeline_status: string;
+  pipeline_results: any;
 }
 
 interface Review {
@@ -86,6 +89,7 @@ const EditorSubmissions = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [publishLoading, setPublishLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -201,6 +205,39 @@ const EditorSubmissions = () => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
     setActionLoading(false);
+  };
+
+  const publishArticle = async () => {
+    if (!selectedSub?.pipeline_results?.prepared_metadata) return;
+    setPublishLoading(true);
+    try {
+      const meta = selectedSub.pipeline_results.prepared_metadata;
+      const { error } = await supabase.functions.invoke("publish-article", {
+        body: {
+          doi: meta.doi,
+          title: meta.title,
+          authors: meta.authors,
+          abstract: meta.abstract,
+          type: meta.type,
+          volume: meta.volume,
+          issue: meta.issue,
+          resolver_url: meta.resolver_url,
+          publication_date: meta.publication_date,
+          orcid_ids: meta.orcid_ids,
+          pdf_url: selectedSub.file_paths?.[0]
+            ? supabase.storage.from("manuscripts").getPublicUrl(selectedSub.file_paths[0]).data.publicUrl
+            : null,
+        },
+      });
+      if (error) throw error;
+      toast({ title: "Published!", description: `Article published with DOI: ${meta.doi}` });
+      await loadSubmissions();
+      const updated = (await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub.id).single()).data;
+      if (updated) setSelectedSub(updated as Submission);
+    } catch (err: any) {
+      toast({ title: "Publish failed", description: err.message, variant: "destructive" });
+    }
+    setPublishLoading(false);
   };
 
   const getFileUrl = (path: string) => {
@@ -337,9 +374,12 @@ const EditorSubmissions = () => {
                       {STATUS_OPTIONS.find(s => s.value === sub.status)?.label || sub.status}
                     </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {sub.corresponding_author_name} · {formatDate(sub.created_at)}
-                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>{sub.corresponding_author_name} · {formatDate(sub.created_at)}</span>
+                    {sub.pipeline_status === 'running' && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+                    {sub.pipeline_status === 'passed' && <Zap className="h-3 w-3 text-green-600" />}
+                    {sub.pipeline_status === 'failed' && <Zap className="h-3 w-3 text-destructive" />}
+                  </div>
                 </button>
               ))
             )}
@@ -459,6 +499,75 @@ const EditorSubmissions = () => {
                       })}
                     </div>
                   </div>
+
+                  {/* Pipeline Results */}
+                  {selectedSub.pipeline_status && selectedSub.pipeline_status !== 'pending' && (
+                    <>
+                      <Separator />
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <Zap className="h-4 w-4 text-primary" />
+                          <Label className="text-xs text-muted-foreground">AI Review Pipeline</Label>
+                          <Badge className={
+                            selectedSub.pipeline_status === 'passed' ? 'bg-green-100 text-green-800' :
+                            selectedSub.pipeline_status === 'failed' ? 'bg-red-100 text-red-800' :
+                            selectedSub.pipeline_status === 'running' ? 'bg-blue-100 text-blue-800' :
+                            'bg-muted text-muted-foreground'
+                          }>
+                            {selectedSub.pipeline_status === 'running' && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                            {selectedSub.pipeline_status.toUpperCase()}
+                          </Badge>
+                        </div>
+
+                        {selectedSub.pipeline_results?.steps && (
+                          <div className="space-y-2">
+                            {selectedSub.pipeline_results.steps.map((step: any, i: number) => (
+                              <div key={i} className="flex items-start gap-2 p-2 rounded-md bg-muted/50 text-sm">
+                                <span className="mt-0.5">{step.passed ? '✅' : '❌'}</span>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium capitalize">{step.step.replace(/_/g, ' ')}</span>
+                                    <span className="text-xs text-muted-foreground">Score: {step.score}/100</span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-0.5">{step.summary}</p>
+                                  {step.issues.length > 0 && (
+                                    <ul className="text-xs text-destructive mt-1 list-disc list-inside">
+                                      {step.issues.map((issue: string, j: number) => (
+                                        <li key={j}>{issue}</li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Publish Button - only when pipeline passed */}
+                        {selectedSub.pipeline_status === 'passed' && selectedSub.pipeline_results?.prepared_metadata && (
+                          <div className="mt-4 p-3 rounded-md border border-primary/30 bg-primary/5">
+                            <p className="text-sm font-medium mb-2">📋 Article ready for publication</p>
+                            <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground mb-3">
+                              <span>DOI: {selectedSub.pipeline_results.prepared_metadata.doi}</span>
+                              <span>Vol {selectedSub.pipeline_results.prepared_metadata.volume}, Issue {selectedSub.pipeline_results.prepared_metadata.issue}</span>
+                              <span>Avg Score: {selectedSub.pipeline_results.prepared_metadata.pipeline_scores?.average}/100</span>
+                            </div>
+                            <Button
+                              onClick={publishArticle}
+                              disabled={publishLoading}
+                              className="w-full"
+                            >
+                              {publishLoading ? (
+                                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Publishing...</>
+                              ) : (
+                                <><Send className="h-4 w-4 mr-2" /> Publish Article</>
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
 
                   <Separator />
 

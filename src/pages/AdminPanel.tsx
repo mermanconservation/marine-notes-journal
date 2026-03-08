@@ -59,6 +59,10 @@ const AdminPanel = () => {
   const [newRoleType, setNewRoleType] = useState<string>("editor");
   const [addingRole, setAddingRole] = useState(false);
   const [stats, setStats] = useState<SubmissionStats>({ total: 0, pending: 0, under_review: 0, accepted: 0, rejected: 0 });
+  const [publishedArticles, setPublishedArticles] = useState<any[]>([]);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleteConfirmTitle, setDeleteConfirmTitle] = useState("");
+  const [deletingArticle, setDeletingArticle] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");

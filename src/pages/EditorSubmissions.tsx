@@ -15,12 +15,13 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, FileText, Clock, CheckCircle, XCircle, RotateCcw,
   LogOut, MessageSquare, UserCheck, Filter, ExternalLink, Bot, Lock, Bell, BellDot,
-  Zap, Send, ChevronDown, Download, Copy, Play, Upload, Trash2,
+  Zap, Send, ChevronDown, Download, Copy, Play, Upload, Trash2, Wand2,
 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { AiReviewNote, isAiReviewComment } from "@/components/AiReviewNote";
+import ManuscriptFormatter from "@/components/ManuscriptFormatter";
 
 const STATUS_OPTIONS = [
   { value: "pending", label: "Pending", color: "bg-yellow-100 text-yellow-800" },
@@ -99,6 +100,7 @@ const EditorSubmissions = () => {
   const [finalPdfUrl, setFinalPdfUrl] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteConfirmTitle, setDeleteConfirmTitle] = useState("");
+  const [showFormatter, setShowFormatter] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -607,7 +609,17 @@ const EditorSubmissions = () => {
                     </div>
                   )}
 
-                  {/* Run Pipeline for pending submissions */}
+                  {/* Format Manuscript */}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowFormatter(true)}
+                    className="border-primary/30 text-primary hover:bg-primary/10"
+                  >
+                    <Wand2 className="h-3 w-3 mr-1" /> Format Manuscript
+                  </Button>
+
+
                   {selectedSub.pipeline_status === 'pending' && (
                     <div className="p-3 rounded-md border border-primary/30 bg-primary/5">
                       <p className="text-sm font-medium mb-2">🔬 AI Review Pipeline has not been run yet</p>
@@ -1318,6 +1330,18 @@ Pages: ${publishData.articleNumber}`}
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Manuscript Formatter */}
+        {selectedSub && (
+          <ManuscriptFormatter
+            open={showFormatter}
+            onOpenChange={setShowFormatter}
+            submissionId={selectedSub.id}
+            title={selectedSub.title}
+            manuscriptType={selectedSub.manuscript_type}
+            authors={selectedSub.all_authors}
+          />
+        )}
       </div>
     </div>
   );

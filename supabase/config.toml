@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.resolve-user-by-email]
 verify_jwt = false
+
+[functions.format-manuscript]
+verify_jwt = false

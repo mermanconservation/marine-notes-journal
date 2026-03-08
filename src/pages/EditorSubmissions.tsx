@@ -210,43 +210,66 @@ const EditorSubmissions = () => {
     setActionLoading(false);
   };
 
-  const publishArticle = async () => {
-    if (!selectedSub?.pipeline_results?.prepared_metadata) return;
+  const publishArticle = async (finalPdfUrl?: string) => {
+    if (!publishData) return;
     setPublishLoading(true);
     try {
-      const meta = selectedSub.pipeline_results.prepared_metadata;
       const passcode = prompt("Enter editor passcode to publish:");
       if (!passcode) { setPublishLoading(false); return; }
-      const { data, error } = await supabase.functions.invoke("publish-article", {
-        body: {
-          passcode,
-          action: "publish",
-          article: {
-            doi: meta.doi,
-            title: meta.title,
-            authors: meta.authors,
-            abstract: meta.abstract,
-            type: meta.type,
-            volume: meta.volume,
-            issue: meta.issue,
-            publicationDate: meta.publication_date,
-            orcidIds: meta.orcid_ids || [],
-            pdfUrl: selectedSub.file_paths?.[0]
-              ? supabase.storage.from("manuscripts").getPublicUrl(selectedSub.file_paths[0]).data.publicUrl
-              : null,
-          },
-        },
-      });
-      if (data?.error) throw new Error(data.error);
-      if (error) throw error;
-      toast({ title: "Published!", description: `Article published with DOI: ${meta.doi}` });
+      
+      const pdfUrl = finalPdfUrl || publishData.pdfUrl;
+      
+      const response = await fetch(
+        `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}.supabase.co/functions/v1/publish-article`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            passcode,
+            action: "publish",
+            article: {
+              doi: publishData.doi,
+              title: publishData.title,
+              authors: publishData.authors,
+              abstract: publishData.abstract,
+              type: publishData.type,
+              volume: publishData.volume,
+              issue: publishData.issue,
+              publicationDate: publishData.publicationDate,
+              orcidIds: publishData.orcid_ids || [],
+              pdfUrl,
+            },
+          }),
+        }
+      );
+      const result = await response.json();
+      if (!response.ok || result.error) throw new Error(result.error || "Publish failed");
+      
+      toast({ title: "Published!", description: `Article published with DOI: ${publishData.doi}` });
       await loadSubmissions();
-      const updated = (await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub.id).single()).data;
+      const updated = (await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub!.id).single()).data;
       if (updated) setSelectedSub(updated as Submission);
     } catch (err: any) {
       toast({ title: "Publish failed", description: err.message, variant: "destructive" });
     }
     setPublishLoading(false);
+  };
+
+  const downloadFile = async (path: string) => {
+    try {
+      const { data, error } = await supabase.storage.from("manuscripts").download(path);
+      if (error) throw error;
+      const url = URL.createObjectURL(data);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = path.split("/").pop() || "manuscript.pdf";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast({ title: "Download failed", description: err.message, variant: "destructive" });
+    }
   };
 
   const getFileUrl = (path: string) => {

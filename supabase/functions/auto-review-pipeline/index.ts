@@ -534,8 +534,8 @@ Be lenient for Field Notes and Observational Reports which may have fewer refere
       })
       .eq("id", submission_id);
 
-    // Record the review
-    const reviewComment = `[AI AUTO-REVIEW PIPELINE]\n\n**Result: ${resultLabel}** (Average Score: ${avgScore}/100)\n\n${steps
+    // Record the detailed review for editors
+    const editorComment = `[AI AUTO-REVIEW PIPELINE]\n\n**Result: ${resultLabel}** (Average Score: ${avgScore}/100)\n\n${steps
       .map(
         (s) =>
           `### ${s.step.replace("_", " ").toUpperCase()}\n${s.passed ? "✅ Passed" : "❌ Failed"} — Score: ${s.score}/100\n${s.summary}${s.issues.length > 0 ? "\n\n**Issues:**\n" + s.issues.map((i) => `- ${i}`).join("\n") : ""}`,
@@ -544,11 +544,23 @@ Be lenient for Field Notes and Observational Reports which may have fewer refere
 
     const reviewAction = avgScore >= 75 ? "accept" : avgScore >= 60 ? "note" : "reject";
 
+    // Build author-friendly note from the AI Chief Editor
+    let authorNote = "";
+    if (avgScore >= 75) {
+      authorNote = `As the AI Chief Editor for **Marine Notes Journal**, I have completed the automated review of your submission.\n\n**Result: ACCEPTED ✅**\n\nYour manuscript has passed all automated quality checks with an overall score of **${avgScore}/100**. It will now proceed to the editorial board for final review and publication.\n\n**Summary of Checks:**\n${steps.map((s) => `- **${s.step.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}**: ${s.passed ? "✅ Passed" : "⚠️ Needs attention"} (${s.score}/100) — ${s.summary}`).join("\n")}\n\nAn editor will review and confirm the publication shortly. Thank you for your submission.`;
+    } else if (avgScore >= 60) {
+      authorNote = `As the AI Chief Editor for **Marine Notes Journal**, I have completed the automated review of your submission.\n\n**Result: EDITOR REVIEW REQUIRED ⚠️**\n\nYour manuscript scored **${avgScore}/100** and has been flagged for human editor review.\n\n**Summary of Checks:**\n${steps.map((s) => `- **${s.step.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}**: ${s.passed ? "✅ Passed" : "❌ Failed"} (${s.score}/100) — ${s.summary}`).join("\n")}\n\nAn editor will review your manuscript and provide further guidance.`;
+    } else {
+      const topReasons = rejectionReasons.slice(0, 5);
+      authorNote = `As the AI Chief Editor for **Marine Notes Journal**, I have completed the automated review of your submission.\n\n**Result: REJECTED ❌**\n\nUnfortunately, your manuscript did not meet the minimum quality threshold, scoring **${avgScore}/100**.\n\n**Summary of Checks:**\n${steps.map((s) => `- **${s.step.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}**: ${s.passed ? "✅ Passed" : "❌ Failed"} (${s.score}/100) — ${s.summary}`).join("\n")}\n\n**Key Reasons for Rejection:**\n${topReasons.map((r) => `- ${r}`).join("\n")}\n\nYou are welcome to address the issues above and resubmit a revised manuscript.`;
+    }
+
+    // Insert author-facing note
     await supabase.from("submission_reviews").insert({
       submission_id,
       reviewer_id: "00000000-0000-0000-0000-000000000000",
       action: reviewAction,
-      comment: reviewComment,
+      comment: authorNote,
     });
 
     return new Response(JSON.stringify({ success: true, passed: avgScore >= 75, results }), {

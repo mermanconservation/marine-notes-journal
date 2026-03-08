@@ -136,30 +136,36 @@ const IssueDetail = () => {
               </div>
 
               <div className="flex gap-4">
-                <Button 
-                  size="lg"
-                  onClick={() => {
-                    const link = document.createElement('a');
-                    link.href = article.pdfUrl;
-                    link.download = `${article.doi}.pdf`;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                  }}
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  Download PDF
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  onClick={() => {
-                    window.open(article.pdfUrl, '_blank', 'noopener,noreferrer');
-                  }}
-                >
-                  <FileText className="mr-2 h-4 w-4" />
-                  View PDF
-                </Button>
+                {article.pdfUrl ? (
+                  <>
+                    <Button 
+                      size="lg"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = article.pdfUrl;
+                        link.download = `${article.doi}.pdf`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download PDF
+                    </Button>
+                    <Button 
+                      size="lg" 
+                      variant="outline"
+                      onClick={() => {
+                        window.open(article.pdfUrl, '_blank', 'noopener,noreferrer');
+                      }}
+                    >
+                      <FileText className="mr-2 h-4 w-4" />
+                      View PDF
+                    </Button>
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground italic">PDF not yet available for this article.</p>
+                )}
               </div>
             </CardContent>
           </Card>

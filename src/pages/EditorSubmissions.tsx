@@ -241,9 +241,63 @@ const EditorSubmissions = () => {
             <h1 className="font-academic text-3xl font-semibold">Editor Dashboard</h1>
             <p className="text-muted-foreground text-sm mt-1">{submissions.length} total submissions</p>
           </div>
-          <Button variant="outline" size="sm" onClick={signOut}>
-            <LogOut className="h-4 w-4 mr-2" /> Sign Out
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative"
+              >
+                {notifications.filter(n => !n.is_read).length > 0 ? (
+                  <BellDot className="h-4 w-4 text-destructive" />
+                ) : (
+                  <Bell className="h-4 w-4" />
+                )}
+                {notifications.filter(n => !n.is_read).length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    {notifications.filter(n => !n.is_read).length}
+                  </span>
+                )}
+              </Button>
+              {showNotifications && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-card border border-border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+                  <div className="flex items-center justify-between p-3 border-b border-border">
+                    <span className="font-medium text-sm">Notifications</span>
+                    {notifications.filter(n => !n.is_read).length > 0 && (
+                      <Button variant="ghost" size="sm" className="text-xs h-6" onClick={markAllAsRead}>
+                        Mark all read
+                      </Button>
+                    )}
+                  </div>
+                  {notifications.length === 0 ? (
+                    <p className="p-4 text-sm text-muted-foreground text-center">No notifications</p>
+                  ) : (
+                    notifications.map(n => (
+                      <button
+                        key={n.id}
+                        onClick={() => {
+                          if (!n.is_read) markAsRead(n.id);
+                          const sub = submissions.find(s => s.id === n.submission_id);
+                          if (sub) { setSelectedSub(sub); setActionComment(""); setAiReviewResult(null); }
+                          setShowNotifications(false);
+                        }}
+                        className={`w-full text-left p-3 border-b border-border last:border-b-0 hover:bg-accent/50 transition-colors ${!n.is_read ? 'bg-accent/20' : ''}`}
+                      >
+                        <p className="text-sm font-medium line-clamp-2">{n.message}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(n.created_at).toLocaleString()}
+                        </p>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+            <Button variant="outline" size="sm" onClick={signOut}>
+              <LogOut className="h-4 w-4 mr-2" /> Sign Out
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}

@@ -258,7 +258,7 @@ const EditorSubmissions = () => {
     setPublishLoading(false);
   };
 
-  const downloadFile = async (path: string, userId?: string | null) => {
+  const downloadFile = async (path: string, userId?: string | null, submission?: Submission) => {
     const normalizePath = (value: string) => value.replace(/^\/+/, "").replace(/^manuscripts\//, "");
     const baseName = path.split("/").pop() || "manuscript";
 
@@ -288,6 +288,29 @@ const EditorSubmissions = () => {
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
           return;
+        }
+      }
+
+      // Fallback: try static public manuscript path for already published legacy items
+      if (submission?.title) {
+        const slug = submission.title
+          .replace(/[^a-zA-Z0-9\s-]/g, "")
+          .trim()
+          .replace(/\s+/g, "-");
+
+        const fallbackYears = [2026, 2027, 2028, new Date().getFullYear()];
+        for (const year of fallbackYears) {
+          const publicPdf = `/manuscripts/${year}/vol1-iss1-${slug}.pdf`;
+          const res = await fetch(publicPdf, { method: "HEAD" });
+          if (res.ok) {
+            const a = document.createElement("a");
+            a.href = publicPdf;
+            a.download = `${slug}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            return;
+          }
         }
       }
 

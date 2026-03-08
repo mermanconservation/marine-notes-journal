@@ -26,7 +26,7 @@ function validateArticle(article: any, requireDoi: boolean): { valid: boolean; e
   if (!article || typeof article !== "object") return { valid: false, error: "Missing article data" };
 
   if (requireDoi) {
-    if (typeof article.doi !== "string" || !/^MNJ-\d{4}-\d{3}$/.test(article.doi)) {
+    if (typeof article.doi !== "string" || (!/^MNJ-\d{4}-\d{3}$/.test(article.doi) && !/^10\.\d{4,}\//.test(article.doi))) {
       return { valid: false, error: "Invalid DOI format" };
     }
   }

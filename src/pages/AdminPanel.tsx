@@ -63,6 +63,7 @@ const AdminPanel = () => {
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteConfirmTitle, setDeleteConfirmTitle] = useState("");
   const [deletingArticle, setDeletingArticle] = useState<string | null>(null);
+  const [editorPasscode, setEditorPasscode] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -126,11 +127,15 @@ const AdminPanel = () => {
 
     // Load published articles
     try {
-      const res = await supabase.functions.invoke("publish-article", {
-        body: { passcode: "Wildlifeuk2026", action: "list-articles" },
-      });
-      if (res.data?.articles) {
-        setPublishedArticles(res.data.articles.filter((a: any) => !a.is_static));
+      const code = editorPasscode || prompt("Enter editor passcode to load articles:");
+      if (code) {
+        if (!editorPasscode) setEditorPasscode(code);
+        const res = await supabase.functions.invoke("publish-article", {
+          body: { passcode: code, action: "list-articles" },
+        });
+        if (res.data?.articles) {
+          setPublishedArticles(res.data.articles.filter((a: any) => !a.is_static));
+        }
       }
     } catch {}
 
@@ -148,8 +153,11 @@ const AdminPanel = () => {
     }
     setDeletingArticle(article.doi);
     try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) { setDeletingArticle(null); return; }
+      if (!editorPasscode) setEditorPasscode(code);
       const res = await supabase.functions.invoke("publish-article", {
-        body: { passcode: "Wildlifeuk2026", action: "delete", article: { doi: article.doi } },
+        body: { passcode: code, action: "delete", article: { doi: article.doi } },
       });
       if (res.error || res.data?.error) {
         throw new Error(res.data?.error || "Failed to delete article");

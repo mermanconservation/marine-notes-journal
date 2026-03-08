@@ -19,17 +19,20 @@ serve(async (req) => {
 
     const { title, authorName, authorEmail, manuscriptType, abstract, keywords } = await req.json();
 
+    const esc = (s: string) =>
+      String(s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
     const htmlBody = `
       <h2>New Manuscript Submission</h2>
       <p>A new manuscript has been submitted through the Marine Notes Journal portal.</p>
       <table style="border-collapse:collapse;width:100%;max-width:600px;">
-        <tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #ddd;">Title</td><td style="padding:8px;border-bottom:1px solid #ddd;">${title}</td></tr>
-        <tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #ddd;">Type</td><td style="padding:8px;border-bottom:1px solid #ddd;">${manuscriptType}</td></tr>
-        <tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #ddd;">Author</td><td style="padding:8px;border-bottom:1px solid #ddd;">${authorName} (${authorEmail})</td></tr>
-        <tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #ddd;">Keywords</td><td style="padding:8px;border-bottom:1px solid #ddd;">${keywords}</td></tr>
+        <tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #ddd;">Title</td><td style="padding:8px;border-bottom:1px solid #ddd;">${esc(title)}</td></tr>
+        <tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #ddd;">Type</td><td style="padding:8px;border-bottom:1px solid #ddd;">${esc(manuscriptType)}</td></tr>
+        <tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #ddd;">Author</td><td style="padding:8px;border-bottom:1px solid #ddd;">${esc(authorName)} (${esc(authorEmail)})</td></tr>
+        <tr><td style="padding:8px;font-weight:bold;border-bottom:1px solid #ddd;">Keywords</td><td style="padding:8px;border-bottom:1px solid #ddd;">${esc(keywords)}</td></tr>
       </table>
       <h3>Abstract</h3>
-      <p>${abstract}</p>
+      <p>${esc(abstract)}</p>
       <hr/>
       <p style="color:#888;font-size:12px;">This is an automated notification from Marine Notes Journal.</p>
     `;

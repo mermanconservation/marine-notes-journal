@@ -337,7 +337,7 @@ const EditorSubmissions = () => {
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {sub.corresponding_author_name} · {new Date(sub.created_at).toLocaleDateString()}
+                    {sub.corresponding_author_name} · {formatDate(sub.created_at)}
                   </p>
                 </button>
               ))

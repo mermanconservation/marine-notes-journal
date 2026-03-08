@@ -219,6 +219,33 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
     );
     steps.push(step4);
 
+    // ── STEP 5: Reference Quality Check ──
+    const step5 = await runAICheck(
+      LOVABLE_API_KEY,
+      `You are a reference quality reviewer for Marine Notes Journal — a peer-reviewed open-access journal on marine biology, ecology, conservation, and ocean sciences.
+
+Based on the manuscript metadata (title, abstract, keywords), assess the likely quality of the references that should accompany this work.
+
+Check for:
+- Does the abstract mention or cite specific studies, data sources, or prior work?
+- Are there indicators of proper literature review (e.g., "previous studies have shown", "according to", "as demonstrated by")?
+- Does the topic require extensive references (e.g., research articles) or fewer (e.g., field notes)?
+- Are the keywords specific enough to suggest familiarity with existing literature?
+- For Conservation News: is a source of the news mentioned?
+- Are there signs of fabricated or placeholder references?
+- Would the described methodology require citations to established protocols?
+
+Score guidelines:
+- 80-100: Clear evidence of proper referencing and literature awareness
+- 60-79: Some evidence of referencing but could be stronger
+- Below 60: Insufficient evidence of proper referencing for the manuscript type
+
+Be lenient for Field Notes and Observational Reports which may have fewer references. Be stricter for Research Articles and Review Articles.`,
+      manuscriptContext,
+      "reference_check",
+    );
+    steps.push(step5);
+
     // ── Determine overall result ──
     // Threshold: ≥75 avg = auto-accept, 60-74 = editor_review, <60 = auto-reject
     const avgScore = Math.round(steps.reduce((a, s) => a + s.score, 0) / steps.length);

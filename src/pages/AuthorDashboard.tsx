@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, FileText, Clock, CheckCircle, XCircle, RotateCcw, LogOut, Upload, Check, Bot } from "lucide-react";
+import { Loader2, Plus, FileText, Clock, CheckCircle, XCircle, RotateCcw, LogOut, Upload, Check, Bot, Heart } from "lucide-react";
 import { AiReviewNote, isAiReviewComment } from "@/components/AiReviewNote";
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {

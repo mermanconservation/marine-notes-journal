@@ -311,7 +311,7 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
       comment: reviewComment,
     });
 
-    return new Response(JSON.stringify({ success: true, passed: allPassed, results }), {
+    return new Response(JSON.stringify({ success: true, passed: avgScore >= 75, results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {

@@ -16,6 +16,7 @@ const ARTICLE_TYPES = [
   "Observational Reports",
   "Case Study",
   "Methodology Paper",
+  "Methodology",
 ];
 
 function stripHtml(str: string): string {

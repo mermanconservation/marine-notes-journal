@@ -555,10 +555,12 @@ Be lenient for Field Notes and Observational Reports which may have fewer refere
       authorNote = `As the AI Chief Editor for **Marine Notes Journal**, I have completed the automated review of your submission.\n\n**Result: REJECTED ❌**\n\nUnfortunately, your manuscript did not meet the minimum quality threshold, scoring **${avgScore}/100**.\n\n**Summary of Checks:**\n${steps.map((s) => `- **${s.step.replace(/_/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase())}**: ${s.passed ? "✅ Passed" : "❌ Failed"} (${s.score}/100) — ${s.summary}`).join("\n")}\n\n**Key Reasons for Rejection:**\n${topReasons.map((r) => `- ${r}`).join("\n")}\n\nYou are welcome to address the issues above and resubmit a revised manuscript.`;
     }
 
-    // Insert author-facing note
+    // Insert author-facing note using the submission's user_id as reviewer
+    // (service role bypasses RLS, and this keeps the FK constraint satisfied)
+    const reviewerId = sub.user_id || sub.corresponding_author_email;
     await supabase.from("submission_reviews").insert({
       submission_id,
-      reviewer_id: "00000000-0000-0000-0000-000000000000",
+      reviewer_id: sub.user_id,
       action: reviewAction,
       comment: authorNote,
     });

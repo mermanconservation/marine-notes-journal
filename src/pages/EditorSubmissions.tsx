@@ -55,6 +55,8 @@ interface Submission {
   user_id: string | null;
   assigned_reviewer_id: string | null;
   decision_date: string | null;
+  pipeline_status: string;
+  pipeline_results: any;
 }
 
 interface Review {

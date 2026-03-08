@@ -883,7 +883,7 @@ const EditorSubmissions = () => {
                                 onClick={() => {
                                   const meta = selectedSub.pipeline_results.prepared_metadata;
                                   const pdfUrl = selectedSub.file_paths?.[0]
-                                    ? supabase.storage.from("manuscripts").getPublicUrl(selectedSub.file_paths[0]).data.publicUrl
+                                    ? supabase.storage.from("manuscript-submissions").getPublicUrl(selectedSub.file_paths[0]).data.publicUrl
                                     : null;
                                   
                                   // Count existing articles in this volume/issue for page continuation

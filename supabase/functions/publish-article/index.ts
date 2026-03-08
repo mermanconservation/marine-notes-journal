@@ -147,9 +147,16 @@ Deno.serve(async (req) => {
         return errorResponse("File too large (max 50MB)", 400);
       }
 
+      // Verify PDF magic bytes (%PDF-)
+      if (bytes.length < 5 ||
+          bytes[0] !== 0x25 || bytes[1] !== 0x50 ||
+          bytes[2] !== 0x44 || bytes[3] !== 0x46 || bytes[4] !== 0x2D) {
+        return errorResponse("File is not a valid PDF", 400);
+      }
+
       const { error } = await supabase.storage
         .from("manuscripts")
-        .upload(fileName, bytes, { contentType: "application/pdf", upsert: true });
+        .upload(fileName, bytes, { contentType: "application/pdf", upsert: false });
 
       if (error) {
         console.error("Storage error:", JSON.stringify(error));

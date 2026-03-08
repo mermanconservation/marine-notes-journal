@@ -374,9 +374,12 @@ const EditorSubmissions = () => {
                       {STATUS_OPTIONS.find(s => s.value === sub.status)?.label || sub.status}
                     </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {sub.corresponding_author_name} · {formatDate(sub.created_at)}
-                  </p>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>{sub.corresponding_author_name} · {formatDate(sub.created_at)}</span>
+                    {sub.pipeline_status === 'running' && <Loader2 className="h-3 w-3 animate-spin text-primary" />}
+                    {sub.pipeline_status === 'passed' && <Zap className="h-3 w-3 text-green-600" />}
+                    {sub.pipeline_status === 'failed' && <Zap className="h-3 w-3 text-destructive" />}
+                  </div>
                 </button>
               ))
             )}

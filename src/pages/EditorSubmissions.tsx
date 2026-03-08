@@ -274,14 +274,14 @@ const EditorSubmissions = () => {
 
     try {
       if (userId) {
-        const { data: userFiles } = await supabase.storage.from("manuscripts").list(`submissions/${userId}`);
+        const { data: userFiles } = await supabase.storage.from("manuscript-submissions").list(`submissions/${userId}`);
         const matched = userFiles?.find((f) => f.name === baseName);
         if (matched) candidates.add(`submissions/${userId}/${matched.name}`);
       }
 
       for (const candidate of candidates) {
         if (!candidate) continue;
-        const { data, error } = await supabase.storage.from("manuscripts").download(candidate);
+        const { data, error } = await supabase.storage.from("manuscript-submissions").download(candidate);
         if (!error && data) {
           const url = URL.createObjectURL(data);
           const a = document.createElement("a");
@@ -324,9 +324,8 @@ const EditorSubmissions = () => {
     }
   };
 
-  const getFileUrl = (path: string) => {
-    const { data } = supabase.storage.from("manuscripts").getPublicUrl(path);
-    return data.publicUrl;
+  const handleFileClick = async (path: string, userId?: string | null) => {
+    await downloadFile(path, userId);
   };
 
   const handleDeleteSubmission = async () => {
@@ -589,9 +588,9 @@ const EditorSubmissions = () => {
                       <Label className="text-xs text-muted-foreground mb-2 block">Attached Files</Label>
                       <div className="space-y-1">
                         {selectedSub.file_paths.map((fp, i) => (
-                          <a key={i} href={getFileUrl(fp)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                          <button key={i} onClick={() => handleFileClick(fp, selectedSub.user_id)} className="flex items-center gap-2 text-sm text-primary hover:underline cursor-pointer">
                             <ExternalLink className="h-3 w-3" /> {fp.split("/").pop()}
-                          </a>
+                          </button>
                         ))}
                       </div>
                     </div>
@@ -884,7 +883,7 @@ const EditorSubmissions = () => {
                                 onClick={() => {
                                   const meta = selectedSub.pipeline_results.prepared_metadata;
                                   const pdfUrl = selectedSub.file_paths?.[0]
-                                    ? supabase.storage.from("manuscripts").getPublicUrl(selectedSub.file_paths[0]).data.publicUrl
+                                    ? supabase.storage.from("manuscript-submissions").getPublicUrl(selectedSub.file_paths[0]).data.publicUrl
                                     : null;
                                   
                                   // Count existing articles in this volume/issue for page continuation

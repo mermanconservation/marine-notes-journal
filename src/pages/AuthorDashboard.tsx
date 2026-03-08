@@ -51,6 +51,8 @@ interface Submission {
   corresponding_author_orcid: string | null;
   all_authors: string;
   cover_letter: string | null;
+  pipeline_status: string;
+  pipeline_results: any;
 }
 
 interface Review {
@@ -93,6 +95,21 @@ const AuthorDashboard = () => {
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
   }, [user, authLoading, navigate]);
+
+  // Poll for pipeline updates when any submission is still processing
+  useEffect(() => {
+    if (!user || submissions.length === 0) return;
+    const hasPending = submissions.some(
+      (s) => s.status === "pending" || (s as any).pipeline_status === "running" || (s as any).pipeline_status === "pending"
+    );
+    if (!hasPending) return;
+
+    const interval = setInterval(() => {
+      loadSubmissions();
+    }, 8000); // Poll every 8 seconds
+
+    return () => clearInterval(interval);
+  }, [user, submissions]);
 
   useEffect(() => {
     if (user) {
@@ -373,6 +390,22 @@ const AuthorDashboard = () => {
                                     <p className="text-sm text-muted-foreground mt-0.5">Manuscript submitted for review</p>
                                   </div>
                                 </div>
+                                {/* AI Pipeline processing indicator */}
+                                {(sub.pipeline_status === "pending" || sub.pipeline_status === "running") && subReviews.length === 0 && (
+                                  <div className="relative">
+                                    <div className="absolute -left-[calc(0.5rem+1px)] top-1 h-3 w-3 rounded-full border-2 border-background bg-blue-500 animate-pulse" />
+                                    <div className="ml-2">
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="text-xs">
+                                          <Bot className="h-3 w-3 mr-1 animate-spin" /> AI Review In Progress
+                                        </Badge>
+                                      </div>
+                                      <p className="text-sm text-muted-foreground mt-0.5">
+                                        Your manuscript is being reviewed by the automated pipeline. This may take a few minutes...
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
                                 {/* Review entries in chronological order */}
                                 {[...subReviews].reverse().map((r) => {
                                   const isAiReview = isAiReviewComment(r.comment);

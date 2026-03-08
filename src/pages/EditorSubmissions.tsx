@@ -91,6 +91,8 @@ const EditorSubmissions = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [publishLoading, setPublishLoading] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [publishData, setPublishData] = useState<any>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");

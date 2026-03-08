@@ -244,6 +244,7 @@ const EditorSubmissions = () => {
               publicationDate: publishData.publicationDate,
               orcidIds: publishData.orcid_ids || [],
               pdfUrl,
+              externalDoi: publishData.externalDoi || null,
             },
           }),
         }

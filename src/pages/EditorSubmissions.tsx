@@ -15,8 +15,9 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, FileText, Clock, CheckCircle, XCircle, RotateCcw,
   LogOut, MessageSquare, UserCheck, Filter, ExternalLink, Bot, Lock, Bell, BellDot,
-  Zap, Send, ChevronDown,
+  Zap, Send, ChevronDown, Download, Copy, Play,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { AiReviewNote, isAiReviewComment } from "@/components/AiReviewNote";
 
@@ -90,6 +91,8 @@ const EditorSubmissions = () => {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
   const [publishLoading, setPublishLoading] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [publishData, setPublishData] = useState<any>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -458,6 +461,50 @@ const EditorSubmissions = () => {
                     </div>
                   )}
 
+                  {/* Download Manuscript Files */}
+                  {selectedSub.file_paths && selectedSub.file_paths.length > 0 && (
+                    <div className="flex gap-2">
+                      {selectedSub.file_paths.map((fp, i) => (
+                        <a key={i} href={getFileUrl(fp)} download target="_blank" rel="noopener noreferrer">
+                          <Button size="sm" variant="outline">
+                            <Download className="h-3 w-3 mr-1" /> Download {fp.split("/").pop()}
+                          </Button>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Run Pipeline for pending submissions */}
+                  {selectedSub.pipeline_status === 'pending' && (
+                    <div className="p-3 rounded-md border border-primary/30 bg-primary/5">
+                      <p className="text-sm font-medium mb-2">🔬 AI Review Pipeline has not been run yet</p>
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          setActionLoading(true);
+                          try {
+                            await supabase.functions.invoke("auto-review-pipeline", {
+                              body: { submission_id: selectedSub.id },
+                            });
+                            toast({ title: "Pipeline started", description: "The AI review pipeline is now processing this manuscript." });
+                            setTimeout(async () => {
+                              await loadSubmissions();
+                              const updated = (await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub.id).single()).data;
+                              if (updated) setSelectedSub(updated as Submission);
+                            }, 3000);
+                          } catch (err: any) {
+                            toast({ title: "Error", description: err.message, variant: "destructive" });
+                          }
+                          setActionLoading(false);
+                        }}
+                        disabled={actionLoading}
+                      >
+                        {actionLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Play className="h-3 w-3 mr-1" />}
+                        Run AI Review Pipeline
+                      </Button>
+                    </div>
+                  )}
+
                   <Separator />
 
                   {/* Submission Timeline */}
@@ -628,25 +675,38 @@ const EditorSubmissions = () => {
                               <p className="text-sm font-medium mb-2">
                                 {selectedSub.pipeline_status === 'passed' ? '📋 Article ready for publication' : '⚠️ Publish despite pipeline issues'}
                               </p>
-                              <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground mb-3">
-                                <span>DOI: {selectedSub.pipeline_results.prepared_metadata.doi}</span>
-                                <span>Vol {selectedSub.pipeline_results.prepared_metadata.volume}, Issue {selectedSub.pipeline_results.prepared_metadata.issue}</span>
-                                <span>Avg Score: {selectedSub.pipeline_results.prepared_metadata.pipeline_scores?.average}/100</span>
-                              </div>
                               {selectedSub.pipeline_status === 'failed' && (
-                                <p className="text-xs text-destructive mb-2">Publishing will override the AI recommendation. Make sure you've reviewed the flagged issues.</p>
+                                <p className="text-xs text-destructive mb-2">Publishing will override the AI recommendation.</p>
                               )}
                               <Button
-                                onClick={publishArticle}
-                                disabled={publishLoading}
+                                onClick={() => {
+                                  const meta = selectedSub.pipeline_results.prepared_metadata;
+                                  const pdfUrl = selectedSub.file_paths?.[0]
+                                    ? supabase.storage.from("manuscripts").getPublicUrl(selectedSub.file_paths[0]).data.publicUrl
+                                    : null;
+                                  
+                                  // Count existing articles in this volume/issue for page continuation
+                                  const volArticles = submissions.filter(s => 
+                                    s.pipeline_results?.prepared_metadata?.volume === meta.volume &&
+                                    s.pipeline_results?.prepared_metadata?.issue === meta.issue &&
+                                    s.status === 'accepted'
+                                  );
+
+                                  setPublishData({
+                                    ...meta,
+                                    pdfUrl,
+                                    submittedDate: selectedSub.created_at,
+                                    acceptedDate: selectedSub.decision_date || new Date().toISOString(),
+                                    approvedDate: new Date().toISOString(),
+                                    publicationDate: meta.publication_date || new Date().toISOString().split("T")[0],
+                                    articleNumber: volArticles.length + 1,
+                                  });
+                                  setShowPublishModal(true);
+                                }}
                                 className="w-full"
                                 variant={selectedSub.pipeline_status === 'failed' ? 'destructive' : 'default'}
                               >
-                                {publishLoading ? (
-                                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Publishing...</>
-                                ) : (
-                                  <><Send className="h-4 w-4 mr-2" /> Publish Article</>
-                                )}
+                                <Send className="h-4 w-4 mr-2" /> Prepare & Publish Article
                               </Button>
                             </div>
                           )}
@@ -850,6 +910,151 @@ const EditorSubmissions = () => {
             )}
           </div>
         </div>
+
+        {/* Publish Modal */}
+        <Dialog open={showPublishModal} onOpenChange={setShowPublishModal}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>📋 Publish Article — Generate Banner & Data</DialogTitle>
+            </DialogHeader>
+            {publishData && (
+              <div className="space-y-5">
+                {/* Article Info */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Article Information</h3>
+                  <div className="grid grid-cols-2 gap-2 text-sm bg-muted p-3 rounded-md">
+                    <div><span className="text-muted-foreground">Title:</span> {publishData.title}</div>
+                    <div><span className="text-muted-foreground">Authors:</span> {publishData.authors}</div>
+                    <div><span className="text-muted-foreground">DOI:</span> {publishData.doi}</div>
+                    <div><span className="text-muted-foreground">Type:</span> {publishData.type}</div>
+                    <div><span className="text-muted-foreground">Volume:</span> {publishData.volume}</div>
+                    <div><span className="text-muted-foreground">Issue:</span> {publishData.issue}</div>
+                  </div>
+                </div>
+
+                {/* Dates */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Key Dates</h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="p-3 rounded-md border border-border bg-card text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Submitted</p>
+                      <p className="text-sm font-medium mt-1">{formatDate(publishData.submittedDate)}</p>
+                    </div>
+                    <div className="p-3 rounded-md border border-border bg-card text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Accepted</p>
+                      <p className="text-sm font-medium mt-1">{formatDate(publishData.acceptedDate)}</p>
+                    </div>
+                    <div className="p-3 rounded-md border border-border bg-card text-center">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider">Published</p>
+                      <p className="text-sm font-medium mt-1">{publishData.publicationDate}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Banner Code for PDF Publishing App */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Banner Data (for PDF Publishing Editor)</h3>
+                  <div className="relative">
+                    <pre className="bg-muted p-3 rounded-md text-xs overflow-x-auto whitespace-pre-wrap border border-border font-mono">
+{`Marine Notes Journal
+Vol. ${publishData.volume}, Issue ${publishData.issue}, ${new Date(publishData.publicationDate).getFullYear()}
+DOI: ${publishData.doi}
+${publishData.type}
+
+Submitted: ${formatDate(publishData.submittedDate)}
+Accepted: ${formatDate(publishData.acceptedDate)}
+Published: ${publishData.publicationDate}`}
+                    </pre>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="absolute top-2 right-2"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`Marine Notes Journal\nVol. ${publishData.volume}, Issue ${publishData.issue}, ${new Date(publishData.publicationDate).getFullYear()}\nDOI: ${publishData.doi}\n${publishData.type}\n\nSubmitted: ${formatDate(publishData.submittedDate)}\nAccepted: ${formatDate(publishData.acceptedDate)}\nPublished: ${publishData.publicationDate}`);
+                        toast({ title: "Copied!", description: "Banner data copied to clipboard." });
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Footer Code */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Footer Code</h3>
+                  <div className="relative">
+                    <pre className="bg-muted p-3 rounded-md text-xs overflow-x-auto whitespace-pre-wrap border border-border font-mono">
+{`© ${new Date(publishData.publicationDate).getFullYear()} Marine Notes Journal. All rights reserved.
+${publishData.authors}. "${publishData.title}." Marine Notes Journal, Vol. ${publishData.volume}, Issue ${publishData.issue}, ${publishData.publicationDate}. DOI: ${publishData.doi}
+This is an open access article under the CC BY 4.0 license.
+Pages: ${publishData.articleNumber}`}
+                    </pre>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="absolute top-2 right-2"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`© ${new Date(publishData.publicationDate).getFullYear()} Marine Notes Journal. All rights reserved.\n${publishData.authors}. "${publishData.title}." Marine Notes Journal, Vol. ${publishData.volume}, Issue ${publishData.issue}, ${publishData.publicationDate}. DOI: ${publishData.doi}\nThis is an open access article under the CC BY 4.0 license.\nPages: ${publishData.articleNumber}`);
+                        toast({ title: "Copied!", description: "Footer code copied to clipboard." });
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* PDF URL if available */}
+                {publishData.pdfUrl && (
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-sm">Manuscript PDF</h3>
+                    <a href={publishData.pdfUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                      <Download className="h-4 w-4" /> Download manuscript PDF
+                    </a>
+                  </div>
+                )}
+
+                {/* Link to external PDF publishing app */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Open PDF Publishing Editor</h3>
+                  <a
+                    href="https://marine-journal-pdf-publishing.lovable.app/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <Button variant="outline" className="w-full">
+                      <ExternalLink className="h-4 w-4 mr-2" /> Open PDF Publishing App
+                    </Button>
+                  </a>
+                  <p className="text-xs text-muted-foreground">
+                    Copy the banner data and footer code above, then use the PDF Publishing App to generate the final publication-ready PDF.
+                  </p>
+                </div>
+
+                <Separator />
+
+                {/* Publish to database */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Publish to Journal Database</h3>
+                  <p className="text-xs text-muted-foreground">Once the PDF is finalized in the publishing app, click below to register the article in the journal database.</p>
+                  <Button
+                    onClick={async () => {
+                      await publishArticle();
+                      setShowPublishModal(false);
+                    }}
+                    disabled={publishLoading}
+                    className="w-full"
+                  >
+                    {publishLoading ? (
+                      <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Publishing...</>
+                    ) : (
+                      <><Send className="h-4 w-4 mr-2" /> Confirm & Publish to Database</>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

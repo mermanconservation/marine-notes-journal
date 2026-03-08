@@ -1182,7 +1182,7 @@ Published: ${publishData.publicationDate}`}
                       variant="outline"
                       className="absolute top-2 right-2"
                       onClick={() => {
-                        navigator.clipboard.writeText(`Marine Notes Journal\nVol. ${publishData.volume}, Issue ${publishData.issue}, ${new Date(publishData.publicationDate).getFullYear()}\nDOI: ${publishData.doi}\n${publishData.type}\n\nSubmitted: ${formatDate(publishData.submittedDate)}\nAccepted: ${formatDate(publishData.acceptedDate)}\nPublished: ${publishData.publicationDate}`);
+                        navigator.clipboard.writeText(`Marine Notes Journal\nVol. ${publishData.volume}, Issue ${publishData.issue}, ${new Date(publishData.publicationDate).getFullYear()}\nArticle ID: ${publishData.doi}${publishData.externalDoi ? `\nDOI: ${publishData.externalDoi}` : ''}\n${publishData.type}\n\nSubmitted: ${formatDate(publishData.submittedDate)}\nAccepted: ${formatDate(publishData.acceptedDate)}\nPublished: ${publishData.publicationDate}`);
                         toast({ title: "Copied!", description: "Banner data copied to clipboard." });
                       }}
                     >

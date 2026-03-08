@@ -318,7 +318,7 @@ Deno.serve(async (req) => {
 
     return errorResponse("Unknown action", 400);
   } catch (err) {
-    console.error("Unhandled error:", err);
+    console.error("Unhandled error:", err instanceof Error ? err.message : "unknown");
     return errorResponse("An unexpected error occurred", 500);
   }
 });

@@ -220,9 +220,66 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
     steps.push(step4);
 
     // ── STEP 5: Reference Quality & Verification Check ──
-    // First, use AI to extract any references mentioned in the manuscript
+    // Download the manuscript PDF to extract the references section
+    let pdfBase64: string | null = null;
+    if (sub.file_paths && sub.file_paths.length > 0) {
+      try {
+        const filePath = sub.file_paths[0];
+        const { data: fileData, error: dlError } = await supabase.storage
+          .from("manuscripts")
+          .download(filePath);
+        if (!dlError && fileData) {
+          const arrayBuffer = await fileData.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuffer);
+          let binary = "";
+          for (let i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          pdfBase64 = btoa(binary);
+          console.log("PDF downloaded for reference extraction, size:", bytes.length);
+        } else {
+          console.error("PDF download error:", dlError);
+        }
+      } catch (e) {
+        console.error("PDF download failed:", e);
+      }
+    }
+
+    // Extract references from the PDF using AI (multimodal — send PDF directly)
     let extractedRefs: { doi?: string; url?: string; title?: string; authors?: string }[] = [];
     try {
+      const extractMessages: any[] = [
+        {
+          role: "system",
+          content: `You are a reference extraction tool. Extract ALL references from the References / Bibliography section at the end of the manuscript (after Conclusion or Acknowledgements). For each reference, extract the authors, title, DOI (if present), and any URLs. Return them as structured data. If no references section is found, return an empty array.`,
+        },
+      ];
+
+      if (pdfBase64) {
+        // Send the actual PDF to Gemini for extraction
+        extractMessages.push({
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Extract all references from the References/Bibliography section at the end of this manuscript PDF. For each reference, extract the author names, title of the work, DOI if listed, and any URLs.",
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:application/pdf;base64,${pdfBase64}`,
+              },
+            },
+          ],
+        });
+      } else {
+        // Fallback: use metadata only
+        extractMessages.push({
+          role: "user",
+          content: `No PDF available. Based on the manuscript metadata below, identify any references, citations, DOIs, or URLs mentioned:\n\n${manuscriptContext}`,
+        });
+      }
+
       const extractResponse = await fetch(AI_URL, {
         method: "POST",
         headers: {
@@ -231,22 +288,13 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
         },
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
-          messages: [
-            {
-              role: "system",
-              content: `You are a reference extraction tool. Extract all references, citations, DOIs, and URLs mentioned in the manuscript text. Return them as structured data. If no references are found, return an empty array.`,
-            },
-            {
-              role: "user",
-              content: manuscriptContext + (sub.cover_letter ? `\n\nCover Letter: ${sub.cover_letter}` : ""),
-            },
-          ],
+          messages: extractMessages,
           tools: [
             {
               type: "function",
               function: {
                 name: "extract_references",
-                description: "Extract all references found in the manuscript.",
+                description: "Extract all references found in the manuscript's references section.",
                 parameters: {
                   type: "object",
                   properties: {
@@ -256,15 +304,19 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
                         type: "object",
                         properties: {
                           doi: { type: "string", description: "DOI if mentioned (e.g., 10.1234/example)" },
-                          url: { type: "string", description: "URL if mentioned" },
+                          url: { type: "string", description: "URL if mentioned (not DOI URLs)" },
                           title: { type: "string", description: "Title of the referenced work" },
                           authors: { type: "string", description: "Authors of the referenced work" },
                         },
                       },
-                      description: "List of extracted references. Empty if none found.",
+                      description: "List of extracted references from the References/Bibliography section.",
+                    },
+                    total_references_found: {
+                      type: "number",
+                      description: "Total number of references found in the section",
                     },
                   },
-                  required: ["references"],
+                  required: ["references", "total_references_found"],
                   additionalProperties: false,
                 },
               },
@@ -280,72 +332,72 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
         if (extractCall) {
           const args = JSON.parse(extractCall.function.arguments);
           extractedRefs = args.references || [];
+          console.log(`Extracted ${extractedRefs.length} references (total found: ${args.total_references_found})`);
         }
+      } else {
+        console.error("Reference extraction API error:", extractResponse.status);
       }
     } catch (e) {
       console.error("Reference extraction failed:", e);
     }
 
-    // Verify DOIs and URLs
+    // Verify DOIs and URLs from extracted references
     const verificationResults: string[] = [];
     let verifiedCount = 0;
     let failedCount = 0;
 
-    for (const ref of extractedRefs.slice(0, 15)) {
+    for (const ref of extractedRefs.slice(0, 20)) {
       // Verify DOI
       if (ref.doi) {
         const cleanDoi = ref.doi.replace(/^https?:\/\/doi\.org\//, "").trim();
         if (/^10\.\d{4,}\//.test(cleanDoi)) {
           try {
-            const doiRes = await fetch(`https://doi.org/${cleanDoi}`, {
-              method: "HEAD",
-              redirect: "follow",
+            const metaRes = await fetch(`https://api.crossref.org/works/${cleanDoi}`, {
               headers: { Accept: "application/json" },
+              signal: AbortSignal.timeout(10000),
             });
-            if (doiRes.ok || doiRes.status === 302 || doiRes.status === 301) {
-              // Try to get metadata to verify title/author match
-              try {
-                const metaRes = await fetch(`https://api.crossref.org/works/${cleanDoi}`, {
-                  headers: { Accept: "application/json" },
-                });
-                if (metaRes.ok) {
-                  const metaData = await metaRes.json();
-                  const work = metaData.message;
-                  const actualTitle = (work?.title?.[0] || "").toLowerCase();
-                  const actualAuthors = (work?.author || [])
-                    .map((a: any) => `${a.given || ""} ${a.family || ""}`.trim())
-                    .join(", ");
+            if (metaRes.ok) {
+              const metaData = await metaRes.json();
+              const work = metaData.message;
+              const actualTitle = (work?.title?.[0] || "").toLowerCase();
+              const actualAuthors = (work?.author || [])
+                .map((a: any) => `${a.given || ""} ${a.family || ""}`.trim())
+                .join(", ");
 
-                  if (ref.title && actualTitle) {
-                    const claimedTitle = ref.title.toLowerCase();
-                    const titleMatch = actualTitle.includes(claimedTitle.substring(0, 30)) ||
-                      claimedTitle.includes(actualTitle.substring(0, 30));
-                    if (titleMatch) {
-                      verificationResults.push(`✅ DOI ${cleanDoi} verified — title matches: "${work.title[0]}"`);
-                      verifiedCount++;
-                    } else {
-                      verificationResults.push(`⚠️ DOI ${cleanDoi} exists but title mismatch — claimed: "${ref.title}" vs actual: "${work.title[0]}"`);
-                      failedCount++;
-                    }
-                  } else {
-                    verificationResults.push(`✅ DOI ${cleanDoi} verified — "${work.title?.[0] || "unknown title"}" by ${actualAuthors || "unknown authors"}`);
-                    verifiedCount++;
-                  }
-                } else {
-                  verificationResults.push(`✅ DOI ${cleanDoi} resolves (metadata unavailable)`);
+              if (ref.title && actualTitle) {
+                const claimedTitle = ref.title.toLowerCase();
+                // Check for reasonable title overlap (at least 30 chars or significant portion)
+                const titleMatch = actualTitle.includes(claimedTitle.substring(0, Math.min(40, claimedTitle.length))) ||
+                  claimedTitle.includes(actualTitle.substring(0, Math.min(40, actualTitle.length)));
+                if (titleMatch) {
+                  verificationResults.push(`✅ DOI ${cleanDoi} verified — title: "${work.title[0]}" by ${actualAuthors}`);
                   verifiedCount++;
+                } else {
+                  verificationResults.push(`⚠️ DOI ${cleanDoi} exists but TITLE MISMATCH — manuscript claims: "${ref.title}" | actual DOI title: "${work.title[0]}" by ${actualAuthors}`);
+                  failedCount++;
                 }
-              } catch {
-                verificationResults.push(`✅ DOI ${cleanDoi} resolves (metadata check skipped)`);
+              } else {
+                verificationResults.push(`✅ DOI ${cleanDoi} verified — "${work.title?.[0] || "unknown title"}" by ${actualAuthors || "unknown authors"}`);
                 verifiedCount++;
               }
-            } else {
-              verificationResults.push(`❌ DOI ${cleanDoi} does not resolve (HTTP ${doiRes.status})`);
+
+              // Also check author name overlap if available
+              if (ref.authors && actualAuthors) {
+                const claimedFirstAuthor = ref.authors.split(",")[0].trim().toLowerCase();
+                const actualFirstAuthor = actualAuthors.split(",")[0].trim().toLowerCase();
+                if (!actualFirstAuthor.includes(claimedFirstAuthor.split(" ").pop() || "") &&
+                    !claimedFirstAuthor.includes(actualFirstAuthor.split(" ").pop() || "")) {
+                  verificationResults.push(`  ⚠️ Author mismatch for DOI ${cleanDoi} — manuscript: "${ref.authors}" vs actual: "${actualAuthors}"`);
+                }
+              }
+            } else if (metaRes.status === 404) {
+              verificationResults.push(`❌ DOI ${cleanDoi} NOT FOUND — does not exist in Crossref database (claimed title: "${ref.title || "unknown"}")`);
               failedCount++;
+            } else {
+              verificationResults.push(`⚠️ DOI ${cleanDoi} could not be verified (HTTP ${metaRes.status})`);
             }
           } catch (e) {
-            verificationResults.push(`❌ DOI ${cleanDoi} verification failed (network error)`);
-            failedCount++;
+            verificationResults.push(`⚠️ DOI ${cleanDoi} verification timed out`);
           }
         }
       }
@@ -372,32 +424,39 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
       }
     }
 
+    const refSummary = extractedRefs.length > 0
+      ? `Found ${extractedRefs.length} references in the manuscript.`
+      : "No references section found or no PDF uploaded.";
+
     const verificationSummary = verificationResults.length > 0
-      ? `\n\nReference Verification Results (${verifiedCount} verified, ${failedCount} failed):\n${verificationResults.join("\n")}`
-      : "\n\nNo DOIs or URLs found to verify.";
+      ? `\n\n${refSummary}\n\nReference Verification Results (${verifiedCount} verified, ${failedCount} failed of ${extractedRefs.length} total):\n${verificationResults.join("\n")}`
+      : `\n\n${refSummary}\nNo DOIs or URLs found to verify in the references.`;
 
     const step5 = await runAICheck(
       LOVABLE_API_KEY,
       `You are a reference quality reviewer for Marine Notes Journal — a peer-reviewed open-access journal on marine biology, ecology, conservation, and ocean sciences.
 
-Based on the manuscript metadata AND the automated reference verification results below, assess the quality and integrity of the references.
+You have been provided with automated verification results from the manuscript's References/Bibliography section (extracted from the uploaded PDF). Assess the quality and integrity of the references.
 
 Check for:
-- Does the abstract mention or cite specific studies, data sources, or prior work?
-- Are there indicators of proper literature review?
-- Does the topic require extensive references (e.g., research articles) or fewer (e.g., field notes)?
-- Are the keywords specific enough to suggest familiarity with existing literature?
-- For Conservation News: is a source of the news mentioned?
-- Are there signs of fabricated or placeholder references?
-- IMPORTANT: Review the automated verification results — flag any DOIs that don't resolve or have title/author mismatches
-- Flag any URLs that are unreachable or broken
+- Were references found in the manuscript? If not, flag this as an issue.
+- Do the DOIs resolve and match the claimed titles and authors?
+- Are there title or author mismatches between what the manuscript cites and what the DOI actually points to?
+- Are any DOIs non-existent (fabricated)?
+- Are any URLs broken or unreachable?
+- Is the number of references appropriate for the manuscript type?
+- Do the references appear relevant to the manuscript's topic (marine science)?
 
 Score guidelines:
-- 80-100: References verified, DOIs resolve correctly, titles match
-- 60-79: Some references verified but issues found (broken links, mismatches)
-- Below 60: Multiple broken DOIs/URLs, title mismatches, or fabricated references detected
+- 80-100: Most/all DOIs verified, titles and authors match, URLs work
+- 60-79: Some references verified but issues found (broken links, minor mismatches, some unverifiable)
+- Below 60: Multiple broken DOIs, title/author mismatches, fabricated references, or no references found for a manuscript type that requires them
 
 Be lenient for Field Notes and Observational Reports which may have fewer references. Be stricter for Research Articles and Review Articles.`,
+      manuscriptContext + verificationSummary,
+      "reference_check",
+    );
+    steps.push(step5);
       manuscriptContext + verificationSummary,
       "reference_check",
     );

@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, FileText, Clock, CheckCircle, XCircle, RotateCcw,
   LogOut, MessageSquare, UserCheck, Filter, ExternalLink, Bot, Lock, Bell, BellDot,
-  Zap, Send,
+  Zap, Send, ChevronDown,
 } from "lucide-react";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { AiReviewNote, isAiReviewComment } from "@/components/AiReviewNote";
@@ -505,104 +505,146 @@ const EditorSubmissions = () => {
                     <>
                       <Separator />
                       <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Zap className="h-4 w-4 text-primary" />
-                          <Label className="text-xs text-muted-foreground">AI Review Pipeline</Label>
-                          <Badge className={
-                            selectedSub.pipeline_status === 'passed' ? 'bg-green-100 text-green-800' :
-                            selectedSub.pipeline_status === 'failed' ? 'bg-red-100 text-red-800' :
-                            selectedSub.pipeline_status === 'running' ? 'bg-blue-100 text-blue-800' :
-                            'bg-muted text-muted-foreground'
-                          }>
-                            {selectedSub.pipeline_status === 'running' && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
-                            {selectedSub.pipeline_status.toUpperCase()}
-                          </Badge>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <Zap className="h-4 w-4 text-primary" />
+                            <span className="font-medium text-sm">AI Review Pipeline</span>
+                            <Badge className={
+                              selectedSub.pipeline_status === 'passed' ? 'bg-green-100 text-green-800' :
+                              selectedSub.pipeline_status === 'failed' ? 'bg-red-100 text-red-800' :
+                              selectedSub.pipeline_status === 'running' ? 'bg-blue-100 text-blue-800' :
+                              'bg-muted text-muted-foreground'
+                            }>
+                              {selectedSub.pipeline_status === 'running' && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+                              {selectedSub.pipeline_status.toUpperCase()}
+                            </Badge>
+                          </div>
+                          {selectedSub.pipeline_results?.prepared_metadata?.pipeline_scores && (
+                            <span className="text-sm font-semibold">
+                              Avg: {selectedSub.pipeline_results.prepared_metadata.pipeline_scores.average}/100
+                            </span>
+                          )}
                         </div>
 
+                        {/* Score overview bar */}
                         {selectedSub.pipeline_results?.steps && (
-                          <div className="space-y-2">
+                          <div className="grid grid-cols-4 gap-1 mb-4">
                             {selectedSub.pipeline_results.steps.map((step: any, i: number) => (
-                              <div key={i} className="flex items-start gap-2 p-2 rounded-md bg-muted/50 text-sm">
-                                <span className="mt-0.5">{step.passed ? '✅' : '❌'}</span>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-medium capitalize">{step.step.replace(/_/g, ' ')}</span>
-                                    <span className="text-xs text-muted-foreground">Score: {step.score}/100</span>
-                                  </div>
-                                  <p className="text-xs text-muted-foreground mt-0.5">{step.summary}</p>
-                                  {step.issues.length > 0 && (
-                                    <ul className="text-xs text-destructive mt-1 list-disc list-inside">
-                                      {step.issues.map((issue: string, j: number) => (
-                                        <li key={j}>{issue}</li>
-                                      ))}
-                                    </ul>
-                                  )}
+                              <div key={i} className="text-center">
+                                <div className="text-[10px] text-muted-foreground capitalize truncate">{step.step.replace(/_/g, ' ')}</div>
+                                <div className="w-full h-2 bg-muted rounded-full mt-1 overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full transition-all ${
+                                      step.score >= 80 ? 'bg-green-500' :
+                                      step.score >= 60 ? 'bg-yellow-500' :
+                                      'bg-red-500'
+                                    }`}
+                                    style={{ width: `${step.score}%` }}
+                                  />
+                                </div>
+                                <div className={`text-xs font-semibold mt-0.5 ${step.passed ? 'text-green-700' : 'text-destructive'}`}>
+                                  {step.score}
                                 </div>
                               </div>
                             ))}
                           </div>
                         )}
 
-                        {/* Publish Button - available to editors regardless of pipeline result */}
-                        {selectedSub.pipeline_results?.prepared_metadata && (
-                          <div className="mt-4 p-3 rounded-md border border-primary/30 bg-primary/5">
-                            <p className="text-sm font-medium mb-2">📋 Article ready for publication</p>
-                            <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground mb-3">
-                              <span>DOI: {selectedSub.pipeline_results.prepared_metadata.doi}</span>
-                              <span>Vol {selectedSub.pipeline_results.prepared_metadata.volume}, Issue {selectedSub.pipeline_results.prepared_metadata.issue}</span>
-                              <span>Avg Score: {selectedSub.pipeline_results.prepared_metadata.pipeline_scores?.average}/100</span>
-                            </div>
-                            {selectedSub.pipeline_status === 'failed' && (
-                              <p className="text-xs text-destructive mb-2">⚠️ Pipeline flagged issues. Publishing overrides the AI recommendation.</p>
-                            )}
-                            <Button
-                              onClick={publishArticle}
-                              disabled={publishLoading}
-                              className="w-full"
-                            >
-                              {publishLoading ? (
-                                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Publishing...</>
-                              ) : (
-                                <><Send className="h-4 w-4 mr-2" /> Publish Article</>
-                              )}
-                            </Button>
+                        {/* Detailed step results */}
+                        {selectedSub.pipeline_results?.steps && (
+                          <div className="space-y-2 max-h-80 overflow-y-auto">
+                            {selectedSub.pipeline_results.steps.map((step: any, i: number) => (
+                              <details key={i} className="group rounded-md border border-border overflow-hidden" open={!step.passed}>
+                                <summary className={`flex items-center gap-2 p-2.5 cursor-pointer hover:bg-accent/50 transition-colors text-sm ${!step.passed ? 'bg-destructive/5' : 'bg-muted/30'}`}>
+                                  <span>{step.passed ? '✅' : '❌'}</span>
+                                  <span className="font-medium capitalize flex-1">{step.step.replace(/_/g, ' ')}</span>
+                                  <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
+                                    step.score >= 80 ? 'bg-green-100 text-green-800' :
+                                    step.score >= 60 ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-red-100 text-red-800'
+                                  }`}>{step.score}/100</span>
+                                  <ChevronDown className="h-3 w-3 text-muted-foreground group-open:rotate-180 transition-transform" />
+                                </summary>
+                                <div className="p-3 border-t border-border bg-background">
+                                  <p className="text-sm text-muted-foreground">{step.summary}</p>
+                                  {step.issues.length > 0 && (
+                                    <div className="mt-2 p-2 bg-destructive/5 rounded-md border border-destructive/10">
+                                      <p className="text-xs font-medium text-destructive mb-1">Issues Found:</p>
+                                      <ul className="text-xs text-destructive space-y-0.5">
+                                        {step.issues.map((issue: string, j: number) => (
+                                          <li key={j} className="flex gap-1.5">
+                                            <span className="shrink-0">•</span>
+                                            <span>{issue}</span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                  )}
+                                </div>
+                              </details>
+                            ))}
                           </div>
                         )}
 
-                        {/* Manual publish for failed pipeline (no metadata prepared) */}
-                        {selectedSub.pipeline_status === 'failed' && !selectedSub.pipeline_results?.prepared_metadata && (
-                          <div className="mt-4 p-3 rounded-md border border-border bg-muted/50">
-                            <p className="text-xs text-muted-foreground mb-2">
-                              The pipeline did not prepare metadata because it failed early. You can override the decision and re-run the pipeline or manually process this submission.
-                            </p>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={async () => {
-                                setActionLoading(true);
-                                try {
-                                  await supabase.from("manuscript_submissions")
-                                    .update({ status: "pending", pipeline_status: "pending", pipeline_results: null, decision_date: null })
-                                    .eq("id", selectedSub.id);
-                                  supabase.functions.invoke("auto-review-pipeline", {
-                                    body: { submission_id: selectedSub.id },
-                                  }).catch(console.error);
-                                  toast({ title: "Re-running pipeline", description: "The manuscript will be re-evaluated." });
-                                  await loadSubmissions();
-                                  const updated = (await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub.id).single()).data;
-                                  if (updated) setSelectedSub(updated as Submission);
-                                } catch (err: any) {
-                                  toast({ title: "Error", description: err.message, variant: "destructive" });
-                                }
-                                setActionLoading(false);
-                              }}
-                              disabled={actionLoading}
-                            >
-                              {actionLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RotateCcw className="h-3 w-3 mr-1" />}
-                              Re-run Pipeline
-                            </Button>
-                          </div>
-                        )}
+                        {/* Publish & Re-run actions */}
+                        <div className="mt-4 space-y-3">
+                          {/* Re-run pipeline button (always available) */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={async () => {
+                              setActionLoading(true);
+                              try {
+                                await supabase.from("manuscript_submissions")
+                                  .update({ status: "pending", pipeline_status: "pending", pipeline_results: null, decision_date: null })
+                                  .eq("id", selectedSub.id);
+                                supabase.functions.invoke("auto-review-pipeline", {
+                                  body: { submission_id: selectedSub.id },
+                                }).catch(console.error);
+                                toast({ title: "Re-running pipeline", description: "The manuscript will be re-evaluated." });
+                                await loadSubmissions();
+                                const updated = (await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub.id).single()).data;
+                                if (updated) setSelectedSub(updated as Submission);
+                              } catch (err: any) {
+                                toast({ title: "Error", description: err.message, variant: "destructive" });
+                              }
+                              setActionLoading(false);
+                            }}
+                            disabled={actionLoading}
+                          >
+                            {actionLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RotateCcw className="h-3 w-3 mr-1" />}
+                            Re-run Pipeline
+                          </Button>
+
+                          {/* Publish section */}
+                          {selectedSub.pipeline_results?.prepared_metadata && (
+                            <div className={`p-3 rounded-md border ${selectedSub.pipeline_status === 'failed' ? 'border-destructive/30 bg-destructive/5' : 'border-primary/30 bg-primary/5'}`}>
+                              <p className="text-sm font-medium mb-2">
+                                {selectedSub.pipeline_status === 'passed' ? '📋 Article ready for publication' : '⚠️ Publish despite pipeline issues'}
+                              </p>
+                              <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground mb-3">
+                                <span>DOI: {selectedSub.pipeline_results.prepared_metadata.doi}</span>
+                                <span>Vol {selectedSub.pipeline_results.prepared_metadata.volume}, Issue {selectedSub.pipeline_results.prepared_metadata.issue}</span>
+                                <span>Avg Score: {selectedSub.pipeline_results.prepared_metadata.pipeline_scores?.average}/100</span>
+                              </div>
+                              {selectedSub.pipeline_status === 'failed' && (
+                                <p className="text-xs text-destructive mb-2">Publishing will override the AI recommendation. Make sure you've reviewed the flagged issues.</p>
+                              )}
+                              <Button
+                                onClick={publishArticle}
+                                disabled={publishLoading}
+                                className="w-full"
+                                variant={selectedSub.pipeline_status === 'failed' ? 'destructive' : 'default'}
+                              >
+                                {publishLoading ? (
+                                  <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Publishing...</>
+                                ) : (
+                                  <><Send className="h-4 w-4 mr-2" /> Publish Article</>
+                                )}
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </>
                   )}

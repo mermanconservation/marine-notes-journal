@@ -328,6 +328,29 @@ const EditorSubmissions = () => {
     return data.publicUrl;
   };
 
+  const handleDeleteSubmission = async () => {
+    if (!selectedSub) return;
+    setDeleteLoading(true);
+    try {
+      // Delete related reviews
+      await supabase.from("submission_reviews").delete().eq("submission_id", selectedSub.id);
+      // Delete related notifications
+      await supabase.from("editor_notifications").delete().eq("submission_id", selectedSub.id);
+      // Delete related unlock requests
+      await supabase.from("unlock_requests").delete().eq("submission_id", selectedSub.id);
+      // Delete the submission itself
+      const { error } = await supabase.from("manuscript_submissions").delete().eq("id", selectedSub.id);
+      if (error) throw error;
+      toast({ title: "Submission Deleted", description: "The submission and all related records have been removed." });
+      setSelectedSub(null);
+      setDeleteConfirmTitle("");
+      await loadSubmissions();
+    } catch (err: any) {
+      toast({ title: "Delete Failed", description: err.message, variant: "destructive" });
+    }
+    setDeleteLoading(false);
+  };
+
   const filtered = filterStatus === "all" ? submissions : submissions.filter(s => s.status === filterStatus);
   const statusColor = (status: string) => STATUS_OPTIONS.find(s => s.value === status)?.color || "bg-muted text-muted-foreground";
 

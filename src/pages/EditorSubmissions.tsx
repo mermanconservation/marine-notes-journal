@@ -15,8 +15,9 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, FileText, Clock, CheckCircle, XCircle, RotateCcw,
   LogOut, MessageSquare, UserCheck, Filter, ExternalLink, Bot, Lock, Bell, BellDot,
-  Zap, Send, ChevronDown, Download, Copy, Play, Upload,
+  Zap, Send, ChevronDown, Download, Copy, Play, Upload, Trash2,
 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { AiReviewNote, isAiReviewComment } from "@/components/AiReviewNote";
@@ -96,6 +97,8 @@ const EditorSubmissions = () => {
   const [finalPdfFile, setFinalPdfFile] = useState<File | null>(null);
   const [finalPdfUploading, setFinalPdfUploading] = useState(false);
   const [finalPdfUrl, setFinalPdfUrl] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteConfirmTitle, setDeleteConfirmTitle] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -325,6 +328,29 @@ const EditorSubmissions = () => {
     return data.publicUrl;
   };
 
+  const handleDeleteSubmission = async () => {
+    if (!selectedSub) return;
+    setDeleteLoading(true);
+    try {
+      // Delete related reviews
+      await supabase.from("submission_reviews").delete().eq("submission_id", selectedSub.id);
+      // Delete related notifications
+      await supabase.from("editor_notifications").delete().eq("submission_id", selectedSub.id);
+      // Delete related unlock requests
+      await supabase.from("unlock_requests").delete().eq("submission_id", selectedSub.id);
+      // Delete the submission itself
+      const { error } = await supabase.from("manuscript_submissions").delete().eq("id", selectedSub.id);
+      if (error) throw error;
+      toast({ title: "Submission Deleted", description: "The submission and all related records have been removed." });
+      setSelectedSub(null);
+      setDeleteConfirmTitle("");
+      await loadSubmissions();
+    } catch (err: any) {
+      toast({ title: "Delete Failed", description: err.message, variant: "destructive" });
+    }
+    setDeleteLoading(false);
+  };
+
   const filtered = filterStatus === "all" ? submissions : submissions.filter(s => s.status === filterStatus);
   const statusColor = (status: string) => STATUS_OPTIONS.find(s => s.value === status)?.color || "bg-muted text-muted-foreground";
 
@@ -471,13 +497,50 @@ const EditorSubmissions = () => {
             {selectedSub ? (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">{selectedSub.title}</CardTitle>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Badge className={statusColor(selectedSub.status)}>
-                      {STATUS_OPTIONS.find(s => s.value === selectedSub.status)?.label}
-                    </Badge>
-                    <span>·</span>
-                    <span>{selectedSub.manuscript_type}</span>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{selectedSub.title}</CardTitle>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                        <Badge className={statusColor(selectedSub.status)}>
+                          {STATUS_OPTIONS.find(s => s.value === selectedSub.status)?.label}
+                        </Badge>
+                        <span>·</span>
+                        <span>{selectedSub.manuscript_type}</span>
+                      </div>
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" title="Delete submission">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Submission</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete <strong>"{selectedSub.title}"</strong> and all related reviews, notifications, and unlock requests. This cannot be undone.
+                            <br /><br />
+                            To confirm, type the manuscript title below:
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <Input
+                          placeholder="Type the manuscript title to confirm..."
+                          value={deleteConfirmTitle}
+                          onChange={e => setDeleteConfirmTitle(e.target.value)}
+                        />
+                        <AlertDialogFooter>
+                          <AlertDialogCancel onClick={() => setDeleteConfirmTitle("")}>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            disabled={deleteConfirmTitle !== selectedSub.title || deleteLoading}
+                            onClick={handleDeleteSubmission}
+                          >
+                            {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                            Delete Permanently
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">

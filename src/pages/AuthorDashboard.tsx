@@ -348,7 +348,7 @@ const AuthorDashboard = () => {
                                       <div className="ml-2">
                                         <div className="flex items-center gap-2">
                                           <Badge variant="outline" className="text-xs">{r.action === 'unlock' ? 'Unlocked' : r.action.replace(/_/g, " ")}</Badge>
-                                          <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
+                                          <span className="text-xs text-muted-foreground">{formatDate(r.created_at)}</span>
                                         </div>
                                         {r.comment && (
                                           isAiReview ? (

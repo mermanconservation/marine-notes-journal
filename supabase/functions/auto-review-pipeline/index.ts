@@ -457,10 +457,6 @@ Be lenient for Field Notes and Observational Reports which may have fewer refere
       "reference_check",
     );
     steps.push(step5);
-      manuscriptContext + verificationSummary,
-      "reference_check",
-    );
-    steps.push(step5);
 
     // ── Determine overall result ──
     // Threshold: ≥75 avg = auto-accept, 60-74 = editor_review, <60 = auto-reject

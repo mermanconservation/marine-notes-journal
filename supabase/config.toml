@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.auto-review-pipeline]
 verify_jwt = false
+
+[functions.resolve-user-by-email]
+verify_jwt = false

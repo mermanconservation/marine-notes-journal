@@ -214,21 +214,20 @@ const AdminPanel = () => {
     if (!newRoleEmail.trim()) return;
     setAddingRole(true);
     try {
-      // Look up user by email via auth admin — we need to find user_id
-      // Since we can't query auth.users directly, we'll search manuscript_submissions for the email
-      const { data: subs } = await supabase
-        .from("manuscript_submissions")
-        .select("user_id")
-        .eq("corresponding_author_email", newRoleEmail.trim())
-        .limit(1);
+      // Securely resolve user_id from verified auth.users via edge function
+      const { data: resolveData, error: resolveError } = await supabase.functions.invoke(
+        "resolve-user-by-email",
+        { body: { email: newRoleEmail.trim() } }
+      );
 
-      let targetUserId: string | null = subs?.[0]?.user_id || null;
-
-      if (!targetUserId) {
-        toast({ title: "User not found", description: "No user found with that email. The user must have submitted at least one manuscript.", variant: "destructive" });
+      if (resolveError || !resolveData?.user_id) {
+        const msg = resolveData?.error || "No account found with that verified email.";
+        toast({ title: "User not found", description: msg, variant: "destructive" });
         setAddingRole(false);
         return;
       }
+
+      const targetUserId: string = resolveData.user_id;
 
       // Check if role already exists
       const { data: existing } = await supabase

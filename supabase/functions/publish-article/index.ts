@@ -92,7 +92,7 @@ function sanitizeArticle(article: any) {
 }
 
 function mapDbError(error: any): { message: string; status: number } {
-  console.error("Database error:", JSON.stringify(error));
+  console.error("Database error:", { code: error?.code, hint: error?.hint });
   const code = error?.code;
   if (code === "23505") return { message: "An article with this DOI already exists", status: 409 };
   if (code === "23502") return { message: "A required field is missing", status: 400 };

@@ -316,7 +316,7 @@ const AdminPanel = () => {
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="text-sm font-medium">{req.submission_title}</p>
-                        <p className="text-xs text-muted-foreground">Requested: {new Date(req.created_at).toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">Requested: {formatDateTime(req.created_at)}</p>
                       </div>
                       <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
                     </div>

@@ -14,7 +14,6 @@ const Header = () => {
     { name: "Author Guidelines", href: "/guidelines" },
     { name: "Editorial Board", href: "/editorial-board" },
     { name: "Archive", href: "/archive" },
-    { name: "Promote", href: "/promote" },
     { name: "Contact", href: "/contact" }
   ];
 

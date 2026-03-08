@@ -107,50 +107,6 @@ Include the website URL ${websiteUrl}.`;
       });
     }
 
-    if (type === "image") {
-      const imagePrompt = `${topic || "A beautiful ocean scene with marine life, coral reefs, and clear blue water"}. Professional, high-quality, suitable for social media promotion of a marine science journal. Clean composition, vibrant colors.`;
-
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash-image",
-          messages: [
-            { role: "user", content: imagePrompt },
-          ],
-          modalities: ["image", "text"],
-        }),
-      });
-
-      if (!response.ok) {
-        if (response.status === 429) {
-          return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-            status: 429,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        if (response.status === 402) {
-          return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits to continue." }), {
-            status: 402,
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
-        }
-        const errText = await response.text();
-        console.error("AI image error:", response.status, errText);
-        throw new Error("AI image generation failed");
-      }
-
-      const data = await response.json();
-      const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url || null;
-      const description = data.choices?.[0]?.message?.content || "";
-
-      return new Response(JSON.stringify({ imageUrl, description }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
 
     return new Response(JSON.stringify({ error: "Invalid type. Use 'text' or 'image'." }), {
       status: 400,

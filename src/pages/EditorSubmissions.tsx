@@ -590,9 +590,9 @@ const EditorSubmissions = () => {
                       <Label className="text-xs text-muted-foreground mb-2 block">Attached Files</Label>
                       <div className="space-y-1">
                         {selectedSub.file_paths.map((fp, i) => (
-                          <a key={i} href={getFileUrl(fp)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                          <button key={i} onClick={(e) => handleFileClick(e, fp, selectedSub.user_id)} className="flex items-center gap-2 text-sm text-primary hover:underline cursor-pointer">
                             <ExternalLink className="h-3 w-3" /> {fp.split("/").pop()}
-                          </a>
+                          </button>
                         ))}
                       </div>
                     </div>

@@ -390,6 +390,22 @@ const AuthorDashboard = () => {
                                     <p className="text-sm text-muted-foreground mt-0.5">Manuscript submitted for review</p>
                                   </div>
                                 </div>
+                                {/* AI Pipeline processing indicator */}
+                                {(sub.pipeline_status === "pending" || sub.pipeline_status === "running") && subReviews.length === 0 && (
+                                  <div className="relative">
+                                    <div className="absolute -left-[calc(0.5rem+1px)] top-1 h-3 w-3 rounded-full border-2 border-background bg-blue-500 animate-pulse" />
+                                    <div className="ml-2">
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="text-xs">
+                                          <Bot className="h-3 w-3 mr-1 animate-spin" /> AI Review In Progress
+                                        </Badge>
+                                      </div>
+                                      <p className="text-sm text-muted-foreground mt-0.5">
+                                        Your manuscript is being reviewed by the automated pipeline. This may take a few minutes...
+                                      </p>
+                                    </div>
+                                  </div>
+                                )}
                                 {/* Review entries in chronological order */}
                                 {[...subReviews].reverse().map((r) => {
                                   const isAiReview = isAiReviewComment(r.comment);

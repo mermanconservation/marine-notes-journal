@@ -30,11 +30,11 @@ const DOIResolver = () => {
       <div className="container mx-auto px-4 py-20">
         <Card className="max-w-2xl mx-auto">
           <CardHeader>
-            <CardTitle className="text-2xl text-destructive">DOI Not Found</CardTitle>
+            <CardTitle className="text-2xl text-destructive">Article Not Found</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-6">
-              The DOI <span className="font-mono font-semibold">{doi}</span> was not found in our database.
+              The Article ID <span className="font-mono font-semibold">{doi}</span> was not found in our database.
             </p>
             <Button onClick={() => navigate("/archive")}>
               <ArrowLeft className="mr-2 h-4 w-4" />

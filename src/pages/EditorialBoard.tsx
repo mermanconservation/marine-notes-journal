@@ -103,6 +103,45 @@ const EditorialBoard = () => {
             </Card>
           </div>
 
+          {/* Lead Editor */}
+          <div className="mb-12">
+            <h2 className="font-academic text-2xl font-semibold mb-6 text-center">Lead Editor</h2>
+            <Card className="max-w-3xl mx-auto shadow-ocean">
+              <CardContent className="p-8">
+                <div className="grid gap-6 lg:grid-cols-3">
+                  <div className="lg:col-span-2">
+                    <div className="mb-4">
+                      <h3 className="text-2xl font-semibold text-foreground">{leadEditor.name}</h3>
+                      <p className="text-lg text-primary font-medium">{leadEditor.title}</p>
+                      <p className="text-muted-foreground">{leadEditor.affiliation}</p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                        <MapPin className="h-4 w-4" />
+                        {leadEditor.location}
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <h4 className="font-medium mb-2">Research Expertise</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {leadEditor.expertise.map((area, index) => (
+                          <Badge key={index} variant="secondary">{area}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{leadEditor.bio}</p>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="h-4 w-4 text-primary" />
+                      <a href={`mailto:${leadEditor.email}`} className="text-primary hover:underline">
+                        {leadEditor.email}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           {/* Editors */}
           <div className="mb-12">
             <h2 className="font-academic text-2xl font-semibold mb-6 text-center">Editors</h2>

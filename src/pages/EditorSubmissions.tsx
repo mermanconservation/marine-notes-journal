@@ -652,7 +652,7 @@ const EditorSubmissions = () => {
 
                         {/* Score overview bar */}
                         {selectedSub.pipeline_results?.steps && (
-                          <div className="grid grid-cols-4 gap-1 mb-4">
+                          <div className="grid grid-cols-5 gap-1 mb-4">
                             {selectedSub.pipeline_results.steps.map((step: any, i: number) => (
                               <div key={i} className="text-center">
                                 <div className="text-[10px] text-muted-foreground capitalize truncate">{step.step.replace(/_/g, ' ')}</div>

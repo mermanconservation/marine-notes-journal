@@ -15,8 +15,9 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, FileText, Clock, CheckCircle, XCircle, RotateCcw,
   LogOut, MessageSquare, UserCheck, Filter, ExternalLink, Bot, Lock, Bell, BellDot,
-  Zap, Send, ChevronDown,
+  Zap, Send, ChevronDown, Download, Copy, Play,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { AiReviewNote, isAiReviewComment } from "@/components/AiReviewNote";
 

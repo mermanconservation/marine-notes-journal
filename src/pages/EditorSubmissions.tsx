@@ -258,18 +258,40 @@ const EditorSubmissions = () => {
     setPublishLoading(false);
   };
 
-  const downloadFile = async (path: string) => {
+  const downloadFile = async (path: string, userId?: string | null) => {
+    const normalizePath = (value: string) => value.replace(/^\/+/, "").replace(/^manuscripts\//, "");
+    const baseName = path.split("/").pop() || "manuscript";
+
+    const candidates = new Set<string>([
+      normalizePath(path),
+      baseName,
+      userId ? `submissions/${userId}/${baseName}` : "",
+    ]);
+
     try {
-      const { data, error } = await supabase.storage.from("manuscripts").download(path);
-      if (error) throw error;
-      const url = URL.createObjectURL(data);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = path.split("/").pop() || "manuscript.pdf";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      if (userId) {
+        const { data: userFiles } = await supabase.storage.from("manuscripts").list(`submissions/${userId}`);
+        const matched = userFiles?.find((f) => f.name === baseName);
+        if (matched) candidates.add(`submissions/${userId}/${matched.name}`);
+      }
+
+      for (const candidate of candidates) {
+        if (!candidate) continue;
+        const { data, error } = await supabase.storage.from("manuscripts").download(candidate);
+        if (!error && data) {
+          const url = URL.createObjectURL(data);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = baseName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          return;
+        }
+      }
+
+      throw new Error(`File not found in storage: ${baseName}`);
     } catch (err: any) {
       toast({ title: "Download failed", description: err.message, variant: "destructive" });
     }

@@ -159,35 +159,7 @@ Be strict: reject manuscripts clearly outside marine/ocean science scope. Pass m
     );
     steps.push(step1);
 
-    if (!step1.passed) {
-      // Early rejection — skip remaining steps
-      const results: PipelineResults = {
-        steps,
-        overall_passed: false,
-        rejection_reasons: step1.issues,
-      };
-      await supabase
-        .from("manuscript_submissions")
-        .update({
-          pipeline_status: "failed",
-          pipeline_results: results,
-          status: "rejected",
-          decision_date: new Date().toISOString(),
-        })
-        .eq("id", submission_id);
-
-      // Record auto-rejection review
-      await supabase.from("submission_reviews").insert({
-        submission_id,
-        reviewer_id: "00000000-0000-0000-0000-000000000000",
-        action: "reject",
-        comment: `[AI AUTO-REVIEW PIPELINE]\n\n**Result: REJECTED — Out of Scope**\n\nScore: ${step1.score}/100\n\n${step1.summary}\n\n**Issues:**\n${step1.issues.map(i => `- ${i}`).join("\n")}`,
-      });
-
-      return new Response(JSON.stringify({ success: true, passed: false, results }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Continue all steps even if scope fails — editors may override
 
     // ── STEP 2: Grammar & Language Quality ──
     const step2 = await runAICheck(

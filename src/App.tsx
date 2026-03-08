@@ -20,6 +20,7 @@ import Auth from "./pages/Auth";
 import AuthorDashboard from "./pages/AuthorDashboard";
 import EditorSubmissions from "./pages/EditorSubmissions";
 import AdminPanel from "./pages/AdminPanel";
+import Promote from "./pages/Promote";
 import Layout from "./components/Layout/Layout";
 
 const queryClient = new QueryClient();

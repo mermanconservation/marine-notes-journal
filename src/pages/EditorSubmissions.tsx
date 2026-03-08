@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -286,7 +287,7 @@ const EditorSubmissions = () => {
                       >
                         <p className="text-sm font-medium line-clamp-2">{n.message}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          {new Date(n.created_at).toLocaleString()}
+                          {formatDateTime(n.created_at)}
                         </p>
                       </button>
                     ))
@@ -337,7 +338,7 @@ const EditorSubmissions = () => {
                     </Badge>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {sub.corresponding_author_name} · {new Date(sub.created_at).toLocaleDateString()}
+                    {sub.corresponding_author_name} · {formatDate(sub.created_at)}
                   </p>
                 </button>
               ))
@@ -423,7 +424,7 @@ const EditorSubmissions = () => {
                         <div className="ml-2">
                           <div className="flex items-center gap-2">
                             <Badge variant="outline" className="text-xs">Received</Badge>
-                            <span className="text-xs text-muted-foreground">{new Date(selectedSub.created_at).toLocaleDateString()}</span>
+                            <span className="text-xs text-muted-foreground">{formatDate(selectedSub.created_at)}</span>
                           </div>
                           <p className="text-sm text-muted-foreground mt-0.5">Manuscript submitted</p>
                         </div>
@@ -443,7 +444,7 @@ const EditorSubmissions = () => {
                             <div className="ml-2">
                               <div className="flex items-center gap-2">
                                 <Badge variant="outline" className="text-xs">{ACTION_LABELS[r.action] || r.action}</Badge>
-                                <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleString()}</span>
+                                <span className="text-xs text-muted-foreground">{formatDateTime(r.created_at)}</span>
                               </div>
                               {r.comment && (
                                 isAiReview ? (

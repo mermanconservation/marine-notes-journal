@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatDateLong } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,11 +18,7 @@ export const PromotionAssistant = ({ article }: PromotionAssistantProps) => {
   const { toast } = useToast();
 
   const generatePressRelease = () => {
-    const date = new Date(article.publicationDate).toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
+    const date = formatDateLong(article.publicationDate);
     
     return `FOR IMMEDIATE RELEASE
 

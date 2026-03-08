@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatMonthYear } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -36,7 +37,7 @@ const Archive = () => {
         vol.issues.set(issueKey, {
           issue: parseInt(article.issue),
           title: "Issue " + article.issue,
-          date: new Date(article.publicationDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          date: formatMonthYear(article.publicationDate),
           articles: []
         });
       }

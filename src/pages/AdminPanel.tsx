@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -316,7 +317,7 @@ const AdminPanel = () => {
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="text-sm font-medium">{req.submission_title}</p>
-                        <p className="text-xs text-muted-foreground">Requested: {new Date(req.created_at).toLocaleString()}</p>
+                        <p className="text-xs text-muted-foreground">Requested: {formatDateTime(req.created_at)}</p>
                       </div>
                       <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>
                     </div>
@@ -380,7 +381,7 @@ const AdminPanel = () => {
                         <p className="text-xs text-muted-foreground mt-0.5">Admin: {req.decision_comment}</p>
                       )}
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {req.decided_at && new Date(req.decided_at).toLocaleString()}
+                        {req.decided_at && formatDateTime(req.decided_at)}
                       </p>
                     </div>
                     <Badge className={req.status === "approved" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
@@ -449,7 +450,7 @@ const AdminPanel = () => {
                       )}
                       <p className="text-xs text-muted-foreground">
                         {role.email && <span className="font-mono">{role.user_id.slice(0, 8)}... · </span>}
-                        Since {new Date(role.created_at).toLocaleDateString()}
+                        Since {formatDate(role.created_at)}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">

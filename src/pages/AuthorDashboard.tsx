@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { formatDate } from "@/lib/utils";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -292,7 +293,7 @@ const AuthorDashboard = () => {
                               <h3 className="font-medium text-base mb-1 hover:text-primary transition-colors">{sub.title}</h3>
                             </button>
                             <p className="text-sm text-muted-foreground">
-                              {sub.manuscript_type} · Submitted {new Date(sub.created_at).toLocaleDateString()}
+                              {sub.manuscript_type} · Submitted {formatDate(sub.created_at)}
                             </p>
                           </div>
                           <Badge className={`${si.color} shrink-0`}>
@@ -328,7 +329,7 @@ const AuthorDashboard = () => {
                                   <div className="ml-2">
                                     <div className="flex items-center gap-2">
                                       <Badge variant="outline" className="text-xs">Received</Badge>
-                                      <span className="text-xs text-muted-foreground">{new Date(sub.created_at).toLocaleDateString()}</span>
+                                      <span className="text-xs text-muted-foreground">{formatDate(sub.created_at)}</span>
                                     </div>
                                     <p className="text-sm text-muted-foreground mt-0.5">Manuscript submitted for review</p>
                                   </div>
@@ -348,7 +349,7 @@ const AuthorDashboard = () => {
                                       <div className="ml-2">
                                         <div className="flex items-center gap-2">
                                           <Badge variant="outline" className="text-xs">{r.action === 'unlock' ? 'Unlocked' : r.action.replace(/_/g, " ")}</Badge>
-                                          <span className="text-xs text-muted-foreground">{new Date(r.created_at).toLocaleDateString()}</span>
+                                          <span className="text-xs text-muted-foreground">{formatDate(r.created_at)}</span>
                                         </div>
                                         {r.comment && (
                                           isAiReview ? (
@@ -546,7 +547,7 @@ const AuthorDashboard = () => {
                     </div>
                     <div className="space-y-2">
                       <Label>Date</Label>
-                      <Input value={new Date().toLocaleDateString()} disabled />
+                      <Input value={formatDate(new Date())} disabled />
                     </div>
                   </div>
                 </CardContent>

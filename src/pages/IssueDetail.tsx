@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { formatDateLong } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Download, FileText, Quote } from "lucide-react";
@@ -93,11 +94,7 @@ const IssueDetail = () => {
                   <AuthorWithOrcid authors={article.authors} orcidIds={article.orcidIds} />
                   <div className="flex flex-wrap gap-4 text-sm">
                     <span className="text-muted-foreground">
-                      Published: {new Date(article.publicationDate).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
+                      Published: {formatDateLong(article.publicationDate)}
                     </span>
                     <span className="bg-accent text-accent-foreground px-2 py-1 rounded">
                       {article.type}

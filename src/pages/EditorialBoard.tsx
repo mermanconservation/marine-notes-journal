@@ -13,6 +13,16 @@ const EditorialBoard = () => {
     bio: "Our AI Editor-in-Chief leverages advanced artificial intelligence to ensure efficient manuscript processing, coordinated peer review, and consistent editorial standards. Working alongside our human editorial team, the AI Editor manages workflow optimization while maintaining rigorous scientific integrity across all publications."
   };
 
+  const leadEditor = {
+    name: "Charlotte Hayers",
+    title: "Lead Editor",
+    affiliation: "University of Bristol",
+    location: "Bristol, UK",
+    expertise: ["Marine Science", "Research Management", "Conservation"],
+    email: "editor@marinenotesjournal.com",
+    bio: "Charlotte Hayers serves as Lead Editor, overseeing the editorial process and ensuring the highest standards of scientific rigour across all Marine Notes Journal publications."
+  };
+
   const editors = [
     {
       name: "Christos Taklis",
@@ -20,13 +30,6 @@ const EditorialBoard = () => {
       location: "Edinburgh, UK",
       expertise: ["Marine Ecology", "Conservation Biology", "Shark Conservation"],
       email: "info@mermanconservation.co.uk"
-    },
-    {
-      name: "Charlotte Hayers",
-      affiliation: "University of Bristol",
-      location: "Bristol, UK",
-      expertise: ["Marine Science", "Research Management", "Conservation"],
-      email: "editor@marinenotesjournal.com"
     },
     {
       name: "Elisabeth Brown",
@@ -92,6 +95,45 @@ const EditorialBoard = () => {
                       <Mail className="h-4 w-4 text-primary" />
                       <a href={`mailto:${editorInChief.email}`} className="text-primary hover:underline">
                         {editorInChief.email}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Lead Editor */}
+          <div className="mb-12">
+            <h2 className="font-academic text-2xl font-semibold mb-6 text-center">Lead Editor</h2>
+            <Card className="max-w-3xl mx-auto shadow-ocean">
+              <CardContent className="p-8">
+                <div className="grid gap-6 lg:grid-cols-3">
+                  <div className="lg:col-span-2">
+                    <div className="mb-4">
+                      <h3 className="text-2xl font-semibold text-foreground">{leadEditor.name}</h3>
+                      <p className="text-lg text-primary font-medium">{leadEditor.title}</p>
+                      <p className="text-muted-foreground">{leadEditor.affiliation}</p>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
+                        <MapPin className="h-4 w-4" />
+                        {leadEditor.location}
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <h4 className="font-medium mb-2">Research Expertise</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {leadEditor.expertise.map((area, index) => (
+                          <Badge key={index} variant="secondary">{area}</Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{leadEditor.bio}</p>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="h-4 w-4 text-primary" />
+                      <a href={`mailto:${leadEditor.email}`} className="text-primary hover:underline">
+                        {leadEditor.email}
                       </a>
                     </div>
                   </div>

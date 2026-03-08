@@ -51,6 +51,8 @@ interface Submission {
   corresponding_author_orcid: string | null;
   all_authors: string;
   cover_letter: string | null;
+  pipeline_status: string;
+  pipeline_results: any;
 }
 
 interface Review {

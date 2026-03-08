@@ -63,6 +63,7 @@ const AdminPanel = () => {
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteConfirmTitle, setDeleteConfirmTitle] = useState("");
   const [deletingArticle, setDeletingArticle] = useState<string | null>(null);
+  const [editorPasscode, setEditorPasscode] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");

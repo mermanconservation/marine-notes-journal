@@ -328,7 +328,7 @@ const AuthorDashboard = () => {
                                   <div className="ml-2">
                                     <div className="flex items-center gap-2">
                                       <Badge variant="outline" className="text-xs">Received</Badge>
-                                      <span className="text-xs text-muted-foreground">{new Date(sub.created_at).toLocaleDateString()}</span>
+                                      <span className="text-xs text-muted-foreground">{formatDate(sub.created_at)}</span>
                                     </div>
                                     <p className="text-sm text-muted-foreground mt-0.5">Manuscript submitted for review</p>
                                   </div>

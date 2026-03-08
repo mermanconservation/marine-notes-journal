@@ -116,7 +116,7 @@ Deno.serve(async (req) => {
     const { passcode, article, action } = await req.json();
 
     const editorPasscode = Deno.env.get("EDITOR_PASSCODE");
-    if (!editorPasscode || passcode !== editorPasscode) {
+    if (!editorPasscode || typeof passcode !== "string" || !constantTimeEqual(passcode, editorPasscode)) {
       return errorResponse("Invalid passcode", 401);
     }
 

@@ -497,13 +497,50 @@ const EditorSubmissions = () => {
             {selectedSub ? (
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">{selectedSub.title}</CardTitle>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Badge className={statusColor(selectedSub.status)}>
-                      {STATUS_OPTIONS.find(s => s.value === selectedSub.status)?.label}
-                    </Badge>
-                    <span>·</span>
-                    <span>{selectedSub.manuscript_type}</span>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-lg">{selectedSub.title}</CardTitle>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                        <Badge className={statusColor(selectedSub.status)}>
+                          {STATUS_OPTIONS.find(s => s.value === selectedSub.status)?.label}
+                        </Badge>
+                        <span>·</span>
+                        <span>{selectedSub.manuscript_type}</span>
+                      </div>
+                    </div>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10" title="Delete submission">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Submission</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete <strong>"{selectedSub.title}"</strong> and all related reviews, notifications, and unlock requests. This cannot be undone.
+                            <br /><br />
+                            To confirm, type the manuscript title below:
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <Input
+                          placeholder="Type the manuscript title to confirm..."
+                          value={deleteConfirmTitle}
+                          onChange={e => setDeleteConfirmTitle(e.target.value)}
+                        />
+                        <AlertDialogFooter>
+                          <AlertDialogCancel onClick={() => setDeleteConfirmTitle("")}>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            disabled={deleteConfirmTitle !== selectedSub.title || deleteLoading}
+                            onClick={handleDeleteSubmission}
+                          >
+                            {deleteLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Trash2 className="h-4 w-4 mr-2" />}
+                            Delete Permanently
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">

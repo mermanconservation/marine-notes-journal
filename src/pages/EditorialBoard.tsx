@@ -13,6 +13,16 @@ const EditorialBoard = () => {
     bio: "Our AI Editor-in-Chief leverages advanced artificial intelligence to ensure efficient manuscript processing, coordinated peer review, and consistent editorial standards. Working alongside our human editorial team, the AI Editor manages workflow optimization while maintaining rigorous scientific integrity across all publications."
   };
 
+  const leadEditor = {
+    name: "Charlotte Hayers",
+    title: "Lead Editor",
+    affiliation: "University of Bristol",
+    location: "Bristol, UK",
+    expertise: ["Marine Science", "Research Management", "Conservation"],
+    email: "editor@marinenotesjournal.com",
+    bio: "Charlotte Hayers serves as Lead Editor, overseeing the editorial process and ensuring the highest standards of scientific rigour across all Marine Notes Journal publications."
+  };
+
   const editors = [
     {
       name: "Christos Taklis",
@@ -20,13 +30,6 @@ const EditorialBoard = () => {
       location: "Edinburgh, UK",
       expertise: ["Marine Ecology", "Conservation Biology", "Shark Conservation"],
       email: "info@mermanconservation.co.uk"
-    },
-    {
-      name: "Charlotte Hayers",
-      affiliation: "University of Bristol",
-      location: "Bristol, UK",
-      expertise: ["Marine Science", "Research Management", "Conservation"],
-      email: "editor@marinenotesjournal.com"
     },
     {
       name: "Elisabeth Brown",

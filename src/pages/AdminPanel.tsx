@@ -431,6 +431,88 @@ const AdminPanel = () => {
           </CardContent>
         </Card>
 
+        {/* Published Articles Management */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <FileText className="h-5 w-5" />
+              Published Articles
+              {publishedArticles.length > 0 && (
+                <Badge variant="secondary" className="ml-2">{publishedArticles.length}</Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {publishedArticles.length === 0 ? (
+              <p className="text-muted-foreground text-sm text-center py-4">No dynamically published articles</p>
+            ) : (
+              <div className="space-y-3">
+                {publishedArticles.map((article: any) => (
+                  <div key={article.doi} className="p-4 border rounded-lg space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{article.title}</p>
+                        <p className="text-xs text-muted-foreground">{article.doi} · {article.authors}</p>
+                      </div>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive shrink-0"
+                            disabled={deletingArticle === article.doi}
+                          >
+                            {deletingArticle === article.doi ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="max-w-lg">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-destructive">Remove Published Article</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently remove <strong>"{article.title}"</strong> from the journal. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <div className="space-y-3 py-2">
+                            <div>
+                              <Label className="text-sm font-medium">Reason for removal *</Label>
+                              <Textarea
+                                value={deleteReason}
+                                onChange={e => setDeleteReason(e.target.value)}
+                                placeholder="e.g. Duplicate entry, retraction, author request..."
+                                rows={2}
+                                className="mt-1"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-sm font-medium">Type the exact article title to confirm *</Label>
+                              <Input
+                                value={deleteConfirmTitle}
+                                onChange={e => setDeleteConfirmTitle(e.target.value)}
+                                placeholder="Type article title here..."
+                                className="mt-1"
+                              />
+                            </div>
+                          </div>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => { setDeleteReason(""); setDeleteConfirmTitle(""); }}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              onClick={() => handleDeleteArticle(article)}
+                              disabled={!deleteReason.trim() || deleteConfirmTitle !== article.title}
+                            >
+                              Remove Article
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* User Roles */}
         <Card>
           <CardHeader>

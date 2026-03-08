@@ -142,6 +142,27 @@ const EditorSubmissions = () => {
     setLoading(false);
   };
 
+  const loadNotifications = async () => {
+    const { data } = await supabase
+      .from("editor_notifications")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(20);
+    setNotifications(data || []);
+  };
+
+  const markAsRead = async (id: string) => {
+    await supabase.from("editor_notifications").update({ is_read: true }).eq("id", id);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+  };
+
+  const markAllAsRead = async () => {
+    const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
+    if (unreadIds.length === 0) return;
+    await supabase.from("editor_notifications").update({ is_read: true }).in("id", unreadIds);
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+  };
+
   const performAction = async (action: string, newStatus?: string, overrideComment?: string) => {
     if (!selectedSub || !user) return;
     setActionLoading(true);

@@ -274,7 +274,7 @@ const EditorSubmissions = () => {
 
     try {
       if (userId) {
-        const { data: userFiles } = await supabase.storage.from("manuscripts").list(`submissions/${userId}`);
+        const { data: userFiles } = await supabase.storage.from("manuscript-submissions").list(`submissions/${userId}`);
         const matched = userFiles?.find((f) => f.name === baseName);
         if (matched) candidates.add(`submissions/${userId}/${matched.name}`);
       }

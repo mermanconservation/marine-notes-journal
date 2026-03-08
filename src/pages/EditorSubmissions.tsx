@@ -609,7 +609,17 @@ const EditorSubmissions = () => {
                     </div>
                   )}
 
-                  {/* Run Pipeline for pending submissions */}
+                  {/* Format Manuscript */}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowFormatter(true)}
+                    className="border-primary/30 text-primary hover:bg-primary/10"
+                  >
+                    <Wand2 className="h-3 w-3 mr-1" /> Format Manuscript
+                  </Button>
+
+
                   {selectedSub.pipeline_status === 'pending' && (
                     <div className="p-3 rounded-md border border-primary/30 bg-primary/5">
                       <p className="text-sm font-medium mb-2">🔬 AI Review Pipeline has not been run yet</p>

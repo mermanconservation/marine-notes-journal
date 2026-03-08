@@ -543,8 +543,8 @@ const EditorSubmissions = () => {
                           </div>
                         )}
 
-                        {/* Publish Button - only when pipeline passed */}
-                        {selectedSub.pipeline_status === 'passed' && selectedSub.pipeline_results?.prepared_metadata && (
+                        {/* Publish Button - available to editors regardless of pipeline result */}
+                        {selectedSub.pipeline_results?.prepared_metadata && (
                           <div className="mt-4 p-3 rounded-md border border-primary/30 bg-primary/5">
                             <p className="text-sm font-medium mb-2">📋 Article ready for publication</p>
                             <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground mb-3">
@@ -552,6 +552,9 @@ const EditorSubmissions = () => {
                               <span>Vol {selectedSub.pipeline_results.prepared_metadata.volume}, Issue {selectedSub.pipeline_results.prepared_metadata.issue}</span>
                               <span>Avg Score: {selectedSub.pipeline_results.prepared_metadata.pipeline_scores?.average}/100</span>
                             </div>
+                            {selectedSub.pipeline_status === 'failed' && (
+                              <p className="text-xs text-destructive mb-2">⚠️ Pipeline flagged issues. Publishing overrides the AI recommendation.</p>
+                            )}
                             <Button
                               onClick={publishArticle}
                               disabled={publishLoading}
@@ -562,6 +565,41 @@ const EditorSubmissions = () => {
                               ) : (
                                 <><Send className="h-4 w-4 mr-2" /> Publish Article</>
                               )}
+                            </Button>
+                          </div>
+                        )}
+
+                        {/* Manual publish for failed pipeline (no metadata prepared) */}
+                        {selectedSub.pipeline_status === 'failed' && !selectedSub.pipeline_results?.prepared_metadata && (
+                          <div className="mt-4 p-3 rounded-md border border-border bg-muted/50">
+                            <p className="text-xs text-muted-foreground mb-2">
+                              The pipeline did not prepare metadata because it failed early. You can override the decision and re-run the pipeline or manually process this submission.
+                            </p>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                setActionLoading(true);
+                                try {
+                                  await supabase.from("manuscript_submissions")
+                                    .update({ status: "pending", pipeline_status: "pending", pipeline_results: null, decision_date: null })
+                                    .eq("id", selectedSub.id);
+                                  supabase.functions.invoke("auto-review-pipeline", {
+                                    body: { submission_id: selectedSub.id },
+                                  }).catch(console.error);
+                                  toast({ title: "Re-running pipeline", description: "The manuscript will be re-evaluated." });
+                                  await loadSubmissions();
+                                  const updated = (await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub.id).single()).data;
+                                  if (updated) setSelectedSub(updated as Submission);
+                                } catch (err: any) {
+                                  toast({ title: "Error", description: err.message, variant: "destructive" });
+                                }
+                                setActionLoading(false);
+                              }}
+                              disabled={actionLoading}
+                            >
+                              {actionLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RotateCcw className="h-3 w-3 mr-1" />}
+                              Re-run Pipeline
                             </Button>
                           </div>
                         )}

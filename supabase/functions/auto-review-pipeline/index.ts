@@ -159,35 +159,7 @@ Be strict: reject manuscripts clearly outside marine/ocean science scope. Pass m
     );
     steps.push(step1);
 
-    if (!step1.passed) {
-      // Early rejection — skip remaining steps
-      const results: PipelineResults = {
-        steps,
-        overall_passed: false,
-        rejection_reasons: step1.issues,
-      };
-      await supabase
-        .from("manuscript_submissions")
-        .update({
-          pipeline_status: "failed",
-          pipeline_results: results,
-          status: "rejected",
-          decision_date: new Date().toISOString(),
-        })
-        .eq("id", submission_id);
-
-      // Record auto-rejection review
-      await supabase.from("submission_reviews").insert({
-        submission_id,
-        reviewer_id: "00000000-0000-0000-0000-000000000000",
-        action: "reject",
-        comment: `[AI AUTO-REVIEW PIPELINE]\n\n**Result: REJECTED — Out of Scope**\n\nScore: ${step1.score}/100\n\n${step1.summary}\n\n**Issues:**\n${step1.issues.map(i => `- ${i}`).join("\n")}`,
-      });
-
-      return new Response(JSON.stringify({ success: true, passed: false, results }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Continue all steps even if scope fails — editors may override
 
     // ── STEP 2: Grammar & Language Quality ──
     const step2 = await runAICheck(
@@ -252,42 +224,38 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
     const failedSteps = steps.filter((s) => !s.passed);
     const rejectionReasons = failedSteps.flatMap((s) => s.issues);
 
-    // Generate metadata if passed
-    let preparedMetadata: Record<string, unknown> | undefined;
-    if (allPassed) {
-      // Determine next DOI, volume, issue
-      const currentYear = new Date().getFullYear();
-      const volume = (currentYear - 2025).toString(); // Vol 1 = 2026, etc.
+    // Always generate metadata so editors can override and publish
+    const currentYear = new Date().getFullYear();
+    const volume = (currentYear - 2025).toString();
 
-      const { count } = await supabase
-        .from("articles")
-        .select("*", { count: "exact", head: true })
-        .eq("volume", volume);
+    const { count } = await supabase
+      .from("articles")
+      .select("*", { count: "exact", head: true })
+      .eq("volume", volume);
 
-      const articleNumber = (count || 0) + 1;
-      const issue = "1"; // Default to issue 1
-      const doi = `10.69882/mnj.${currentYear}.v${volume}i${issue}.${articleNumber}`;
+    const articleNumber = (count || 0) + 1;
+    const issue = "1";
+    const doi = `10.69882/mnj.${currentYear}.v${volume}i${issue}.${articleNumber}`;
 
-      preparedMetadata = {
-        doi,
-        volume,
-        issue,
-        title: sub.title,
-        authors: sub.all_authors,
-        abstract: sub.abstract,
-        type: sub.manuscript_type,
-        resolver_url: `https://marine-notes-journal.lovable.app/doi/${doi}`,
-        publication_date: new Date().toISOString().split("T")[0],
-        orcid_ids: sub.corresponding_author_orcid ? [sub.corresponding_author_orcid] : [],
-        pipeline_scores: {
-          scope: step1.score,
-          grammar: step2.score,
-          structure: step3.score,
-          originality: step4.score,
-          average: Math.round((step1.score + step2.score + step3.score + step4.score) / 4),
-        },
-      };
-    }
+    const preparedMetadata = {
+      doi,
+      volume,
+      issue,
+      title: sub.title,
+      authors: sub.all_authors,
+      abstract: sub.abstract,
+      type: sub.manuscript_type,
+      resolver_url: `https://marine-notes-journal.lovable.app/doi/${doi}`,
+      publication_date: new Date().toISOString().split("T")[0],
+      orcid_ids: sub.corresponding_author_orcid ? [sub.corresponding_author_orcid] : [],
+      pipeline_scores: {
+        scope: step1.score,
+        grammar: step2.score,
+        structure: step3.score,
+        originality: step4.score,
+        average: Math.round((step1.score + step2.score + step3.score + step4.score) / 4),
+      },
+    };
 
     const results: PipelineResults = {
       steps,

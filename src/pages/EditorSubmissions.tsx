@@ -1027,13 +1027,15 @@ Pages: ${publishData.articleNumber}`}
                   </div>
                 </div>
 
-                {/* PDF URL if available */}
-                {publishData.pdfUrl && (
+                {/* Download Original Manuscript */}
+                {selectedSub?.file_paths && selectedSub.file_paths.length > 0 && (
                   <div className="space-y-2">
-                    <h3 className="font-semibold text-sm">Manuscript PDF</h3>
-                    <a href={publishData.pdfUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
-                      <Download className="h-4 w-4" /> Download manuscript PDF
-                    </a>
+                    <h3 className="font-semibold text-sm">Original Manuscript</h3>
+                    {selectedSub.file_paths.map((fp, i) => (
+                      <Button key={i} size="sm" variant="outline" onClick={() => downloadFile(fp)}>
+                        <Download className="h-4 w-4 mr-2" /> Download {fp.split("/").pop()}
+                      </Button>
+                    ))}
                   </div>
                 )}
 
@@ -1056,14 +1058,68 @@ Pages: ${publishData.articleNumber}`}
 
                 <Separator />
 
+                {/* Upload Final Publication PDF */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">Upload Final Publication PDF</h3>
+                  <p className="text-xs text-muted-foreground">Upload the finalized PDF with banner, footer, and formatting from the publishing app.</p>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => setFinalPdfFile(e.target.files?.[0] || null)}
+                      className="flex-1"
+                    />
+                    <Button
+                      size="sm"
+                      disabled={!finalPdfFile || finalPdfUploading}
+                      onClick={async () => {
+                        if (!finalPdfFile || !publishData) return;
+                        setFinalPdfUploading(true);
+                        try {
+                          const year = new Date(publishData.publicationDate).getFullYear();
+                          const safeName = publishData.title.replace(/[^a-zA-Z0-9\s-]/g, "").replace(/\s+/g, "-").substring(0, 80);
+                          const fileName = `${year}/vol${publishData.volume}-iss${publishData.issue}-${safeName}.pdf`;
+                          
+                          const { error } = await supabase.storage
+                            .from("manuscripts")
+                            .upload(fileName, finalPdfFile, { contentType: "application/pdf", upsert: true });
+                          if (error) throw error;
+                          
+                          const { data: urlData } = supabase.storage.from("manuscripts").getPublicUrl(fileName);
+                          setFinalPdfUrl(urlData.publicUrl);
+                          toast({ title: "Uploaded!", description: "Final publication PDF uploaded successfully." });
+                        } catch (err: any) {
+                          toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+                        }
+                        setFinalPdfUploading(false);
+                      }}
+                    >
+                      {finalPdfUploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
+                      Upload
+                    </Button>
+                  </div>
+                  {finalPdfUrl && (
+                    <p className="text-xs text-green-700">✅ Final PDF uploaded and ready for publishing.</p>
+                  )}
+                </div>
+
+                <Separator />
+
                 {/* Publish to database */}
                 <div className="space-y-2">
                   <h3 className="font-semibold text-sm">Publish to Journal Database</h3>
-                  <p className="text-xs text-muted-foreground">Once the PDF is finalized in the publishing app, click below to register the article in the journal database.</p>
+                  <p className="text-xs text-muted-foreground">
+                    {finalPdfUrl 
+                      ? "Final PDF is ready. Click below to register the article with the uploaded PDF."
+                      : "You can publish now with the original manuscript, or upload the final PDF first."
+                    }
+                  </p>
                   <Button
                     onClick={async () => {
-                      await publishArticle();
+                      await publishArticle(finalPdfUrl || undefined);
                       setShowPublishModal(false);
+                      setFinalPdfFile(null);
+                      setFinalPdfUrl(null);
                     }}
                     disabled={publishLoading}
                     className="w-full"

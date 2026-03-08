@@ -292,7 +292,7 @@ const AuthorDashboard = () => {
                               <h3 className="font-medium text-base mb-1 hover:text-primary transition-colors">{sub.title}</h3>
                             </button>
                             <p className="text-sm text-muted-foreground">
-                              {sub.manuscript_type} · Submitted {new Date(sub.created_at).toLocaleDateString()}
+                              {sub.manuscript_type} · Submitted {formatDate(sub.created_at)}
                             </p>
                           </div>
                           <Badge className={`${si.color} shrink-0`}>

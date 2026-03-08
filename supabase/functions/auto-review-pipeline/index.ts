@@ -281,6 +281,7 @@ Be lenient for Field Notes and Observational Reports which may have fewer refere
         grammar: steps[1].score,
         structure: steps[2].score,
         originality: steps[3].score,
+        references: steps[4].score,
         average: avgScore,
       },
     };

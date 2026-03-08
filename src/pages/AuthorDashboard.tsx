@@ -326,6 +326,38 @@ const AuthorDashboard = () => {
                               </div>
                             </div>
 
+                            {/* Donation Card for Accepted Manuscripts */}
+                            {sub.status === "accepted" && (
+                              <Card className="border-green-200 bg-green-50/50 dark:bg-green-950/20 dark:border-green-800">
+                                <CardContent className="p-4 space-y-3">
+                                  <div className="flex items-center gap-2 text-green-700 dark:text-green-400">
+                                    <Heart className="h-4 w-4" />
+                                    <span className="font-semibold text-sm">Congratulations — Your Manuscript Has Been Accepted!</span>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    If you would like to support Marine Notes Journal and marine conservation efforts, 
+                                    you may make a voluntary donation of <strong>£20 GBP</strong>. This is entirely optional 
+                                    and does not affect your publication.
+                                  </p>
+                                  <div className="bg-background/80 p-3 rounded-md border border-border space-y-2 text-xs text-muted-foreground">
+                                    <p className="font-semibold text-sm text-foreground">Donation Payment Details</p>
+                                    <div>
+                                      <p><strong>Bank Transfer:</strong></p>
+                                      <p>Name: Merman Conservation Expeditions Ltd</p>
+                                      <p>Account Number: 53869821</p>
+                                      <p>Sort Code: 60 84 64</p>
+                                      <p>IBAN: GB09 TRWI 6084 6453 8698 21</p>
+                                      <p>Swift BIC: TRWIGB2LXXX</p>
+                                      <p>Bank Address: 56 Shoreditch High Street, London, UK</p>
+                                    </div>
+                                    <div>
+                                      <p><strong>PayPal:</strong> info@mermanconservation.co.uk</p>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )}
+
                             {/* Submission Timeline */}
                             <div>
                               <Label className="text-xs text-muted-foreground mb-2 block">Submission Timeline</Label>

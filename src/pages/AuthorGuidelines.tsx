@@ -129,26 +129,42 @@ const AuthorGuidelines = () => {
                 </CardContent>
               </Card>
 
-              {/* Publication Fee */}
+              {/* Voluntary Donation */}
               <Card className="border-accent/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <PoundSterling className="h-5 w-5 text-accent" />
-                    Publication Fee
+                    Voluntary Publication Donation
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="bg-accent/10 p-4 rounded-lg">
-                    <p className="text-lg font-semibold mb-2">£20 GBP Publication Fee</p>
+                    <p className="text-lg font-semibold mb-2">£20 GBP — Optional Donation</p>
                     <p className="text-sm text-muted-foreground mb-3">
-                      A publication fee of £20 (Twenty British Pounds) is required upon acceptance 
-                      of your manuscript for publication.
+                      Marine Notes Journal is a free, open-access publication. There are <strong>no mandatory fees</strong> for 
+                      submitting or publishing your manuscript. However, if you wish to support the journal's 
+                      continued operation and marine conservation efforts, an optional donation of £20 GBP is warmly appreciated.
                     </p>
-                    <ul className="text-sm space-y-1 text-muted-foreground">
-                      <li>• Fee covers editorial processing and open-access publication</li>
+                    <ul className="text-sm space-y-1 text-muted-foreground mb-4">
+                      <li>• Donations support editorial processing and open-access infrastructure</li>
                       <li>• Payment details will be provided after manuscript acceptance</li>
-                      <li>• Fee waivers may be available for authors from developing countries</li>
+                      <li>• This donation is entirely voluntary — your publication is not affected in any way</li>
                     </ul>
+                    <div className="bg-background/60 p-3 rounded-md border border-border space-y-2 text-xs text-muted-foreground">
+                      <p className="font-semibold text-sm text-foreground">Donation Payment Details</p>
+                      <div>
+                        <p><strong>Bank Transfer:</strong></p>
+                        <p>Name: Merman Conservation Expeditions Ltd</p>
+                        <p>Account Number: 53869821</p>
+                        <p>Sort Code: 60 84 64</p>
+                        <p>IBAN: GB09 TRWI 6084 6453 8698 21</p>
+                        <p>Swift BIC: TRWIGB2LXXX</p>
+                        <p>Bank Address: 56 Shoreditch High Street, London, UK</p>
+                      </div>
+                      <div>
+                        <p><strong>PayPal:</strong> info@mermanconservation.co.uk</p>
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

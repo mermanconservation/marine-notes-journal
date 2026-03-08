@@ -114,9 +114,17 @@ const DOIResolver = () => {
           <div className="mb-6 p-4 bg-muted rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <FileText className="h-5 w-5 text-primary" />
-              <span className="font-semibold">DOI:</span>
+              <span className="font-semibold">Article ID:</span>
             </div>
             <code className="text-lg font-mono text-primary">{article.doi}</code>
+            {(article as any).externalDoi && (
+              <div className="mt-2">
+                <span className="font-semibold text-sm">DOI: </span>
+                <a href={`https://doi.org/${(article as any).externalDoi}`} target="_blank" rel="noopener noreferrer" className="text-primary underline font-mono text-sm">
+                  {(article as any).externalDoi}
+                </a>
+              </div>
+            )}
             <p className="text-sm text-muted-foreground mt-2">
               Permanent link: {article.resolverUrl}
             </p>

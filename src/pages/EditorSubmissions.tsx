@@ -697,12 +697,21 @@ const EditorSubmissions = () => {
 
                           {/* Publish section */}
                           {selectedSub.pipeline_results?.prepared_metadata && (
-                            <div className={`p-3 rounded-md border ${selectedSub.pipeline_status === 'failed' ? 'border-destructive/30 bg-destructive/5' : 'border-primary/30 bg-primary/5'}`}>
+                            <div className={`p-3 rounded-md border ${
+                              selectedSub.pipeline_status === 'failed' ? 'border-destructive/30 bg-destructive/5' :
+                              selectedSub.pipeline_status === 'editor_review' ? 'border-yellow-300 bg-yellow-50' :
+                              'border-primary/30 bg-primary/5'
+                            }`}>
                               <p className="text-sm font-medium mb-2">
-                                {selectedSub.pipeline_status === 'passed' ? '📋 Article ready for publication' : '⚠️ Publish despite pipeline issues'}
+                                {selectedSub.pipeline_status === 'passed' ? '📋 Article ready for publication' :
+                                 selectedSub.pipeline_status === 'editor_review' ? '⚠️ Score 60-74 — Editor review required' :
+                                 '⚠️ Publish despite pipeline issues'}
                               </p>
                               {selectedSub.pipeline_status === 'failed' && (
                                 <p className="text-xs text-destructive mb-2">Publishing will override the AI recommendation.</p>
+                              )}
+                              {selectedSub.pipeline_status === 'editor_review' && (
+                                <p className="text-xs text-yellow-700 mb-2">This manuscript scored between 60-74. Please review and decide whether to publish.</p>
                               )}
                               <Button
                                 onClick={() => {

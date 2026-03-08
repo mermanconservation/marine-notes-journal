@@ -461,6 +461,50 @@ const EditorSubmissions = () => {
                     </div>
                   )}
 
+                  {/* Download Manuscript Files */}
+                  {selectedSub.file_paths && selectedSub.file_paths.length > 0 && (
+                    <div className="flex gap-2">
+                      {selectedSub.file_paths.map((fp, i) => (
+                        <a key={i} href={getFileUrl(fp)} download target="_blank" rel="noopener noreferrer">
+                          <Button size="sm" variant="outline">
+                            <Download className="h-3 w-3 mr-1" /> Download {fp.split("/").pop()}
+                          </Button>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Run Pipeline for pending submissions */}
+                  {selectedSub.pipeline_status === 'pending' && (
+                    <div className="p-3 rounded-md border border-primary/30 bg-primary/5">
+                      <p className="text-sm font-medium mb-2">🔬 AI Review Pipeline has not been run yet</p>
+                      <Button
+                        size="sm"
+                        onClick={async () => {
+                          setActionLoading(true);
+                          try {
+                            await supabase.functions.invoke("auto-review-pipeline", {
+                              body: { submission_id: selectedSub.id },
+                            });
+                            toast({ title: "Pipeline started", description: "The AI review pipeline is now processing this manuscript." });
+                            setTimeout(async () => {
+                              await loadSubmissions();
+                              const updated = (await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub.id).single()).data;
+                              if (updated) setSelectedSub(updated as Submission);
+                            }, 3000);
+                          } catch (err: any) {
+                            toast({ title: "Error", description: err.message, variant: "destructive" });
+                          }
+                          setActionLoading(false);
+                        }}
+                        disabled={actionLoading}
+                      >
+                        {actionLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Play className="h-3 w-3 mr-1" />}
+                        Run AI Review Pipeline
+                      </Button>
+                    </div>
+                  )
+
                   <Separator />
 
                   {/* Submission Timeline */}

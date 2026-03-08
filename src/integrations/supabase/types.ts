@@ -20,6 +20,7 @@ export type Database = {
           authors: string
           created_at: string
           doi: string
+          external_doi: string | null
           id: number
           issue: string
           orcid_ids: string[] | null
@@ -35,6 +36,7 @@ export type Database = {
           authors: string
           created_at?: string
           doi: string
+          external_doi?: string | null
           id?: number
           issue: string
           orcid_ids?: string[] | null
@@ -50,6 +52,7 @@ export type Database = {
           authors?: string
           created_at?: string
           doi?: string
+          external_doi?: string | null
           id?: number
           issue?: string
           orcid_ids?: string[] | null

@@ -1,0 +1,1 @@
+ALTER TABLE public.articles ADD COLUMN external_doi text DEFAULT NULL;

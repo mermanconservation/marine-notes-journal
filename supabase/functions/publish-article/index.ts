@@ -78,6 +78,7 @@ function sanitizeArticle(article: any) {
     orcidIds: (article.orcidIds || []).filter((id: string) => id.length > 0),
     doi: article.doi,
     pdfUrl: article.pdfUrl,
+    externalDoi: article.externalDoi || null,
   };
 }
 

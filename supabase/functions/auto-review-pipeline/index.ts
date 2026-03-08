@@ -219,29 +219,186 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
     );
     steps.push(step4);
 
-    // ── STEP 5: Reference Quality Check ──
+    // ── STEP 5: Reference Quality & Verification Check ──
+    // First, use AI to extract any references mentioned in the manuscript
+    let extractedRefs: { doi?: string; url?: string; title?: string; authors?: string }[] = [];
+    try {
+      const extractResponse = await fetch(AI_URL, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            {
+              role: "system",
+              content: `You are a reference extraction tool. Extract all references, citations, DOIs, and URLs mentioned in the manuscript text. Return them as structured data. If no references are found, return an empty array.`,
+            },
+            {
+              role: "user",
+              content: manuscriptContext + (sub.cover_letter ? `\n\nCover Letter: ${sub.cover_letter}` : ""),
+            },
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "extract_references",
+                description: "Extract all references found in the manuscript.",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    references: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          doi: { type: "string", description: "DOI if mentioned (e.g., 10.1234/example)" },
+                          url: { type: "string", description: "URL if mentioned" },
+                          title: { type: "string", description: "Title of the referenced work" },
+                          authors: { type: "string", description: "Authors of the referenced work" },
+                        },
+                      },
+                      description: "List of extracted references. Empty if none found.",
+                    },
+                  },
+                  required: ["references"],
+                  additionalProperties: false,
+                },
+              },
+            },
+          ],
+          tool_choice: { type: "function", function: { name: "extract_references" } },
+        }),
+      });
+
+      if (extractResponse.ok) {
+        const extractData = await extractResponse.json();
+        const extractCall = extractData.choices?.[0]?.message?.tool_calls?.[0];
+        if (extractCall) {
+          const args = JSON.parse(extractCall.function.arguments);
+          extractedRefs = args.references || [];
+        }
+      }
+    } catch (e) {
+      console.error("Reference extraction failed:", e);
+    }
+
+    // Verify DOIs and URLs
+    const verificationResults: string[] = [];
+    let verifiedCount = 0;
+    let failedCount = 0;
+
+    for (const ref of extractedRefs.slice(0, 15)) {
+      // Verify DOI
+      if (ref.doi) {
+        const cleanDoi = ref.doi.replace(/^https?:\/\/doi\.org\//, "").trim();
+        if (/^10\.\d{4,}\//.test(cleanDoi)) {
+          try {
+            const doiRes = await fetch(`https://doi.org/${cleanDoi}`, {
+              method: "HEAD",
+              redirect: "follow",
+              headers: { Accept: "application/json" },
+            });
+            if (doiRes.ok || doiRes.status === 302 || doiRes.status === 301) {
+              // Try to get metadata to verify title/author match
+              try {
+                const metaRes = await fetch(`https://api.crossref.org/works/${cleanDoi}`, {
+                  headers: { Accept: "application/json" },
+                });
+                if (metaRes.ok) {
+                  const metaData = await metaRes.json();
+                  const work = metaData.message;
+                  const actualTitle = (work?.title?.[0] || "").toLowerCase();
+                  const actualAuthors = (work?.author || [])
+                    .map((a: any) => `${a.given || ""} ${a.family || ""}`.trim())
+                    .join(", ");
+
+                  if (ref.title && actualTitle) {
+                    const claimedTitle = ref.title.toLowerCase();
+                    const titleMatch = actualTitle.includes(claimedTitle.substring(0, 30)) ||
+                      claimedTitle.includes(actualTitle.substring(0, 30));
+                    if (titleMatch) {
+                      verificationResults.push(`✅ DOI ${cleanDoi} verified — title matches: "${work.title[0]}"`);
+                      verifiedCount++;
+                    } else {
+                      verificationResults.push(`⚠️ DOI ${cleanDoi} exists but title mismatch — claimed: "${ref.title}" vs actual: "${work.title[0]}"`);
+                      failedCount++;
+                    }
+                  } else {
+                    verificationResults.push(`✅ DOI ${cleanDoi} verified — "${work.title?.[0] || "unknown title"}" by ${actualAuthors || "unknown authors"}`);
+                    verifiedCount++;
+                  }
+                } else {
+                  verificationResults.push(`✅ DOI ${cleanDoi} resolves (metadata unavailable)`);
+                  verifiedCount++;
+                }
+              } catch {
+                verificationResults.push(`✅ DOI ${cleanDoi} resolves (metadata check skipped)`);
+                verifiedCount++;
+              }
+            } else {
+              verificationResults.push(`❌ DOI ${cleanDoi} does not resolve (HTTP ${doiRes.status})`);
+              failedCount++;
+            }
+          } catch (e) {
+            verificationResults.push(`❌ DOI ${cleanDoi} verification failed (network error)`);
+            failedCount++;
+          }
+        }
+      }
+
+      // Verify URL (non-DOI)
+      if (ref.url && !ref.url.includes("doi.org")) {
+        try {
+          const urlRes = await fetch(ref.url, {
+            method: "HEAD",
+            redirect: "follow",
+            signal: AbortSignal.timeout(8000),
+          });
+          if (urlRes.ok || urlRes.status === 301 || urlRes.status === 302) {
+            verificationResults.push(`✅ URL reachable: ${ref.url}`);
+            verifiedCount++;
+          } else {
+            verificationResults.push(`❌ URL unreachable (HTTP ${urlRes.status}): ${ref.url}`);
+            failedCount++;
+          }
+        } catch {
+          verificationResults.push(`❌ URL unreachable: ${ref.url}`);
+          failedCount++;
+        }
+      }
+    }
+
+    const verificationSummary = verificationResults.length > 0
+      ? `\n\nReference Verification Results (${verifiedCount} verified, ${failedCount} failed):\n${verificationResults.join("\n")}`
+      : "\n\nNo DOIs or URLs found to verify.";
+
     const step5 = await runAICheck(
       LOVABLE_API_KEY,
       `You are a reference quality reviewer for Marine Notes Journal — a peer-reviewed open-access journal on marine biology, ecology, conservation, and ocean sciences.
 
-Based on the manuscript metadata (title, abstract, keywords), assess the likely quality of the references that should accompany this work.
+Based on the manuscript metadata AND the automated reference verification results below, assess the quality and integrity of the references.
 
 Check for:
 - Does the abstract mention or cite specific studies, data sources, or prior work?
-- Are there indicators of proper literature review (e.g., "previous studies have shown", "according to", "as demonstrated by")?
+- Are there indicators of proper literature review?
 - Does the topic require extensive references (e.g., research articles) or fewer (e.g., field notes)?
 - Are the keywords specific enough to suggest familiarity with existing literature?
 - For Conservation News: is a source of the news mentioned?
 - Are there signs of fabricated or placeholder references?
-- Would the described methodology require citations to established protocols?
+- IMPORTANT: Review the automated verification results — flag any DOIs that don't resolve or have title/author mismatches
+- Flag any URLs that are unreachable or broken
 
 Score guidelines:
-- 80-100: Clear evidence of proper referencing and literature awareness
-- 60-79: Some evidence of referencing but could be stronger
-- Below 60: Insufficient evidence of proper referencing for the manuscript type
+- 80-100: References verified, DOIs resolve correctly, titles match
+- 60-79: Some references verified but issues found (broken links, mismatches)
+- Below 60: Multiple broken DOIs/URLs, title mismatches, or fabricated references detected
 
 Be lenient for Field Notes and Observational Reports which may have fewer references. Be stricter for Research Articles and Review Articles.`,
-      manuscriptContext,
+      manuscriptContext + verificationSummary,
       "reference_check",
     );
     steps.push(step5);

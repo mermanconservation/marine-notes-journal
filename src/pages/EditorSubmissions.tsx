@@ -89,6 +89,7 @@ const EditorSubmissions = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [publishLoading, setPublishLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");

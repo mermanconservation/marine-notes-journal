@@ -94,6 +94,21 @@ const AuthorDashboard = () => {
     if (!authLoading && !user) navigate("/auth");
   }, [user, authLoading, navigate]);
 
+  // Poll for pipeline updates when any submission is still processing
+  useEffect(() => {
+    if (!user || submissions.length === 0) return;
+    const hasPending = submissions.some(
+      (s) => s.status === "pending" || (s as any).pipeline_status === "running" || (s as any).pipeline_status === "pending"
+    );
+    if (!hasPending) return;
+
+    const interval = setInterval(() => {
+      loadSubmissions();
+    }, 8000); // Poll every 8 seconds
+
+    return () => clearInterval(interval);
+  }, [user, submissions]);
+
   useEffect(() => {
     if (user) {
       loadSubmissions();

@@ -48,6 +48,7 @@ const App = () => (
             <Route path="/submissions" element={<AuthorDashboard />} />
             <Route path="/editor-submissions" element={<EditorSubmissions />} />
             <Route path="/admin-panel" element={<AdminPanel />} />
+            <Route path="/promote" element={<Promote />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>

@@ -5,9 +5,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Download, Wand2, FileText, Check, AlertTriangle } from "lucide-react";
+import { Loader2, Download, Wand2, FileText, Check, AlertTriangle, Upload } from "lucide-react";
 
 interface ManuscriptFormatterProps {
   open: boolean;
@@ -16,7 +17,23 @@ interface ManuscriptFormatterProps {
   title: string;
   manuscriptType: string;
   authors: string;
+  filePaths?: string[] | null;
+  userId?: string | null;
+  onFileUploaded?: () => void;
 }
+
+const WORD_LIMITS: Record<string, number> = {
+  "Research Article": 8000,
+  "Review Article": 10000,
+  "Short Communication": 3000,
+  "Technical Report": 5000,
+  "Risk Assessment": 5000,
+  "Conservation News": 2000,
+  "Field Notes": 1500,
+  "Observational Report": 3000,
+  "Case Study": 5000,
+  "Methodology Paper": 6000,
+};
 
 const FORMATTING_RULES = [
   { label: "Double-spaced text", key: "doubleSpaced" },
@@ -36,6 +53,9 @@ const ManuscriptFormatter = ({
   title,
   manuscriptType,
   authors,
+  filePaths,
+  userId,
+  onFileUploaded,
 }: ManuscriptFormatterProps) => {
   const { toast } = useToast();
   const [content, setContent] = useState("");
@@ -44,6 +64,33 @@ const ManuscriptFormatter = ({
   const [extracted, setExtracted] = useState(false);
   const [formatted, setFormatted] = useState(false);
   const [formattingChecks, setFormattingChecks] = useState<Record<string, boolean | null>>({});
+  const [uploading, setUploading] = useState(false);
+
+  const wordCount = content.trim() ? content.split(/\s+/).filter(Boolean).length : 0;
+
+  // Find matching word limit
+  const getWordLimit = (): number | null => {
+    const type = manuscriptType.toLowerCase();
+    for (const [key, limit] of Object.entries(WORD_LIMITS)) {
+      if (type.includes(key.toLowerCase()) || key.toLowerCase().includes(type)) {
+        return limit;
+      }
+    }
+    // Fuzzy match
+    if (type.includes("research")) return 8000;
+    if (type.includes("review")) return 10000;
+    if (type.includes("short") || type.includes("communication")) return 3000;
+    if (type.includes("technical") || type.includes("risk")) return 5000;
+    if (type.includes("conservation")) return 2000;
+    if (type.includes("field")) return 1500;
+    if (type.includes("observational")) return 3000;
+    if (type.includes("case")) return 5000;
+    if (type.includes("methodology") || type.includes("method")) return 6000;
+    return null;
+  };
+
+  const wordLimit = getWordLimit();
+  const isOverLimit = wordLimit !== null && wordCount > wordLimit;
 
   const extractFromPdf = async () => {
     setExtracting(true);
@@ -73,7 +120,6 @@ const ManuscriptFormatter = ({
     }
     setFormatting(true);
     try {
-      const LOVABLE_API_KEY_PROXY = true; // We'll call via edge function
       const { data, error } = await supabase.functions.invoke("format-manuscript", {
         body: {
           submission_id: submissionId,
@@ -97,6 +143,41 @@ const ManuscriptFormatter = ({
     setFormatting(false);
   };
 
+  const uploadFormattedFile = async () => {
+    if (!content.trim()) return;
+    setUploading(true);
+    try {
+      const htmlContent = generateFormattedHtml(content, title, authors, manuscriptType);
+      const blob = new Blob(['\ufeff' + htmlContent], { type: "application/msword" });
+      const slug = title.replace(/[^a-zA-Z0-9\s-]/g, "").trim().replace(/\s+/g, "-").substring(0, 60);
+      const fileName = `Formatted-${slug}-${Date.now()}.doc`;
+      const storagePath = `submissions/${userId || "editor"}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("manuscript-submissions")
+        .upload(storagePath, blob, { contentType: "application/msword", upsert: false });
+
+      if (uploadError) throw uploadError;
+
+      // Append the new file path to the submission's file_paths
+      const currentPaths = filePaths || [];
+      const updatedPaths = [...currentPaths, storagePath];
+
+      const { error: updateError } = await supabase
+        .from("manuscript_submissions")
+        .update({ file_paths: updatedPaths, updated_at: new Date().toISOString() })
+        .eq("id", submissionId);
+
+      if (updateError) throw updateError;
+
+      toast({ title: "Uploaded", description: "Formatted manuscript attached to the submission." });
+      onFileUploaded?.();
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setUploading(false);
+  };
+
   const downloadAsHtml = () => {
     const htmlContent = generateFormattedHtml(content, title, authors, manuscriptType);
     const blob = new Blob([htmlContent], { type: "text/html" });
@@ -113,10 +194,9 @@ const ManuscriptFormatter = ({
   };
 
   const downloadAsDocx = () => {
-    // Generate a Word-compatible HTML file with .doc extension
     const htmlContent = generateFormattedHtml(content, title, authors, manuscriptType);
     const blob = new Blob(
-      ['\ufeff' + htmlContent], // BOM for Word compatibility
+      ['\ufeff' + htmlContent],
       { type: "application/msword" }
     );
     const url = URL.createObjectURL(blob);
@@ -145,8 +225,22 @@ const ManuscriptFormatter = ({
           {/* Submission info */}
           <div className="p-3 rounded-md bg-muted/50 border border-border">
             <p className="text-sm font-medium">{title}</p>
-            <p className="text-xs text-muted-foreground mt-1">{authors} · {manuscriptType}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {authors} · {manuscriptType}
+              {wordLimit && <span> · Limit: {wordLimit.toLocaleString()} words</span>}
+            </p>
           </div>
+
+          {/* Word count warning */}
+          {isOverLimit && (
+            <Alert variant="destructive">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Word count exceeded:</strong> This {manuscriptType} has {wordCount.toLocaleString()} words, 
+                exceeding the {wordLimit!.toLocaleString()}-word limit by {(wordCount - wordLimit!).toLocaleString()} words.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Formatting rules checklist */}
           <div>
@@ -217,6 +311,20 @@ const ManuscriptFormatter = ({
                 <Button size="sm" variant="outline" onClick={downloadAsHtml}>
                   <Download className="h-3 w-3 mr-1" /> Download .html
                 </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={uploadFormattedFile}
+                  disabled={uploading}
+                  className="border-primary/30 text-primary hover:bg-primary/10"
+                >
+                  {uploading ? (
+                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                  ) : (
+                    <Upload className="h-3 w-3 mr-1" />
+                  )}
+                  Upload to Submission
+                </Button>
               </>
             )}
           </div>
@@ -233,11 +341,20 @@ const ManuscriptFormatter = ({
               placeholder="Extract text from the PDF using the button above, or paste manuscript text here..."
               className="min-h-[400px] font-mono text-sm leading-relaxed"
             />
-            <p className="text-[10px] text-muted-foreground">
-              {content.length > 0
-                ? `${content.split(/\s+/).filter(Boolean).length} words · ${content.length} characters`
-                : "No content loaded"}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] text-muted-foreground">
+                {content.length > 0
+                  ? `${wordCount.toLocaleString()} words · ${content.length.toLocaleString()} characters`
+                  : "No content loaded"}
+              </p>
+              {wordLimit !== null && content.length > 0 && (
+                <p className={`text-[10px] font-medium ${isOverLimit ? "text-destructive" : "text-green-700"}`}>
+                  {isOverLimit
+                    ? `⚠ ${(wordCount - wordLimit).toLocaleString()} words over limit`
+                    : `✓ ${(wordLimit - wordCount).toLocaleString()} words remaining`}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>
@@ -251,7 +368,6 @@ function generateFormattedHtml(
   authors: string,
   manuscriptType: string
 ): string {
-  // Process content: detect sections and apply formatting
   const lines = content.split("\n");
   let bodyHtml = "";
   let lineNumber = 1;
@@ -264,17 +380,14 @@ function generateFormattedHtml(
       continue;
     }
 
-    // Detect section headings (ALL CAPS lines or lines starting with numbers like "1. INTRODUCTION")
     const isHeading = /^(\d+\.?\s+)?[A-Z][A-Z\s\/&:,.-]{3,}$/.test(trimmed) ||
                       /^(ABSTRACT|INTRODUCTION|METHODS|RESULTS|DISCUSSION|CONCLUSIONS?|REFERENCES|ACKNOWLEDGMENTS?|MATERIALS AND METHODS)$/i.test(trimmed);
     
     const isSubheading = /^\d+\.\d+\s+/.test(trimmed);
 
-    // Italicize species names (two-word Latin-looking names)
     let processed = trimmed.replace(
       /\b([A-Z][a-z]+\s+[a-z]{2,}(?:\s+[a-z]+)?)\b/g,
       (match) => {
-        // Common species name patterns
         const speciesPatterns = /^[A-Z][a-z]+\s+[a-z]+$/;
         if (speciesPatterns.test(match)) {
           return `<i>${match}</i>`;

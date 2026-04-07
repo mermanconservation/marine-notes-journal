@@ -1340,6 +1340,13 @@ Pages: ${publishData.articleNumber}`}
             title={selectedSub.title}
             manuscriptType={selectedSub.manuscript_type}
             authors={selectedSub.all_authors}
+            filePaths={selectedSub.file_paths}
+            userId={selectedSub.user_id}
+            onFileUploaded={async () => {
+              await loadSubmissions();
+              const { data: updated } = await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub.id).single();
+              if (updated) setSelectedSub(updated as Submission);
+            }}
           />
         )}
       </div>

@@ -64,6 +64,10 @@ const AdminPanel = () => {
   const [deleteConfirmTitle, setDeleteConfirmTitle] = useState("");
   const [deletingArticle, setDeletingArticle] = useState<string | null>(null);
   const [editorPasscode, setEditorPasscode] = useState<string | null>(null);
+  const [acceptedSubmissions, setAcceptedSubmissions] = useState<any[]>([]);
+  const [publishingSubmission, setPublishingSubmission] = useState<string | null>(null);
+  const [publishPdfFile, setPublishPdfFile] = useState<File | null>(null);
+  const publishFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");

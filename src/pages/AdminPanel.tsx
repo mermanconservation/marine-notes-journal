@@ -274,6 +274,75 @@ const AdminPanel = () => {
     setActionLoading(null);
   };
 
+  const handlePublishAccepted = async (submission: any) => {
+    if (!publishPdfFile) {
+      toast({ title: "PDF Required", description: "Please select the final manuscript PDF to publish.", variant: "destructive" });
+      return;
+    }
+    setPublishingSubmission(submission.id);
+    try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) { setPublishingSubmission(null); return; }
+      if (!editorPasscode) setEditorPasscode(code);
+
+      const doiRes = await supabase.functions.invoke("publish-article", { body: { passcode: code, action: "get-next-doi" } });
+      if (doiRes.data?.error) throw new Error(doiRes.data.error);
+      const doi = doiRes.data.doi;
+
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(publishPdfFile);
+      });
+
+      const year = new Date().getFullYear();
+      const safeName = submission.title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").substring(0, 80);
+      const fileName = `${year}/vol1-iss1-${safeName}.pdf`;
+
+      const uploadRes = await supabase.functions.invoke("publish-article", {
+        body: { passcode: code, action: "upload-pdf", article: { fileName, fileData: base64 } },
+      });
+      if (uploadRes.data?.error) throw new Error(uploadRes.data.error);
+      const pdfUrl = uploadRes.data.url;
+
+      const meta = submission.pipeline_results?.prepared_metadata || {};
+      const orcids = submission.corresponding_author_orcid ? [submission.corresponding_author_orcid] : [];
+      const typeMap: Record<string, string> = {
+        research_article: "Research Article", review_article: "Review Article",
+        short_communication: "Short Communication", technical_report: "Technical Report / Risk Assessment",
+        conservation_news: "Conservation News", field_notes: "Field Notes",
+        observational_reports: "Observational Reports", case_study: "Case Study",
+        methodology: "Methodology Paper",
+      };
+      const articleType = typeMap[submission.manuscript_type] || submission.manuscript_type || "Research Article";
+
+      const publishRes = await supabase.functions.invoke("publish-article", {
+        body: {
+          passcode: code, action: "publish",
+          article: {
+            doi, title: submission.title,
+            authors: submission.all_authors || submission.corresponding_author_name,
+            orcidIds: orcids, type: articleType,
+            volume: meta.volume || "1", issue: meta.issue || "1",
+            abstract: submission.abstract,
+            publicationDate: new Date().toISOString().split("T")[0],
+            pdfUrl,
+          },
+        },
+      });
+      if (publishRes.data?.error) throw new Error(publishRes.data.error);
+
+      toast({ title: "Published!", description: `"${submission.title}" is now live with DOI: ${doi}` });
+      setPublishPdfFile(null);
+      if (publishFileRef.current) publishFileRef.current.value = "";
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Publish Failed", description: err.message, variant: "destructive" });
+    }
+    setPublishingSubmission(null);
+  };
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">

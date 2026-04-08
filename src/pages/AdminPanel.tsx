@@ -550,6 +550,52 @@ const AdminPanel = () => {
           </CardContent>
         </Card>
 
+        {/* Publish Accepted Submissions */}
+        {acceptedSubmissions.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <BookOpen className="h-5 w-5" />
+                Accepted Submissions — Ready to Publish
+                <Badge className="ml-2 bg-green-100 text-green-800">{acceptedSubmissions.length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {acceptedSubmissions.map((sub: any) => (
+                <div key={sub.id} className="p-4 border rounded-lg space-y-3">
+                  <div>
+                    <p className="text-sm font-medium">{sub.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {sub.all_authors || sub.corresponding_author_name} · {sub.manuscript_type} · Accepted: {formatDate(sub.decision_date || sub.updated_at)}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Upload Final Manuscript PDF *</Label>
+                    <Input
+                      ref={publishFileRef}
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      onChange={(e) => setPublishPdfFile(e.target.files?.[0] || null)}
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    disabled={publishingSubmission === sub.id || !publishPdfFile}
+                    onClick={() => handlePublishAccepted(sub)}
+                  >
+                    {publishingSubmission === sub.id ? (
+                      <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Publishing...</>
+                    ) : (
+                      <><Upload className="h-3 w-3 mr-1" /> Upload PDF & Publish</>
+                    )}
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Published Articles Management */}
         <Card className="mb-6">
           <CardHeader>

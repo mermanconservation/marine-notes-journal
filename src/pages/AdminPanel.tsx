@@ -90,10 +90,11 @@ const AdminPanel = () => {
 
   const loadData = async () => {
     setLoading(true);
-    const [{ data: requests }, { data: roles }, { data: submissions }] = await Promise.all([
+    const [{ data: requests }, { data: roles }, { data: submissions }, { data: acceptedSubs }] = await Promise.all([
       supabase.from("unlock_requests").select("*").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("*").order("created_at", { ascending: false }),
       supabase.from("manuscript_submissions").select("id, title, status, user_id, corresponding_author_email"),
+      supabase.from("manuscript_submissions").select("*").eq("status", "accepted").order("decision_date", { ascending: false }),
     ]);
 
     // Build email map: user_id -> email

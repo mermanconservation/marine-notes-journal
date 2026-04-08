@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Loader2, Shield, LogOut, CheckCircle, XCircle, Lock, Unlock, Users, FileText, UserPlus, Trash2, BarChart3,
+  Loader2, Shield, LogOut, CheckCircle, XCircle, Lock, Unlock, Users, FileText, UserPlus, Trash2, BarChart3, Upload, BookOpen,
 } from "lucide-react";
 
 interface UnlockRequest {
@@ -64,6 +64,10 @@ const AdminPanel = () => {
   const [deleteConfirmTitle, setDeleteConfirmTitle] = useState("");
   const [deletingArticle, setDeletingArticle] = useState<string | null>(null);
   const [editorPasscode, setEditorPasscode] = useState<string | null>(null);
+  const [acceptedSubmissions, setAcceptedSubmissions] = useState<any[]>([]);
+  const [publishingSubmission, setPublishingSubmission] = useState<string | null>(null);
+  const [publishPdfFile, setPublishPdfFile] = useState<File | null>(null);
+  const publishFileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -86,10 +90,11 @@ const AdminPanel = () => {
 
   const loadData = async () => {
     setLoading(true);
-    const [{ data: requests }, { data: roles }, { data: submissions }] = await Promise.all([
+    const [{ data: requests }, { data: roles }, { data: submissions }, { data: acceptedSubs }] = await Promise.all([
       supabase.from("unlock_requests").select("*").order("created_at", { ascending: false }),
       supabase.from("user_roles").select("*").order("created_at", { ascending: false }),
       supabase.from("manuscript_submissions").select("id, title, status, user_id, corresponding_author_email"),
+      supabase.from("manuscript_submissions").select("*").eq("status", "accepted").order("decision_date", { ascending: false }),
     ]);
 
     // Build email map: user_id -> email
@@ -139,6 +144,7 @@ const AdminPanel = () => {
       }
     } catch {}
 
+    setAcceptedSubmissions(acceptedSubs || []);
     setLoading(false);
   };
 
@@ -266,6 +272,75 @@ const AdminPanel = () => {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     }
     setActionLoading(null);
+  };
+
+  const handlePublishAccepted = async (submission: any) => {
+    if (!publishPdfFile) {
+      toast({ title: "PDF Required", description: "Please select the final manuscript PDF to publish.", variant: "destructive" });
+      return;
+    }
+    setPublishingSubmission(submission.id);
+    try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) { setPublishingSubmission(null); return; }
+      if (!editorPasscode) setEditorPasscode(code);
+
+      const doiRes = await supabase.functions.invoke("publish-article", { body: { passcode: code, action: "get-next-doi" } });
+      if (doiRes.data?.error) throw new Error(doiRes.data.error);
+      const doi = doiRes.data.doi;
+
+      const reader = new FileReader();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsDataURL(publishPdfFile);
+      });
+
+      const year = new Date().getFullYear();
+      const safeName = submission.title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").substring(0, 80);
+      const fileName = `${year}/vol1-iss1-${safeName}.pdf`;
+
+      const uploadRes = await supabase.functions.invoke("publish-article", {
+        body: { passcode: code, action: "upload-pdf", article: { fileName, fileData: base64 } },
+      });
+      if (uploadRes.data?.error) throw new Error(uploadRes.data.error);
+      const pdfUrl = uploadRes.data.url;
+
+      const meta = submission.pipeline_results?.prepared_metadata || {};
+      const orcids = submission.corresponding_author_orcid ? [submission.corresponding_author_orcid] : [];
+      const typeMap: Record<string, string> = {
+        research_article: "Research Article", review_article: "Review Article",
+        short_communication: "Short Communication", technical_report: "Technical Report / Risk Assessment",
+        conservation_news: "Conservation News", field_notes: "Field Notes",
+        observational_reports: "Observational Reports", case_study: "Case Study",
+        methodology: "Methodology Paper",
+      };
+      const articleType = typeMap[submission.manuscript_type] || submission.manuscript_type || "Research Article";
+
+      const publishRes = await supabase.functions.invoke("publish-article", {
+        body: {
+          passcode: code, action: "publish",
+          article: {
+            doi, title: submission.title,
+            authors: submission.all_authors || submission.corresponding_author_name,
+            orcidIds: orcids, type: articleType,
+            volume: meta.volume || "1", issue: meta.issue || "1",
+            abstract: submission.abstract,
+            publicationDate: new Date().toISOString().split("T")[0],
+            pdfUrl,
+          },
+        },
+      });
+      if (publishRes.data?.error) throw new Error(publishRes.data.error);
+
+      toast({ title: "Published!", description: `"${submission.title}" is now live with DOI: ${doi}` });
+      setPublishPdfFile(null);
+      if (publishFileRef.current) publishFileRef.current.value = "";
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Publish Failed", description: err.message, variant: "destructive" });
+    }
+    setPublishingSubmission(null);
   };
 
   if (authLoading || loading) {
@@ -474,6 +549,52 @@ const AdminPanel = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Publish Accepted Submissions */}
+        {acceptedSubmissions.length > 0 && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <BookOpen className="h-5 w-5" />
+                Accepted Submissions — Ready to Publish
+                <Badge className="ml-2 bg-green-100 text-green-800">{acceptedSubmissions.length}</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {acceptedSubmissions.map((sub: any) => (
+                <div key={sub.id} className="p-4 border rounded-lg space-y-3">
+                  <div>
+                    <p className="text-sm font-medium">{sub.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {sub.all_authors || sub.corresponding_author_name} · {sub.manuscript_type} · Accepted: {formatDate(sub.decision_date || sub.updated_at)}
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Upload Final Manuscript PDF *</Label>
+                    <Input
+                      ref={publishFileRef}
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      onChange={(e) => setPublishPdfFile(e.target.files?.[0] || null)}
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 text-white"
+                    disabled={publishingSubmission === sub.id || !publishPdfFile}
+                    onClick={() => handlePublishAccepted(sub)}
+                  >
+                    {publishingSubmission === sub.id ? (
+                      <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Publishing...</>
+                    ) : (
+                      <><Upload className="h-3 w-3 mr-1" /> Upload PDF & Publish</>
+                    )}
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Published Articles Management */}
         <Card className="mb-6">

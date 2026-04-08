@@ -139,6 +139,31 @@ ${sub.cover_letter ? `Cover Letter: ${sub.cover_letter}` : ""}`;
 
     const steps: StepResult[] = [];
 
+    // Download PDF for later steps (structure check, reference extraction)
+    let pdfBase64: string | null = null;
+    if (sub.file_paths && sub.file_paths.length > 0) {
+      try {
+        const filePath = sub.file_paths[0];
+        const { data: fileData, error: dlError } = await supabase.storage
+          .from("manuscript-submissions")
+          .download(filePath);
+        if (!dlError && fileData) {
+          const arrayBuffer = await fileData.arrayBuffer();
+          const bytes = new Uint8Array(arrayBuffer);
+          let binary = "";
+          for (let i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+          }
+          pdfBase64 = btoa(binary);
+          console.log("PDF downloaded for pipeline analysis, size:", bytes.length);
+        } else {
+          console.error("PDF download error for pipeline:", dlError);
+        }
+      } catch (e) {
+        console.error("PDF download failed for pipeline:", e);
+      }
+    }
+
     // ── STEP 1: Scope & Relevance ──
     const step1 = await runAICheck(
       LOVABLE_API_KEY,

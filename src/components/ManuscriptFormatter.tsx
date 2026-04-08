@@ -211,6 +211,24 @@ const ManuscriptFormatter = ({
     toast({ title: "Downloaded", description: "Word-compatible document downloaded." });
   };
 
+  const downloadAsPdf = () => {
+    const htmlContent = generateFormattedHtml(content, title, authors, manuscriptType);
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast({ title: "Popup blocked", description: "Please allow popups to download the PDF.", variant: "destructive" });
+      return;
+    }
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    // Wait for content to render, then trigger print dialog (Save as PDF)
+    printWindow.onload = () => {
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    };
+    toast({ title: "Print dialog opened", description: "Select 'Save as PDF' in the print dialog to download." });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -305,6 +323,9 @@ const ManuscriptFormatter = ({
             </Button>
             {content.trim() && (
               <>
+                <Button size="sm" variant="outline" onClick={downloadAsPdf}>
+                  <Download className="h-3 w-3 mr-1" /> Download PDF
+                </Button>
                 <Button size="sm" variant="outline" onClick={downloadAsDocx}>
                   <Download className="h-3 w-3 mr-1" /> Download .doc
                 </Button>

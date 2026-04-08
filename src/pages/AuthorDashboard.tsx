@@ -362,6 +362,73 @@ const AuthorDashboard = () => {
                               </Card>
                             )}
 
+                            {/* Revision Upload for revisions_requested */}
+                            {sub.status === "revisions_requested" && (
+                              <Card className="border-orange-200 bg-orange-50/50 dark:bg-orange-950/20 dark:border-orange-800">
+                                <CardContent className="p-4 space-y-3">
+                                  <div className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
+                                    <RotateCcw className="h-4 w-4" />
+                                    <span className="font-semibold text-sm">Revisions Requested — Upload Revised Manuscript</span>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    The editor has requested revisions. Please upload your revised manuscript below.
+                                  </p>
+                                  <div className="border-2 border-dashed border-orange-300 rounded-lg p-4 text-center">
+                                    <Upload className="mx-auto h-6 w-6 text-muted-foreground mb-2" />
+                                    <input
+                                      type="file"
+                                      id={`revisionFile-${sub.id}`}
+                                      onChange={async (e) => {
+                                        const file = e.target.files?.[0];
+                                        if (!file || !user) return;
+                                        try {
+                                          const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+                                          const path = `submissions/${user.id}/revision-${Date.now()}-${safeName}`;
+                                          const { error: uploadError } = await supabase.storage
+                                            .from("manuscript-submissions")
+                                            .upload(path, file, { upsert: true });
+                                          if (uploadError) throw uploadError;
+
+                                          // Fetch current file_paths from DB
+                                          const { data: current } = await supabase
+                                            .from("manuscript_submissions")
+                                            .select("file_paths")
+                                            .eq("id", sub.id)
+                                            .single();
+                                          const currentPaths = (current?.file_paths as string[]) || [];
+                                          
+                                          const { error: updateError } = await supabase
+                                            .from("manuscript_submissions")
+                                            .update({
+                                              file_paths: [...currentPaths, path],
+                                              updated_at: new Date().toISOString(),
+                                            })
+                                            .eq("id", sub.id);
+                                          if (updateError) throw updateError;
+
+                                          toast({ title: "Revision uploaded!", description: "Your revised manuscript has been uploaded successfully." });
+                                          await loadSubmissions();
+                                        } catch (err: any) {
+                                          toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+                                        }
+                                      }}
+                                      accept=".pdf,.doc,.docx"
+                                      className="hidden"
+                                    />
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      className="border-orange-300 text-orange-700 hover:bg-orange-100"
+                                      onClick={() => document.getElementById(`revisionFile-${sub.id}`)?.click()}
+                                    >
+                                      <Upload className="h-4 w-4 mr-2" /> Upload Revised File
+                                    </Button>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            )}
+
                             {/* Submission Timeline */}
                             <div>
                               <Label className="text-xs text-muted-foreground mb-2 block">Submission Timeline</Label>

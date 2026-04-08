@@ -62,7 +62,7 @@ const EditorPanel = () => {
 
   const callEdge = async (body: any) => {
     const { data } = await supabase.functions.invoke("publish-article", {
-      body: JSON.stringify(body),
+      body,
     });
     return data;
   };

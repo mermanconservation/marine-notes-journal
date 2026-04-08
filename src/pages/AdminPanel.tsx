@@ -144,6 +144,7 @@ const AdminPanel = () => {
       }
     } catch {}
 
+    setAcceptedSubmissions(acceptedSubs || []);
     setLoading(false);
   };
 

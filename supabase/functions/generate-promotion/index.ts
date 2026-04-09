@@ -20,11 +20,11 @@ serve(async (req) => {
     if (type === "text") {
       const websiteUrl = "https://www.marinenotesjournal.com";
       
-      let systemPrompt = `You are a social media marketing expert for Marine Notes Journal, a peer-reviewed open-access marine science journal. 
+      let systemPrompt = `You are a social media marketing expert for Marine Notes Journal, the first full AI-Edited and Peer-Reviewed Marine Science Journal dedicated to advancing marine science research and knowledge. 
 The journal website is ${websiteUrl}. Always include this URL in promotional content.
-The journal is the first Full AI-Edited and Peer-Reviewed Marine Science Journal.
 Generate engaging, professional promotional content that drives traffic to the website.
-Do NOT use markdown formatting. Use plain text with emojis where appropriate.`;
+Do NOT use markdown formatting. Use plain text with emojis where appropriate.
+IMPORTANT: When mentioning authors, if there is only ONE author, refer to them by name only (e.g., "Christos Taklis published..."). Do NOT say "and their team" or "and colleagues" for single authors. Only use "and colleagues" or "et al." when there are multiple authors.`;
 
       let userPrompt = "";
 

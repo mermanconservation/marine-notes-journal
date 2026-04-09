@@ -20,6 +20,7 @@ export interface Article {
   volume: string;
   issue: string;
   abstract: string;
+  pages?: string;
   metrics?: ArticleMetrics;
 }
 

@@ -141,7 +141,7 @@ const DOIResolver = () => {
               <h3 className="text-lg font-semibold">How to Cite (APA Format)</h3>
             </div>
             <p className="font-mono text-sm leading-relaxed">
-              {article.authors} ({new Date(article.publicationDate).getFullYear()}). {article.title}. <em>Marine Notes Journal</em>, <em>{article.volume}</em>({article.issue}). {(article as any).externalDoi ? `https://doi.org/${(article as any).externalDoi}` : article.doi}
+              {article.authors} ({new Date(article.publicationDate).getFullYear()}). {article.title}. <em>Marine Notes Journal</em>, <em>{article.volume}</em>({article.issue}){article.pages ? `, ${article.pages}` : ""}. {(article as any).externalDoi ? `https://doi.org/${(article as any).externalDoi}` : article.doi}
             </p>
           </div>
 

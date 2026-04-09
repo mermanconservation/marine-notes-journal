@@ -17,8 +17,15 @@ export const PromotionAssistant = ({ article }: PromotionAssistantProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
+  const getAuthorDisplay = () => {
+    const authorList = article.authors.split(',').map(a => a.trim());
+    if (authorList.length === 1) return authorList[0];
+    return `${authorList[0]} and colleagues`;
+  };
+
   const generatePressRelease = () => {
     const date = formatDateLong(article.publicationDate);
+    const authorDisplay = getAuthorDisplay();
     
     return `FOR IMMEDIATE RELEASE
 
@@ -26,7 +33,7 @@ ${date}
 
 New Research Published in Marine Notes Journal: ${article.title}
 
-${article.authors.split(',')[0].trim()} and colleagues have published groundbreaking research in Marine Notes Journal that advances our understanding of marine science.
+${authorDisplay} published groundbreaking research in Marine Notes Journal that advances our understanding of marine science.
 
 ${article.abstract}
 
@@ -37,16 +44,16 @@ For more information and to access the full paper, visit: ${article.resolverUrl}
 DOI: ${article.doi}
 
 About Marine Notes Journal:
-Marine Notes Journal is a peer-reviewed publication dedicated to advancing marine science research and knowledge.
+Marine Notes Journal is the first full AI-Edited and Peer-Reviewed Marine Science Journal dedicated to advancing marine science research and knowledge.
 
 ###`;
   };
 
   const generatePlainLanguageSummary = () => {
-    const firstAuthor = article.authors.split(',')[0].trim();
+    const authorDisplay = getAuthorDisplay();
     return `🌊 What did researchers discover?
 
-${firstAuthor} and their team have published new research that helps us better understand our oceans. 
+${authorDisplay} published new research that helps us better understand our oceans. 
 
 ${article.abstract}
 
@@ -59,10 +66,12 @@ Want to learn more? Read the full paper: ${article.resolverUrl}`;
   };
 
   const generateSocialMediaPosts = () => {
-    const firstAuthor = article.authors.split(',')[0].trim();
+    const authorList = article.authors.split(',').map(a => a.trim());
+    const firstAuthor = authorList[0];
+    const authorTag = authorList.length === 1 ? firstAuthor : `${firstAuthor} et al.`;
     
     return {
-      twitter: `🔬 New research alert! "${article.title}" by ${firstAuthor} et al. now published in Marine Notes Journal 🌊
+      twitter: `🔬 New research alert! "${article.title}" by ${authorTag} now published in Marine Notes Journal 🌊
 
 Read the full paper: ${article.resolverUrl}
 
@@ -86,7 +95,7 @@ New research titled "${article.title}" has just been published in Marine Notes J
 
 ${article.abstract.substring(0, 200)}...
 
-This important work by ${firstAuthor} and colleagues advances our understanding of marine ecosystems.
+This important work by ${authorList.length === 1 ? firstAuthor : `${firstAuthor} and colleagues`} advances our understanding of marine ecosystems.
 
 Learn more: ${article.resolverUrl}
 

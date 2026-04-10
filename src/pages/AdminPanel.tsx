@@ -607,6 +607,14 @@ const AdminPanel = () => {
                       onChange={(e) => setPublishPdfFile(e.target.files?.[0] || null)}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Pages (e.g. "43-58")</Label>
+                    <Input
+                      placeholder="e.g. 43-58"
+                      value={publishPages}
+                      onChange={(e) => setPublishPages(e.target.value)}
+                    />
+                  </div>
                   <Button
                     size="sm"
                     className="bg-green-600 hover:bg-green-700 text-white"

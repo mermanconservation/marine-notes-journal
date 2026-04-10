@@ -654,8 +654,26 @@ const AdminPanel = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{article.title}</p>
-                        <p className="text-xs text-muted-foreground">{article.doi} · {article.authors}</p>
+                        <p className="text-xs text-muted-foreground">{article.doi} · {article.authors} · Pages: {article.pages || "—"}</p>
                       </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-1">
+                          <Input
+                            className="w-24 h-7 text-xs"
+                            placeholder="e.g. 1-15"
+                            value={editingPages[article.doi] ?? (article.pages || "")}
+                            onChange={e => setEditingPages(prev => ({ ...prev, [article.doi]: e.target.value }))}
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs px-2"
+                            disabled={savingPages === article.doi || editingPages[article.doi] === undefined}
+                            onClick={() => handleSavePages(article)}
+                          >
+                            {savingPages === article.doi ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
+                          </Button>
+                        </div>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button

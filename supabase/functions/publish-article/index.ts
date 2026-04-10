@@ -203,7 +203,7 @@ Deno.serve(async (req) => {
           pdf_url: "/manuscripts/2026/vol1-iss1-Unusual-2025-interactions-of-Iberian-Orcinus-orca-with-sailing-vessels-behaviour-patterns-and-conservation-responses.pdf",
           volume: "1", issue: "1",
           abstract: "During 2025, the Iberian killer whale (Orcinus orca) population exhibited an ongoing pattern of interactions with sailing boats...",
-          pages: "1-8",
+          pages: "1-5",
           is_static: true,
         },
         {
@@ -214,7 +214,7 @@ Deno.serve(async (req) => {
           pdf_url: "/manuscripts/2026/vol1-iss1-The-Environmental-Risks-of-a-Floating-LNG-Terminal-in-the-Pagasetic-Gulf.pdf",
           volume: "1", issue: "1",
           abstract: "This report assesses the environmental risks associated with the proposed floating liquefied natural gas terminal in the Pagasetic Gulf...",
-          pages: "9-22",
+          pages: "6-17",
           is_static: true,
         },
         {
@@ -225,7 +225,19 @@ Deno.serve(async (req) => {
           pdf_url: "/manuscripts/2026/vol1-iss1-Juvenile-Humpback-Whale-Recorded-in-the-Pagasetic-Gulf-Greece.pdf",
           volume: "1", issue: "1",
           abstract: "On 24 January 2026, multiple independent reports confirmed the presence of a juvenile humpback whale...",
-          pages: "23-26",
+          pages: "18-20",
+          is_static: true,
+        },
+        
+        {
+          id: -4, doi: "MNJ-2026-004",
+          title: "Nudibranch Diversity of South-East Pelion, Greece: An Eight-Year Citizen Science and Field Research Record (2017–2025)",
+          authors: "Christos Taklis", orcid_ids: ["0000-0001-9181-0292"], type: "Observational Reports",
+          publication_date: "2026-04-13",
+          pdf_url: "/manuscripts/2026/vol1-iss1-nudibranch-diversity-of-south-east-pelion-greece-an-eight-year-citizen-science-and-field-research-record-2017-2025.pdf",
+          volume: "1", issue: "1",
+          abstract: "We report 152 georeferenced observations of nudibranch molluscs (Gastropoda: Nudibranchia) recorded in the shallow...",
+          pages: "21-33",
           is_static: true,
         },
       ];

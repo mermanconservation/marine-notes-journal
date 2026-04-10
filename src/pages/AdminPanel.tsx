@@ -68,6 +68,9 @@ const AdminPanel = () => {
   const [publishingSubmission, setPublishingSubmission] = useState<string | null>(null);
   const [publishPdfFile, setPublishPdfFile] = useState<File | null>(null);
   const publishFileRef = useRef<HTMLInputElement>(null);
+  const [editingPages, setEditingPages] = useState<Record<string, string>>({});
+  const [savingPages, setSavingPages] = useState<string | null>(null);
+  const [publishPages, setPublishPages] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -274,6 +277,30 @@ const AdminPanel = () => {
     setActionLoading(null);
   };
 
+  const handleSavePages = async (article: any) => {
+    const newPages = editingPages[article.doi];
+    if (newPages === undefined) return;
+    setSavingPages(article.doi);
+    try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) { setSavingPages(null); return; }
+      if (!editorPasscode) setEditorPasscode(code);
+      const res = await supabase.functions.invoke("publish-article", {
+        body: {
+          passcode: code, action: "update",
+          article: { ...article, pages: newPages || null },
+        },
+      });
+      if (res.error || res.data?.error) throw new Error(res.data?.error || "Failed to update pages");
+      toast({ title: "Pages Updated", description: `Pages set to "${newPages}" for ${article.doi}` });
+      setEditingPages(prev => { const n = { ...prev }; delete n[article.doi]; return n; });
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setSavingPages(null);
+  };
+
   const handlePublishAccepted = async (submission: any) => {
     if (!publishPdfFile) {
       toast({ title: "PDF Required", description: "Please select the final manuscript PDF to publish.", variant: "destructive" });
@@ -328,6 +355,7 @@ const AdminPanel = () => {
             abstract: submission.abstract,
             publicationDate: new Date().toISOString().split("T")[0],
             pdfUrl,
+            pages: publishPages || null,
           },
         },
       });
@@ -335,6 +363,7 @@ const AdminPanel = () => {
 
       toast({ title: "Published!", description: `"${submission.title}" is now live with DOI: ${doi}` });
       setPublishPdfFile(null);
+      setPublishPages("");
       if (publishFileRef.current) publishFileRef.current.value = "";
       await loadData();
     } catch (err: any) {
@@ -578,6 +607,14 @@ const AdminPanel = () => {
                       onChange={(e) => setPublishPdfFile(e.target.files?.[0] || null)}
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs">Pages (e.g. "43-58")</Label>
+                    <Input
+                      placeholder="e.g. 43-58"
+                      value={publishPages}
+                      onChange={(e) => setPublishPages(e.target.value)}
+                    />
+                  </div>
                   <Button
                     size="sm"
                     className="bg-green-600 hover:bg-green-700 text-white"
@@ -617,8 +654,26 @@ const AdminPanel = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{article.title}</p>
-                        <p className="text-xs text-muted-foreground">{article.doi} · {article.authors}</p>
+                        <p className="text-xs text-muted-foreground">{article.doi} · {article.authors} · Pages: {article.pages || "—"}</p>
                       </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-1">
+                          <Input
+                            className="w-24 h-7 text-xs"
+                            placeholder="e.g. 1-15"
+                            value={editingPages[article.doi] ?? (article.pages || "")}
+                            onChange={e => setEditingPages(prev => ({ ...prev, [article.doi]: e.target.value }))}
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs px-2"
+                            disabled={savingPages === article.doi || editingPages[article.doi] === undefined}
+                            onClick={() => handleSavePages(article)}
+                          >
+                            {savingPages === article.doi ? <Loader2 className="h-3 w-3 animate-spin" /> : "Save"}
+                          </Button>
+                        </div>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
@@ -670,6 +725,7 @@ const AdminPanel = () => {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
+                      </div>
                     </div>
                   </div>
                 ))}

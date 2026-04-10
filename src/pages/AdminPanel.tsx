@@ -68,6 +68,9 @@ const AdminPanel = () => {
   const [publishingSubmission, setPublishingSubmission] = useState<string | null>(null);
   const [publishPdfFile, setPublishPdfFile] = useState<File | null>(null);
   const publishFileRef = useRef<HTMLInputElement>(null);
+  const [editingPages, setEditingPages] = useState<Record<string, string>>({});
+  const [savingPages, setSavingPages] = useState<string | null>(null);
+  const [publishPages, setPublishPages] = useState("");
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");

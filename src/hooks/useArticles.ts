@@ -16,6 +16,7 @@ export interface UnifiedArticle {
   volume: string;
   issue: string;
   abstract: string;
+  pages?: string;
 }
 
 function mapStaticArticles(): UnifiedArticle[] {
@@ -32,6 +33,7 @@ function mapStaticArticles(): UnifiedArticle[] {
     volume: a.volume,
     issue: a.issue,
     abstract: a.abstract,
+    pages: (a as any).pages,
   }));
 }
 

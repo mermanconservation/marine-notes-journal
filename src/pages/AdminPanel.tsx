@@ -725,6 +725,7 @@ const AdminPanel = () => {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
+                      </div>
                     </div>
                   </div>
                 ))}

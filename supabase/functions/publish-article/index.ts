@@ -72,6 +72,9 @@ function validateArticle(article: any, requireDoi: boolean): { valid: boolean; e
       }
     }
   }
+  if (article.pages != null && typeof article.pages !== "string") {
+    return { valid: false, error: "Pages must be a string (e.g. '1-15')" };
+  }
   return { valid: true };
 }
 
@@ -88,6 +91,7 @@ function sanitizeArticle(article: any) {
     doi: article.doi,
     pdfUrl: article.pdfUrl,
     externalDoi: article.externalDoi || null,
+    pages: article.pages || null,
   };
 }
 
@@ -199,6 +203,7 @@ Deno.serve(async (req) => {
           pdf_url: "/manuscripts/2026/vol1-iss1-Unusual-2025-interactions-of-Iberian-Orcinus-orca-with-sailing-vessels-behaviour-patterns-and-conservation-responses.pdf",
           volume: "1", issue: "1",
           abstract: "During 2025, the Iberian killer whale (Orcinus orca) population exhibited an ongoing pattern of interactions with sailing boats...",
+          pages: "1-8",
           is_static: true,
         },
         {
@@ -209,6 +214,7 @@ Deno.serve(async (req) => {
           pdf_url: "/manuscripts/2026/vol1-iss1-The-Environmental-Risks-of-a-Floating-LNG-Terminal-in-the-Pagasetic-Gulf.pdf",
           volume: "1", issue: "1",
           abstract: "This report assesses the environmental risks associated with the proposed floating liquefied natural gas terminal in the Pagasetic Gulf...",
+          pages: "9-22",
           is_static: true,
         },
         {
@@ -219,6 +225,7 @@ Deno.serve(async (req) => {
           pdf_url: "/manuscripts/2026/vol1-iss1-Juvenile-Humpback-Whale-Recorded-in-the-Pagasetic-Gulf-Greece.pdf",
           volume: "1", issue: "1",
           abstract: "On 24 January 2026, multiple independent reports confirmed the presence of a juvenile humpback whale...",
+          pages: "23-26",
           is_static: true,
         },
       ];
@@ -252,6 +259,7 @@ Deno.serve(async (req) => {
         issue: clean.issue,
         abstract: clean.abstract,
         external_doi: clean.externalDoi,
+        pages: clean.pages,
       }).select().single();
 
       if (error) {
@@ -284,6 +292,7 @@ Deno.serve(async (req) => {
         volume: clean.volume,
         issue: clean.issue,
         abstract: clean.abstract,
+        pages: clean.pages,
       };
       if (clean.pdfUrl) updatePayload.pdf_url = clean.pdfUrl;
 

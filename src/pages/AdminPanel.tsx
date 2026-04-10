@@ -277,6 +277,30 @@ const AdminPanel = () => {
     setActionLoading(null);
   };
 
+  const handleSavePages = async (article: any) => {
+    const newPages = editingPages[article.doi];
+    if (newPages === undefined) return;
+    setSavingPages(article.doi);
+    try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) { setSavingPages(null); return; }
+      if (!editorPasscode) setEditorPasscode(code);
+      const res = await supabase.functions.invoke("publish-article", {
+        body: {
+          passcode: code, action: "update",
+          article: { ...article, pages: newPages || null },
+        },
+      });
+      if (res.error || res.data?.error) throw new Error(res.data?.error || "Failed to update pages");
+      toast({ title: "Pages Updated", description: `Pages set to "${newPages}" for ${article.doi}` });
+      setEditingPages(prev => { const n = { ...prev }; delete n[article.doi]; return n; });
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setSavingPages(null);
+  };
+
   const handlePublishAccepted = async (submission: any) => {
     if (!publishPdfFile) {
       toast({ title: "PDF Required", description: "Please select the final manuscript PDF to publish.", variant: "destructive" });
@@ -331,6 +355,7 @@ const AdminPanel = () => {
             abstract: submission.abstract,
             publicationDate: new Date().toISOString().split("T")[0],
             pdfUrl,
+            pages: publishPages || null,
           },
         },
       });
@@ -338,6 +363,7 @@ const AdminPanel = () => {
 
       toast({ title: "Published!", description: `"${submission.title}" is now live with DOI: ${doi}` });
       setPublishPdfFile(null);
+      setPublishPages("");
       if (publishFileRef.current) publishFileRef.current.value = "";
       await loadData();
     } catch (err: any) {

@@ -59,6 +59,7 @@ async function fetchDbArticles(): Promise<UnifiedArticle[]> {
     volume: a.volume,
     issue: a.issue,
     abstract: a.abstract,
+    pages: a.pages || undefined,
   }));
 }
 

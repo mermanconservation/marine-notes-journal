@@ -24,6 +24,7 @@ export type Database = {
           id: number
           issue: string
           orcid_ids: string[] | null
+          pages: string | null
           pdf_url: string | null
           publication_date: string
           resolver_url: string
@@ -40,6 +41,7 @@ export type Database = {
           id?: number
           issue: string
           orcid_ids?: string[] | null
+          pages?: string | null
           pdf_url?: string | null
           publication_date?: string
           resolver_url: string
@@ -56,6 +58,7 @@ export type Database = {
           id?: number
           issue?: string
           orcid_ids?: string[] | null
+          pages?: string | null
           pdf_url?: string | null
           publication_date?: string
           resolver_url?: string

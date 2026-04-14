@@ -22,12 +22,14 @@ import EditorSubmissions from "./pages/EditorSubmissions";
 import AdminPanel from "./pages/AdminPanel";
 import Promote from "./pages/Promote";
 import Layout from "./components/Layout/Layout";
+import { AccessibilityProvider } from "./context/AccessibilityContext";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <AccessibilityProvider>
       <Toaster />
       <Sonner />
       <BrowserRouter>
@@ -53,6 +55,7 @@ const App = () => (
           </Routes>
         </Layout>
       </BrowserRouter>
+      </AccessibilityProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

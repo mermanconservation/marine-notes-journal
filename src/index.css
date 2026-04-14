@@ -117,4 +117,132 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+
+  /* High Contrast Mode */
+  .high-contrast {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+    --card: 0 0% 97%;
+    --card-foreground: 0 0% 0%;
+    --primary: 210 100% 30%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 90%;
+    --secondary-foreground: 0 0% 0%;
+    --muted: 0 0% 92%;
+    --muted-foreground: 0 0% 20%;
+    --border: 0 0% 30%;
+    --input: 0 0% 30%;
+  }
+
+  /* Dark Theme (accessibility) */
+  .theme-dark {
+    --background: 220 20% 10%;
+    --foreground: 220 10% 90%;
+    --card: 220 18% 14%;
+    --card-foreground: 220 10% 90%;
+    --popover: 220 18% 14%;
+    --popover-foreground: 220 10% 90%;
+    --primary: 210 70% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 15% 20%;
+    --secondary-foreground: 220 10% 85%;
+    --muted: 220 15% 18%;
+    --muted-foreground: 220 10% 60%;
+    --border: 220 15% 25%;
+    --input: 220 15% 25%;
+    --ring: 210 70% 55%;
+  }
+
+  /* Sepia Theme */
+  .theme-sepia {
+    --background: 35 40% 92%;
+    --foreground: 30 20% 18%;
+    --card: 35 35% 88%;
+    --card-foreground: 30 20% 18%;
+    --primary: 30 60% 40%;
+    --primary-foreground: 35 40% 95%;
+    --secondary: 35 25% 85%;
+    --secondary-foreground: 30 20% 18%;
+    --muted: 35 20% 82%;
+    --muted-foreground: 30 15% 40%;
+    --border: 30 20% 75%;
+  }
+
+  /* Grayscale Theme */
+  .theme-grayscale {
+    --background: 0 0% 95%;
+    --foreground: 0 0% 15%;
+    --card: 0 0% 92%;
+    --card-foreground: 0 0% 15%;
+    --primary: 0 0% 35%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 85%;
+    --secondary-foreground: 0 0% 15%;
+    --muted: 0 0% 88%;
+    --muted-foreground: 0 0% 40%;
+    --border: 0 0% 70%;
+  }
+
+  /* Low Stimulation Mode */
+  .low-stimulation * {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0s !important;
+  }
+
+  /* Dyslexic font */
+  body.font-dyslexic,
+  body.font-dyslexic * {
+    font-family: 'OpenDyslexic', 'Comic Sans MS', cursive !important;
+  }
+
+  body.line-spacing-relaxed {
+    line-height: 2;
+  }
+  body.line-spacing-loose {
+    line-height: 2.4;
+  }
+
+  body.letter-spacing-wide,
+  body.letter-spacing-wide * {
+    letter-spacing: 0.03em;
+  }
+
+  body.large-cursor * {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cpath d='M5 2l18 14H13l6 13-3 1-6-13-5 8z' fill='black' stroke='white' stroke-width='1'/%3E%3C/svg%3E") 5 2, auto !important;
+  }
 }
+
+/* Reading Mode */
+body.reading-mode main,
+body.reading-mode [role="main"] {
+  max-width: 42rem !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  padding-left: 1.5rem !important;
+  padding-right: 1.5rem !important;
+}
+
+body.reading-mode .grid {
+  display: flex !important;
+  flex-direction: column !important;
+  max-width: 42rem !important;
+}
+
+body.reading-mode img,
+body.reading-mode video,
+body.reading-mode iframe {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+body.reading-mode p,
+body.reading-mode li {
+  max-width: 65ch !important;
+  font-size: 1.125rem !important;
+  line-height: 1.8 !important;
+}
+
+body.reading-mode h1 { font-size: 2rem !important; }
+body.reading-mode h2 { font-size: 1.6rem !important; }
+body.reading-mode h3 { font-size: 1.3rem !important; }

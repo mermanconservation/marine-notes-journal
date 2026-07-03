@@ -335,7 +335,34 @@ const AdminPanel = () => {
     setSavingPages(null);
   };
 
-  const handlePublishAccepted = async (submission: any) => {
+  const readFileAsBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1]);
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
+
+  const safeInvoke = async (fn: string, body: any) => {
+    const res = await supabase.functions.invoke(fn, { body });
+    // supabase-js returns { data, error }; when the function throws or returns non-2xx,
+    // `data` can be null and `error` holds a FunctionsHttpError whose context has the response body.
+    if (res.error) {
+      let msg = res.error.message || `${fn} failed`;
+      try {
+        const ctx: any = (res.error as any).context;
+        if (ctx?.body) {
+          const parsed = typeof ctx.body === "string" ? JSON.parse(ctx.body) : ctx.body;
+          if (parsed?.error) msg = parsed.error;
+        }
+      } catch {}
+      throw new Error(msg);
+    }
+    if (!res.data) throw new Error(`${fn} returned no data`);
+    if (res.data.error) throw new Error(res.data.error);
+    return res.data;
+  };
+
+  const handlePreparePreview = async (submission: any) => {
     if (!publishPdfFile) {
       toast({ title: "PDF Required", description: "Please select the final manuscript PDF to publish.", variant: "destructive" });
       return;
@@ -346,26 +373,20 @@ const AdminPanel = () => {
       if (!code) { setPublishingSubmission(null); return; }
       if (!editorPasscode) setEditorPasscode(code);
 
-      const doiRes = await supabase.functions.invoke("publish-article", { body: { passcode: code, action: "get-next-doi" } });
-      if (doiRes.data?.error) throw new Error(doiRes.data.error);
-      const doi = doiRes.data.doi;
+      const doiData = await safeInvoke("publish-article", { passcode: code, action: "get-next-doi" });
+      const doi = doiData.doi;
+      if (!doi) throw new Error("Could not generate DOI");
 
-      const reader = new FileReader();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve((reader.result as string).split(",")[1]);
-        reader.onerror = () => reject(new Error("Failed to read file"));
-        reader.readAsDataURL(publishPdfFile);
-      });
-
+      const base64 = await readFileAsBase64(publishPdfFile);
       const year = new Date().getFullYear();
       const safeName = submission.title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").substring(0, 80);
-      const fileName = `${year}/vol1-iss1-${safeName}.pdf`;
+      const fileName = `${year}/${doi}-${safeName}.pdf`;
 
-      const uploadRes = await supabase.functions.invoke("publish-article", {
-        body: { passcode: code, action: "upload-pdf", article: { fileName, fileData: base64 } },
+      const uploadData = await safeInvoke("publish-article", {
+        passcode: code, action: "upload-pdf", article: { fileName, fileData: base64 },
       });
-      if (uploadRes.data?.error) throw new Error(uploadRes.data.error);
-      const pdfUrl = uploadRes.data.url;
+      const pdfUrl = uploadData.url;
+      if (!pdfUrl) throw new Error("PDF upload returned no URL");
 
       const meta = submission.pipeline_results?.prepared_metadata || {};
       const orcids = submission.corresponding_author_orcid ? [submission.corresponding_author_orcid] : [];
@@ -378,24 +399,77 @@ const AdminPanel = () => {
       };
       const articleType = typeMap[submission.manuscript_type] || submission.manuscript_type || "Research Article";
 
-      const publishRes = await supabase.functions.invoke("publish-article", {
-        body: {
-          passcode: code, action: "publish",
-          article: {
-            doi, title: submission.title,
-            authors: submission.all_authors || submission.corresponding_author_name,
-            orcidIds: orcids, type: articleType,
-            volume: meta.volume || "1", issue: meta.issue || "1",
-            abstract: submission.abstract,
-            publicationDate: new Date().toISOString().split("T")[0],
-            pdfUrl,
-            pages: publishPages || null,
-          },
+      setPreviewData({
+        submission,
+        code,
+        doi,
+        title: submission.title,
+        authors: submission.all_authors || submission.corresponding_author_name,
+        orcids,
+        articleType,
+        volume: meta.volume || "1",
+        issue: meta.issue || "1",
+        abstract: submission.abstract,
+        pages: publishPages || "",
+        pdfUrl,
+        publicationDate: new Date().toISOString().split("T")[0],
+        recipient: submission.corresponding_author_email,
+      });
+      setPreviewOpen(true);
+    } catch (err: any) {
+      toast({ title: "Preview Failed", description: err.message, variant: "destructive" });
+    }
+    setPublishingSubmission(null);
+  };
+
+  const handleConfirmPublish = async () => {
+    if (!previewData) return;
+    setConfirmingPublish(true);
+    try {
+      await safeInvoke("publish-article", {
+        passcode: previewData.code, action: "publish",
+        article: {
+          doi: previewData.doi,
+          title: previewData.title,
+          authors: previewData.authors,
+          orcidIds: previewData.orcids,
+          type: previewData.articleType,
+          volume: previewData.volume,
+          issue: previewData.issue,
+          abstract: previewData.abstract,
+          publicationDate: previewData.publicationDate,
+          pdfUrl: previewData.pdfUrl,
+          pages: previewData.pages || null,
         },
       });
-      if (publishRes.data?.error) throw new Error(publishRes.data.error);
 
-      toast({ title: "Published!", description: `"${submission.title}" is now live with DOI: ${doi}` });
+      // Send confirmation email if enabled
+      if (sendAuthorEmail && previewData.recipient) {
+        try {
+          await safeInvoke("admin-extras", {
+            passcode: previewData.code, action: "send-publication-email",
+            payload: {
+              recipient: previewData.recipient,
+              title: previewData.title,
+              authors: previewData.authors,
+              doi: previewData.doi,
+              volume: previewData.volume,
+              issue: previewData.issue,
+              pages: previewData.pages,
+              articleUrl: `https://www.marinenotesjournal.com/doi/${previewData.doi}`,
+              pdfUrl: previewData.pdfUrl,
+            },
+          });
+          toast({ title: "Published & Author Notified", description: `${previewData.doi} live. Email sent to ${previewData.recipient}` });
+        } catch (emailErr: any) {
+          toast({ title: "Published (email failed)", description: `Article live but email failed: ${emailErr.message}`, variant: "destructive" });
+        }
+      } else {
+        toast({ title: "Published!", description: `${previewData.doi} is now live.` });
+      }
+
+      setPreviewOpen(false);
+      setPreviewData(null);
       setPublishPdfFile(null);
       setPublishPages("");
       if (publishFileRef.current) publishFileRef.current.value = "";
@@ -403,6 +477,128 @@ const AdminPanel = () => {
     } catch (err: any) {
       toast({ title: "Publish Failed", description: err.message, variant: "destructive" });
     }
+    setConfirmingPublish(false);
+  };
+
+  const handleExtractMetadata = async (submission: any) => {
+    if (!publishPdfFile) {
+      toast({ title: "PDF Required", description: "Select the PDF first, then extract.", variant: "destructive" });
+      return;
+    }
+    setExtractingMeta(true);
+    try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) { setExtractingMeta(false); return; }
+      if (!editorPasscode) setEditorPasscode(code);
+      const base64 = await readFileAsBase64(publishPdfFile);
+      const data = await safeInvoke("admin-extras", {
+        passcode: code, action: "extract-pdf-metadata",
+        payload: { pdfBase64: base64, mimeType: publishPdfFile.type || "application/pdf" },
+      });
+      const m = data.metadata || {};
+      // Patch the submission in-memory so the preview picks it up
+      setAcceptedSubmissions(prev => prev.map(s => s.id === submission.id ? {
+        ...s,
+        title: m.title || s.title,
+        all_authors: m.authors || s.all_authors,
+        abstract: m.abstract || s.abstract,
+      } : s));
+      toast({ title: "Metadata Extracted", description: "Submission updated with values from the PDF. Review before publishing." });
+    } catch (err: any) {
+      toast({ title: "Extraction failed", description: err.message, variant: "destructive" });
+    }
+    setExtractingMeta(false);
+  };
+
+  // -------- Journal issues management --------
+  const handleOpenIssue = async () => {
+    if (!newVolume || !newIssue) {
+      toast({ title: "Missing fields", description: "Volume and Issue are required.", variant: "destructive" });
+      return;
+    }
+    setOpeningIssue(true);
+    try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) { setOpeningIssue(false); return; }
+      if (!editorPasscode) setEditorPasscode(code);
+      await safeInvoke("admin-extras", {
+        passcode: code, action: "open-issue",
+        payload: { volume: newVolume, issue: newIssue, year: Number(newIssueYear) },
+      });
+      toast({ title: "Issue opened", description: `Vol ${newVolume}, Issue ${newIssue} (${newIssueYear})` });
+      setNewVolume(""); setNewIssue("");
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setOpeningIssue(false);
+  };
+
+  const handleBulkOpenIssues = async () => {
+    const count = parseInt(bulkIssueCount, 10);
+    if (!bulkVolume || !count || count < 1 || count > 12) {
+      toast({ title: "Invalid input", description: "Give a volume and 1–12 issues.", variant: "destructive" });
+      return;
+    }
+    setOpeningIssue(true);
+    try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) { setOpeningIssue(false); return; }
+      if (!editorPasscode) setEditorPasscode(code);
+      const items = Array.from({ length: count }, (_, i) => ({
+        volume: bulkVolume, issue: String(i + 1), year: Number(bulkYear),
+      }));
+      const data = await safeInvoke("admin-extras", { passcode: code, action: "bulk-open-issues", payload: { items } });
+      toast({ title: "Issues opened", description: `${data.count} issues created for Volume ${bulkVolume} (${bulkYear})` });
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setOpeningIssue(false);
+  };
+
+  const handleUploadIssuePdf = async (issueRow: any) => {
+    if (!issuePdfFile || issueUploadTargetId !== issueRow.id) {
+      toast({ title: "Select a PDF", description: "Choose a PDF file for this issue first.", variant: "destructive" });
+      return;
+    }
+    setUploadingIssuePdf(issueRow.id);
+    try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) { setUploadingIssuePdf(null); return; }
+      if (!editorPasscode) setEditorPasscode(code);
+      const base64 = await readFileAsBase64(issuePdfFile);
+      const safeName = issuePdfFile.name.replace(/[^\w\-\.]/g, "-");
+      await safeInvoke("admin-extras", {
+        passcode: code, action: "upload-issue-pdf",
+        payload: { volume: issueRow.volume, issue: issueRow.issue, year: issueRow.year, fileName: safeName, fileData: base64 },
+      });
+      toast({ title: "Issue PDF uploaded", description: `Vol ${issueRow.volume}, Issue ${issueRow.issue}` });
+      setIssuePdfFile(null);
+      setIssueUploadTargetId(null);
+      if (issuePdfRef.current) issuePdfRef.current.value = "";
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setUploadingIssuePdf(null);
+  };
+
+  const handleDownloadIssuePdf = async (issueRow: any) => {
+    if (!issueRow.issue_pdf_url) return;
+    try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) return;
+      if (!editorPasscode) setEditorPasscode(code);
+      const data = await safeInvoke("admin-extras", {
+        passcode: code, action: "get-issue-pdf-signed-url", payload: { path: issueRow.issue_pdf_url },
+      });
+      window.open(data.url, "_blank");
+    } catch (err: any) {
+      toast({ title: "Download failed", description: err.message, variant: "destructive" });
+    }
+  };
+
     setPublishingSubmission(null);
   };
 

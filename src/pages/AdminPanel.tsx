@@ -599,8 +599,7 @@ const AdminPanel = () => {
     }
   };
 
-    setPublishingSubmission(null);
-  };
+
 
   if (authLoading || loading) {
     return (

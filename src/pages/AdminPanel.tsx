@@ -74,6 +74,26 @@ const AdminPanel = () => {
   const [editingPages, setEditingPages] = useState<Record<string, string>>({});
   const [savingPages, setSavingPages] = useState<string | null>(null);
   const [publishPages, setPublishPages] = useState("");
+  const [sendAuthorEmail, setSendAuthorEmail] = useState(true);
+  const [extractingMeta, setExtractingMeta] = useState(false);
+  // Preview modal state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<any | null>(null);
+  const [confirmingPublish, setConfirmingPublish] = useState(false);
+  // Issue management
+  const [issues, setIssues] = useState<any[]>([]);
+  const [newVolume, setNewVolume] = useState("");
+  const [newIssue, setNewIssue] = useState("");
+  const [newIssueYear, setNewIssueYear] = useState(String(new Date().getFullYear() + 1));
+  const [openingIssue, setOpeningIssue] = useState(false);
+  const [bulkVolume, setBulkVolume] = useState("2");
+  const [bulkIssueCount, setBulkIssueCount] = useState("4");
+  const [bulkYear, setBulkYear] = useState(String(new Date().getFullYear() + 1));
+  const [issuePdfFile, setIssuePdfFile] = useState<File | null>(null);
+  const [uploadingIssuePdf, setUploadingIssuePdf] = useState<string | null>(null);
+  const issuePdfRef = useRef<HTMLInputElement>(null);
+  const [issueUploadTargetId, setIssueUploadTargetId] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");

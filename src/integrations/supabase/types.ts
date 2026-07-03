@@ -112,6 +112,42 @@ export type Database = {
           },
         ]
       }
+      journal_issues: {
+        Row: {
+          created_at: string
+          id: string
+          issue: string
+          issue_pdf_url: string | null
+          notes: string | null
+          status: string
+          updated_at: string
+          volume: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          issue: string
+          issue_pdf_url?: string | null
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          volume: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          issue?: string
+          issue_pdf_url?: string | null
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          volume?: string
+          year?: number
+        }
+        Relationships: []
+      }
       manuscript_submissions: {
         Row: {
           abstract: string

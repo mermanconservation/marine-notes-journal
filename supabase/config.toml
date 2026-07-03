@@ -14,3 +14,7 @@ verify_jwt = false
 
 [functions.format-manuscript]
 verify_jwt = false
+
+[functions.admin-extras]
+verify_jwt = false
+

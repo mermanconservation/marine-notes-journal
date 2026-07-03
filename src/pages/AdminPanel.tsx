@@ -9,12 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Loader2, Shield, LogOut, CheckCircle, XCircle, Lock, Unlock, Users, FileText, UserPlus, Trash2, BarChart3, Upload, BookOpen,
+  Loader2, Shield, LogOut, CheckCircle, XCircle, Lock, Unlock, Users, FileText, UserPlus, Trash2, BarChart3, Upload, BookOpen, Download, Mail, Eye, Sparkles, Plus,
 } from "lucide-react";
+
 
 interface UnlockRequest {
   id: string;
@@ -71,6 +74,26 @@ const AdminPanel = () => {
   const [editingPages, setEditingPages] = useState<Record<string, string>>({});
   const [savingPages, setSavingPages] = useState<string | null>(null);
   const [publishPages, setPublishPages] = useState("");
+  const [sendAuthorEmail, setSendAuthorEmail] = useState(true);
+  const [extractingMeta, setExtractingMeta] = useState(false);
+  // Preview modal state
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<any | null>(null);
+  const [confirmingPublish, setConfirmingPublish] = useState(false);
+  // Issue management
+  const [issues, setIssues] = useState<any[]>([]);
+  const [newVolume, setNewVolume] = useState("");
+  const [newIssue, setNewIssue] = useState("");
+  const [newIssueYear, setNewIssueYear] = useState(String(new Date().getFullYear() + 1));
+  const [openingIssue, setOpeningIssue] = useState(false);
+  const [bulkVolume, setBulkVolume] = useState("2");
+  const [bulkIssueCount, setBulkIssueCount] = useState("4");
+  const [bulkYear, setBulkYear] = useState(String(new Date().getFullYear() + 1));
+  const [issuePdfFile, setIssuePdfFile] = useState<File | null>(null);
+  const [uploadingIssuePdf, setUploadingIssuePdf] = useState<string | null>(null);
+  const issuePdfRef = useRef<HTMLInputElement>(null);
+  const [issueUploadTargetId, setIssueUploadTargetId] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
@@ -148,8 +171,19 @@ const AdminPanel = () => {
     } catch {}
 
     setAcceptedSubmissions(acceptedSubs || []);
+
+    // Load journal issues
+    const { data: issuesData } = await supabase
+      .from("journal_issues")
+      .select("*")
+      .order("year", { ascending: true })
+      .order("volume", { ascending: true })
+      .order("issue", { ascending: true });
+    setIssues(issuesData || []);
+
     setLoading(false);
   };
+
 
   const handleDeleteArticle = async (article: any) => {
     if (deleteConfirmTitle !== article.title) {
@@ -301,7 +335,34 @@ const AdminPanel = () => {
     setSavingPages(null);
   };
 
-  const handlePublishAccepted = async (submission: any) => {
+  const readFileAsBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1]);
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
+
+  const safeInvoke = async (fn: string, body: any) => {
+    const res = await supabase.functions.invoke(fn, { body });
+    // supabase-js returns { data, error }; when the function throws or returns non-2xx,
+    // `data` can be null and `error` holds a FunctionsHttpError whose context has the response body.
+    if (res.error) {
+      let msg = res.error.message || `${fn} failed`;
+      try {
+        const ctx: any = (res.error as any).context;
+        if (ctx?.body) {
+          const parsed = typeof ctx.body === "string" ? JSON.parse(ctx.body) : ctx.body;
+          if (parsed?.error) msg = parsed.error;
+        }
+      } catch {}
+      throw new Error(msg);
+    }
+    if (!res.data) throw new Error(`${fn} returned no data`);
+    if (res.data.error) throw new Error(res.data.error);
+    return res.data;
+  };
+
+  const handlePreparePreview = async (submission: any) => {
     if (!publishPdfFile) {
       toast({ title: "PDF Required", description: "Please select the final manuscript PDF to publish.", variant: "destructive" });
       return;
@@ -312,26 +373,20 @@ const AdminPanel = () => {
       if (!code) { setPublishingSubmission(null); return; }
       if (!editorPasscode) setEditorPasscode(code);
 
-      const doiRes = await supabase.functions.invoke("publish-article", { body: { passcode: code, action: "get-next-doi" } });
-      if (doiRes.data?.error) throw new Error(doiRes.data.error);
-      const doi = doiRes.data.doi;
+      const doiData = await safeInvoke("publish-article", { passcode: code, action: "get-next-doi" });
+      const doi = doiData.doi;
+      if (!doi) throw new Error("Could not generate DOI");
 
-      const reader = new FileReader();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve((reader.result as string).split(",")[1]);
-        reader.onerror = () => reject(new Error("Failed to read file"));
-        reader.readAsDataURL(publishPdfFile);
-      });
-
+      const base64 = await readFileAsBase64(publishPdfFile);
       const year = new Date().getFullYear();
       const safeName = submission.title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").substring(0, 80);
-      const fileName = `${year}/vol1-iss1-${safeName}.pdf`;
+      const fileName = `${year}/${doi}-${safeName}.pdf`;
 
-      const uploadRes = await supabase.functions.invoke("publish-article", {
-        body: { passcode: code, action: "upload-pdf", article: { fileName, fileData: base64 } },
+      const uploadData = await safeInvoke("publish-article", {
+        passcode: code, action: "upload-pdf", article: { fileName, fileData: base64 },
       });
-      if (uploadRes.data?.error) throw new Error(uploadRes.data.error);
-      const pdfUrl = uploadRes.data.url;
+      const pdfUrl = uploadData.url;
+      if (!pdfUrl) throw new Error("PDF upload returned no URL");
 
       const meta = submission.pipeline_results?.prepared_metadata || {};
       const orcids = submission.corresponding_author_orcid ? [submission.corresponding_author_orcid] : [];
@@ -344,24 +399,77 @@ const AdminPanel = () => {
       };
       const articleType = typeMap[submission.manuscript_type] || submission.manuscript_type || "Research Article";
 
-      const publishRes = await supabase.functions.invoke("publish-article", {
-        body: {
-          passcode: code, action: "publish",
-          article: {
-            doi, title: submission.title,
-            authors: submission.all_authors || submission.corresponding_author_name,
-            orcidIds: orcids, type: articleType,
-            volume: meta.volume || "1", issue: meta.issue || "1",
-            abstract: submission.abstract,
-            publicationDate: new Date().toISOString().split("T")[0],
-            pdfUrl,
-            pages: publishPages || null,
-          },
+      setPreviewData({
+        submission,
+        code,
+        doi,
+        title: submission.title,
+        authors: submission.all_authors || submission.corresponding_author_name,
+        orcids,
+        articleType,
+        volume: meta.volume || "1",
+        issue: meta.issue || "1",
+        abstract: submission.abstract,
+        pages: publishPages || "",
+        pdfUrl,
+        publicationDate: new Date().toISOString().split("T")[0],
+        recipient: submission.corresponding_author_email,
+      });
+      setPreviewOpen(true);
+    } catch (err: any) {
+      toast({ title: "Preview Failed", description: err.message, variant: "destructive" });
+    }
+    setPublishingSubmission(null);
+  };
+
+  const handleConfirmPublish = async () => {
+    if (!previewData) return;
+    setConfirmingPublish(true);
+    try {
+      await safeInvoke("publish-article", {
+        passcode: previewData.code, action: "publish",
+        article: {
+          doi: previewData.doi,
+          title: previewData.title,
+          authors: previewData.authors,
+          orcidIds: previewData.orcids,
+          type: previewData.articleType,
+          volume: previewData.volume,
+          issue: previewData.issue,
+          abstract: previewData.abstract,
+          publicationDate: previewData.publicationDate,
+          pdfUrl: previewData.pdfUrl,
+          pages: previewData.pages || null,
         },
       });
-      if (publishRes.data?.error) throw new Error(publishRes.data.error);
 
-      toast({ title: "Published!", description: `"${submission.title}" is now live with DOI: ${doi}` });
+      // Send confirmation email if enabled
+      if (sendAuthorEmail && previewData.recipient) {
+        try {
+          await safeInvoke("admin-extras", {
+            passcode: previewData.code, action: "send-publication-email",
+            payload: {
+              recipient: previewData.recipient,
+              title: previewData.title,
+              authors: previewData.authors,
+              doi: previewData.doi,
+              volume: previewData.volume,
+              issue: previewData.issue,
+              pages: previewData.pages,
+              articleUrl: `https://www.marinenotesjournal.com/doi/${previewData.doi}`,
+              pdfUrl: previewData.pdfUrl,
+            },
+          });
+          toast({ title: "Published & Author Notified", description: `${previewData.doi} live. Email sent to ${previewData.recipient}` });
+        } catch (emailErr: any) {
+          toast({ title: "Published (email failed)", description: `Article live but email failed: ${emailErr.message}`, variant: "destructive" });
+        }
+      } else {
+        toast({ title: "Published!", description: `${previewData.doi} is now live.` });
+      }
+
+      setPreviewOpen(false);
+      setPreviewData(null);
       setPublishPdfFile(null);
       setPublishPages("");
       if (publishFileRef.current) publishFileRef.current.value = "";
@@ -369,8 +477,129 @@ const AdminPanel = () => {
     } catch (err: any) {
       toast({ title: "Publish Failed", description: err.message, variant: "destructive" });
     }
-    setPublishingSubmission(null);
+    setConfirmingPublish(false);
   };
+
+  const handleExtractMetadata = async (submission: any) => {
+    if (!publishPdfFile) {
+      toast({ title: "PDF Required", description: "Select the PDF first, then extract.", variant: "destructive" });
+      return;
+    }
+    setExtractingMeta(true);
+    try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) { setExtractingMeta(false); return; }
+      if (!editorPasscode) setEditorPasscode(code);
+      const base64 = await readFileAsBase64(publishPdfFile);
+      const data = await safeInvoke("admin-extras", {
+        passcode: code, action: "extract-pdf-metadata",
+        payload: { pdfBase64: base64, mimeType: publishPdfFile.type || "application/pdf" },
+      });
+      const m = data.metadata || {};
+      // Patch the submission in-memory so the preview picks it up
+      setAcceptedSubmissions(prev => prev.map(s => s.id === submission.id ? {
+        ...s,
+        title: m.title || s.title,
+        all_authors: m.authors || s.all_authors,
+        abstract: m.abstract || s.abstract,
+      } : s));
+      toast({ title: "Metadata Extracted", description: "Submission updated with values from the PDF. Review before publishing." });
+    } catch (err: any) {
+      toast({ title: "Extraction failed", description: err.message, variant: "destructive" });
+    }
+    setExtractingMeta(false);
+  };
+
+  // -------- Journal issues management --------
+  const handleOpenIssue = async () => {
+    if (!newVolume || !newIssue) {
+      toast({ title: "Missing fields", description: "Volume and Issue are required.", variant: "destructive" });
+      return;
+    }
+    setOpeningIssue(true);
+    try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) { setOpeningIssue(false); return; }
+      if (!editorPasscode) setEditorPasscode(code);
+      await safeInvoke("admin-extras", {
+        passcode: code, action: "open-issue",
+        payload: { volume: newVolume, issue: newIssue, year: Number(newIssueYear) },
+      });
+      toast({ title: "Issue opened", description: `Vol ${newVolume}, Issue ${newIssue} (${newIssueYear})` });
+      setNewVolume(""); setNewIssue("");
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setOpeningIssue(false);
+  };
+
+  const handleBulkOpenIssues = async () => {
+    const count = parseInt(bulkIssueCount, 10);
+    if (!bulkVolume || !count || count < 1 || count > 12) {
+      toast({ title: "Invalid input", description: "Give a volume and 1–12 issues.", variant: "destructive" });
+      return;
+    }
+    setOpeningIssue(true);
+    try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) { setOpeningIssue(false); return; }
+      if (!editorPasscode) setEditorPasscode(code);
+      const items = Array.from({ length: count }, (_, i) => ({
+        volume: bulkVolume, issue: String(i + 1), year: Number(bulkYear),
+      }));
+      const data = await safeInvoke("admin-extras", { passcode: code, action: "bulk-open-issues", payload: { items } });
+      toast({ title: "Issues opened", description: `${data.count} issues created for Volume ${bulkVolume} (${bulkYear})` });
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setOpeningIssue(false);
+  };
+
+  const handleUploadIssuePdf = async (issueRow: any) => {
+    if (!issuePdfFile || issueUploadTargetId !== issueRow.id) {
+      toast({ title: "Select a PDF", description: "Choose a PDF file for this issue first.", variant: "destructive" });
+      return;
+    }
+    setUploadingIssuePdf(issueRow.id);
+    try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) { setUploadingIssuePdf(null); return; }
+      if (!editorPasscode) setEditorPasscode(code);
+      const base64 = await readFileAsBase64(issuePdfFile);
+      const safeName = issuePdfFile.name.replace(/[^\w\-\.]/g, "-");
+      await safeInvoke("admin-extras", {
+        passcode: code, action: "upload-issue-pdf",
+        payload: { volume: issueRow.volume, issue: issueRow.issue, year: issueRow.year, fileName: safeName, fileData: base64 },
+      });
+      toast({ title: "Issue PDF uploaded", description: `Vol ${issueRow.volume}, Issue ${issueRow.issue}` });
+      setIssuePdfFile(null);
+      setIssueUploadTargetId(null);
+      if (issuePdfRef.current) issuePdfRef.current.value = "";
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setUploadingIssuePdf(null);
+  };
+
+  const handleDownloadIssuePdf = async (issueRow: any) => {
+    if (!issueRow.issue_pdf_url) return;
+    try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) return;
+      if (!editorPasscode) setEditorPasscode(code);
+      const data = await safeInvoke("admin-extras", {
+        passcode: code, action: "get-issue-pdf-signed-url", payload: { path: issueRow.issue_pdf_url },
+      });
+      window.open(data.url, "_blank");
+    } catch (err: any) {
+      toast({ title: "Download failed", description: err.message, variant: "destructive" });
+    }
+  };
+
+
 
   if (authLoading || loading) {
     return (
@@ -615,23 +844,166 @@ const AdminPanel = () => {
                       onChange={(e) => setPublishPages(e.target.value)}
                     />
                   </div>
-                  <Button
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                    disabled={publishingSubmission === sub.id || !publishPdfFile}
-                    onClick={() => handlePublishAccepted(sub)}
-                  >
-                    {publishingSubmission === sub.id ? (
-                      <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Publishing...</>
-                    ) : (
-                      <><Upload className="h-3 w-3 mr-1" /> Upload PDF & Publish</>
-                    )}
-                  </Button>
+                  <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <Label className="text-xs cursor-pointer" htmlFor={`email-${sub.id}`}>
+                        Email author on publish ({sub.corresponding_author_email || "no email"})
+                      </Label>
+                    </div>
+                    <Switch id={`email-${sub.id}`} checked={sendAuthorEmail} onCheckedChange={setSendAuthorEmail} />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm" variant="outline"
+                      disabled={extractingMeta || !publishPdfFile}
+                      onClick={() => handleExtractMetadata(sub)}
+                    >
+                      {extractingMeta ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
+                      Extract title/authors/abstract from PDF
+                    </Button>
+                    <Button
+                      size="sm" className="bg-green-600 hover:bg-green-700 text-white"
+                      disabled={publishingSubmission === sub.id || !publishPdfFile}
+                      onClick={() => handlePreparePreview(sub)}
+                    >
+                      {publishingSubmission === sub.id ? (
+                        <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Preparing…</>
+                      ) : (
+                        <><Eye className="h-3 w-3 mr-1" /> Preview & Publish</>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </CardContent>
           </Card>
         )}
+
+        {/* Journal Issues Management */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <BookOpen className="h-5 w-5" />
+              Volumes & Issues
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="p-3 border rounded-lg space-y-2">
+                <Label className="text-sm font-medium">Open a single issue</Label>
+                <div className="flex gap-2">
+                  <Input placeholder="Vol" value={newVolume} onChange={e => setNewVolume(e.target.value)} className="w-16" />
+                  <Input placeholder="Issue" value={newIssue} onChange={e => setNewIssue(e.target.value)} className="w-20" />
+                  <Input placeholder="Year" value={newIssueYear} onChange={e => setNewIssueYear(e.target.value)} className="w-24" />
+                  <Button size="sm" onClick={handleOpenIssue} disabled={openingIssue}>
+                    {openingIssue ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3 mr-1" />}Open
+                  </Button>
+                </div>
+              </div>
+              <div className="p-3 border rounded-lg space-y-2">
+                <Label className="text-sm font-medium">Open a full volume (all issues)</Label>
+                <div className="flex gap-2">
+                  <Input placeholder="Vol" value={bulkVolume} onChange={e => setBulkVolume(e.target.value)} className="w-16" />
+                  <Input placeholder="# issues" value={bulkIssueCount} onChange={e => setBulkIssueCount(e.target.value)} className="w-24" />
+                  <Input placeholder="Year" value={bulkYear} onChange={e => setBulkYear(e.target.value)} className="w-24" />
+                  <Button size="sm" onClick={handleBulkOpenIssues} disabled={openingIssue}>
+                    {openingIssue ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3 mr-1" />}Open all
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {issues.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No issues yet.</p>
+              ) : issues.map((iss: any) => (
+                <div key={iss.id} className="flex flex-wrap items-center gap-3 p-3 border rounded-lg">
+                  <div className="flex-1 min-w-[180px]">
+                    <p className="text-sm font-medium">Vol {iss.volume} · Issue {iss.issue} · {iss.year}</p>
+                    <p className="text-xs text-muted-foreground">Status: {iss.status}{iss.issue_pdf_url ? " · PDF uploaded" : ""}</p>
+                  </div>
+                  <Input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    className="h-8 text-xs w-56"
+                    ref={issueUploadTargetId === iss.id ? issuePdfRef : undefined}
+                    onChange={(e) => { setIssuePdfFile(e.target.files?.[0] || null); setIssueUploadTargetId(iss.id); }}
+                  />
+                  <Button size="sm" variant="outline"
+                    disabled={uploadingIssuePdf === iss.id || issueUploadTargetId !== iss.id || !issuePdfFile}
+                    onClick={() => handleUploadIssuePdf(iss)}>
+                    {uploadingIssuePdf === iss.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
+                    Upload
+                  </Button>
+                  {iss.issue_pdf_url && (
+                    <Button size="sm" variant="outline" onClick={() => handleDownloadIssuePdf(iss)}>
+                      <Download className="h-3 w-3 mr-1" /> Download
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Preview Modal */}
+        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Preview before publish</DialogTitle>
+              <DialogDescription>Verify the metadata and PDF, then confirm to make the article live.</DialogDescription>
+            </DialogHeader>
+            {previewData && (
+              <div className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-xs">DOI</Label><p className="font-mono text-xs">{previewData.doi}</p></div>
+                  <div><Label className="text-xs">Type</Label><p>{previewData.articleType}</p></div>
+                  <div><Label className="text-xs">Volume</Label>
+                    <Input value={previewData.volume} onChange={e => setPreviewData({ ...previewData, volume: e.target.value })} className="h-8" />
+                  </div>
+                  <div><Label className="text-xs">Issue</Label>
+                    <Input value={previewData.issue} onChange={e => setPreviewData({ ...previewData, issue: e.target.value })} className="h-8" />
+                  </div>
+                  <div><Label className="text-xs">Pages</Label>
+                    <Input value={previewData.pages} onChange={e => setPreviewData({ ...previewData, pages: e.target.value })} className="h-8" placeholder="e.g. 43-58" />
+                  </div>
+                  <div><Label className="text-xs">Publication date</Label>
+                    <Input type="date" value={previewData.publicationDate} onChange={e => setPreviewData({ ...previewData, publicationDate: e.target.value })} className="h-8" />
+                  </div>
+                </div>
+                <div><Label className="text-xs">Title</Label>
+                  <Textarea rows={2} value={previewData.title} onChange={e => setPreviewData({ ...previewData, title: e.target.value })} />
+                </div>
+                <div><Label className="text-xs">Authors</Label>
+                  <Input value={previewData.authors} onChange={e => setPreviewData({ ...previewData, authors: e.target.value })} />
+                </div>
+                <div><Label className="text-xs">Abstract</Label>
+                  <Textarea rows={5} value={previewData.abstract} onChange={e => setPreviewData({ ...previewData, abstract: e.target.value })} />
+                </div>
+                <div className="p-2 bg-muted/50 rounded flex items-center justify-between">
+                  <span className="text-xs">PDF uploaded ✓</span>
+                  <a href={previewData.pdfUrl} target="_blank" rel="noreferrer" className="text-xs text-primary underline">Open PDF</a>
+                </div>
+                <div className="p-2 bg-muted/50 rounded flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    <span className="text-xs">Send confirmation email to {previewData.recipient || "(no email on file)"}</span>
+                  </div>
+                  <Switch checked={sendAuthorEmail} onCheckedChange={setSendAuthorEmail} disabled={!previewData.recipient} />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPreviewOpen(false)} disabled={confirmingPublish}>Cancel</Button>
+              <Button onClick={handleConfirmPublish} disabled={confirmingPublish} className="bg-green-600 hover:bg-green-700 text-white">
+                {confirmingPublish ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                Confirm & Publish
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
 
         {/* Published Articles Management */}
         <Card className="mb-6">

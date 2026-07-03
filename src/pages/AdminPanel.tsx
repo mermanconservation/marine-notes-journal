@@ -844,23 +844,166 @@ const AdminPanel = () => {
                       onChange={(e) => setPublishPages(e.target.value)}
                     />
                   </div>
-                  <Button
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700 text-white"
-                    disabled={publishingSubmission === sub.id || !publishPdfFile}
-                    onClick={() => handlePublishAccepted(sub)}
-                  >
-                    {publishingSubmission === sub.id ? (
-                      <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Publishing...</>
-                    ) : (
-                      <><Upload className="h-3 w-3 mr-1" /> Upload PDF & Publish</>
-                    )}
-                  </Button>
+                  <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <Label className="text-xs cursor-pointer" htmlFor={`email-${sub.id}`}>
+                        Email author on publish ({sub.corresponding_author_email || "no email"})
+                      </Label>
+                    </div>
+                    <Switch id={`email-${sub.id}`} checked={sendAuthorEmail} onCheckedChange={setSendAuthorEmail} />
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm" variant="outline"
+                      disabled={extractingMeta || !publishPdfFile}
+                      onClick={() => handleExtractMetadata(sub)}
+                    >
+                      {extractingMeta ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Sparkles className="h-3 w-3 mr-1" />}
+                      Extract title/authors/abstract from PDF
+                    </Button>
+                    <Button
+                      size="sm" className="bg-green-600 hover:bg-green-700 text-white"
+                      disabled={publishingSubmission === sub.id || !publishPdfFile}
+                      onClick={() => handlePreparePreview(sub)}
+                    >
+                      {publishingSubmission === sub.id ? (
+                        <><Loader2 className="h-3 w-3 animate-spin mr-1" /> Preparing…</>
+                      ) : (
+                        <><Eye className="h-3 w-3 mr-1" /> Preview & Publish</>
+                      )}
+                    </Button>
+                  </div>
                 </div>
               ))}
             </CardContent>
           </Card>
         )}
+
+        {/* Journal Issues Management */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <BookOpen className="h-5 w-5" />
+              Volumes & Issues
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div className="p-3 border rounded-lg space-y-2">
+                <Label className="text-sm font-medium">Open a single issue</Label>
+                <div className="flex gap-2">
+                  <Input placeholder="Vol" value={newVolume} onChange={e => setNewVolume(e.target.value)} className="w-16" />
+                  <Input placeholder="Issue" value={newIssue} onChange={e => setNewIssue(e.target.value)} className="w-20" />
+                  <Input placeholder="Year" value={newIssueYear} onChange={e => setNewIssueYear(e.target.value)} className="w-24" />
+                  <Button size="sm" onClick={handleOpenIssue} disabled={openingIssue}>
+                    {openingIssue ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3 mr-1" />}Open
+                  </Button>
+                </div>
+              </div>
+              <div className="p-3 border rounded-lg space-y-2">
+                <Label className="text-sm font-medium">Open a full volume (all issues)</Label>
+                <div className="flex gap-2">
+                  <Input placeholder="Vol" value={bulkVolume} onChange={e => setBulkVolume(e.target.value)} className="w-16" />
+                  <Input placeholder="# issues" value={bulkIssueCount} onChange={e => setBulkIssueCount(e.target.value)} className="w-24" />
+                  <Input placeholder="Year" value={bulkYear} onChange={e => setBulkYear(e.target.value)} className="w-24" />
+                  <Button size="sm" onClick={handleBulkOpenIssues} disabled={openingIssue}>
+                    {openingIssue ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3 mr-1" />}Open all
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              {issues.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No issues yet.</p>
+              ) : issues.map((iss: any) => (
+                <div key={iss.id} className="flex flex-wrap items-center gap-3 p-3 border rounded-lg">
+                  <div className="flex-1 min-w-[180px]">
+                    <p className="text-sm font-medium">Vol {iss.volume} · Issue {iss.issue} · {iss.year}</p>
+                    <p className="text-xs text-muted-foreground">Status: {iss.status}{iss.issue_pdf_url ? " · PDF uploaded" : ""}</p>
+                  </div>
+                  <Input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    className="h-8 text-xs w-56"
+                    ref={issueUploadTargetId === iss.id ? issuePdfRef : undefined}
+                    onChange={(e) => { setIssuePdfFile(e.target.files?.[0] || null); setIssueUploadTargetId(iss.id); }}
+                  />
+                  <Button size="sm" variant="outline"
+                    disabled={uploadingIssuePdf === iss.id || issueUploadTargetId !== iss.id || !issuePdfFile}
+                    onClick={() => handleUploadIssuePdf(iss)}>
+                    {uploadingIssuePdf === iss.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
+                    Upload
+                  </Button>
+                  {iss.issue_pdf_url && (
+                    <Button size="sm" variant="outline" onClick={() => handleDownloadIssuePdf(iss)}>
+                      <Download className="h-3 w-3 mr-1" /> Download
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Preview Modal */}
+        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Preview before publish</DialogTitle>
+              <DialogDescription>Verify the metadata and PDF, then confirm to make the article live.</DialogDescription>
+            </DialogHeader>
+            {previewData && (
+              <div className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-xs">DOI</Label><p className="font-mono text-xs">{previewData.doi}</p></div>
+                  <div><Label className="text-xs">Type</Label><p>{previewData.articleType}</p></div>
+                  <div><Label className="text-xs">Volume</Label>
+                    <Input value={previewData.volume} onChange={e => setPreviewData({ ...previewData, volume: e.target.value })} className="h-8" />
+                  </div>
+                  <div><Label className="text-xs">Issue</Label>
+                    <Input value={previewData.issue} onChange={e => setPreviewData({ ...previewData, issue: e.target.value })} className="h-8" />
+                  </div>
+                  <div><Label className="text-xs">Pages</Label>
+                    <Input value={previewData.pages} onChange={e => setPreviewData({ ...previewData, pages: e.target.value })} className="h-8" placeholder="e.g. 43-58" />
+                  </div>
+                  <div><Label className="text-xs">Publication date</Label>
+                    <Input type="date" value={previewData.publicationDate} onChange={e => setPreviewData({ ...previewData, publicationDate: e.target.value })} className="h-8" />
+                  </div>
+                </div>
+                <div><Label className="text-xs">Title</Label>
+                  <Textarea rows={2} value={previewData.title} onChange={e => setPreviewData({ ...previewData, title: e.target.value })} />
+                </div>
+                <div><Label className="text-xs">Authors</Label>
+                  <Input value={previewData.authors} onChange={e => setPreviewData({ ...previewData, authors: e.target.value })} />
+                </div>
+                <div><Label className="text-xs">Abstract</Label>
+                  <Textarea rows={5} value={previewData.abstract} onChange={e => setPreviewData({ ...previewData, abstract: e.target.value })} />
+                </div>
+                <div className="p-2 bg-muted/50 rounded flex items-center justify-between">
+                  <span className="text-xs">PDF uploaded ✓</span>
+                  <a href={previewData.pdfUrl} target="_blank" rel="noreferrer" className="text-xs text-primary underline">Open PDF</a>
+                </div>
+                <div className="p-2 bg-muted/50 rounded flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4" />
+                    <span className="text-xs">Send confirmation email to {previewData.recipient || "(no email on file)"}</span>
+                  </div>
+                  <Switch checked={sendAuthorEmail} onCheckedChange={setSendAuthorEmail} disabled={!previewData.recipient} />
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPreviewOpen(false)} disabled={confirmingPublish}>Cancel</Button>
+              <Button onClick={handleConfirmPublish} disabled={confirmingPublish} className="bg-green-600 hover:bg-green-700 text-white">
+                {confirmingPublish ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
+                Confirm & Publish
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
 
         {/* Published Articles Management */}
         <Card className="mb-6">

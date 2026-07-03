@@ -171,8 +171,19 @@ const AdminPanel = () => {
     } catch {}
 
     setAcceptedSubmissions(acceptedSubs || []);
+
+    // Load journal issues
+    const { data: issuesData } = await supabase
+      .from("journal_issues")
+      .select("*")
+      .order("year", { ascending: true })
+      .order("volume", { ascending: true })
+      .order("issue", { ascending: true });
+    setIssues(issuesData || []);
+
     setLoading(false);
   };
+
 
   const handleDeleteArticle = async (article: any) => {
     if (deleteConfirmTitle !== article.title) {

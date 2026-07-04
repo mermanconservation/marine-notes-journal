@@ -939,6 +939,17 @@ const AdminPanel = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-muted/30">
+              <Button size="sm" variant="secondary" onClick={handleOpenNextIssue} disabled={openingIssue}>
+                {openingIssue ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
+                Open next issue
+              </Button>
+              <Button size="sm" variant="secondary" onClick={handleOpenNextVolume} disabled={openingIssue}>
+                {openingIssue ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
+                Open next volume
+              </Button>
+              <p className="text-xs text-muted-foreground self-center ml-2">Auto-detects highest existing volume/issue.</p>
+            </div>
             <div className="grid gap-3 md:grid-cols-2">
               <div className="p-3 border rounded-lg space-y-2">
                 <Label className="text-sm font-medium">Open a single issue</Label>

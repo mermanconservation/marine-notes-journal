@@ -557,6 +557,56 @@ const AdminPanel = () => {
     setOpeningIssue(false);
   };
 
+  const handleOpenNextIssue = async () => {
+    // Highest volume; within it, highest issue → next issue
+    if (issues.length === 0) {
+      setNewVolume("1"); setNewIssue("1"); setNewIssueYear(String(new Date().getFullYear()));
+      await handleOpenIssue();
+      return;
+    }
+    const maxVol = Math.max(...issues.map((i: any) => parseInt(i.volume) || 0));
+    const inVol = issues.filter((i: any) => parseInt(i.volume) === maxVol);
+    const maxIssue = Math.max(...inVol.map((i: any) => parseInt(i.issue) || 0));
+    const year = inVol[0]?.year || new Date().getFullYear();
+    setOpeningIssue(true);
+    try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) { setOpeningIssue(false); return; }
+      if (!editorPasscode) setEditorPasscode(code);
+      await safeInvoke("admin-extras", {
+        passcode: code, action: "open-issue",
+        payload: { volume: String(maxVol), issue: String(maxIssue + 1), year },
+      });
+      toast({ title: "Next issue opened", description: `Vol ${maxVol}, Issue ${maxIssue + 1} (${year})` });
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setOpeningIssue(false);
+  };
+
+  const handleOpenNextVolume = async () => {
+    const maxVol = issues.length === 0 ? 0 : Math.max(...issues.map((i: any) => parseInt(i.volume) || 0));
+    const nextVol = maxVol + 1;
+    const year = new Date().getFullYear() + (issues.length === 0 ? 0 : 1);
+    setOpeningIssue(true);
+    try {
+      const code = editorPasscode || prompt("Enter editor passcode:");
+      if (!code) { setOpeningIssue(false); return; }
+      if (!editorPasscode) setEditorPasscode(code);
+      await safeInvoke("admin-extras", {
+        passcode: code, action: "open-issue",
+        payload: { volume: String(nextVol), issue: "1", year },
+      });
+      toast({ title: "Next volume opened", description: `Vol ${nextVol}, Issue 1 (${year})` });
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setOpeningIssue(false);
+  };
+
+
   const handleUploadIssuePdf = async (issueRow: any) => {
     if (!issuePdfFile || issueUploadTargetId !== issueRow.id) {
       toast({ title: "Select a PDF", description: "Choose a PDF file for this issue first.", variant: "destructive" });
@@ -889,6 +939,17 @@ const AdminPanel = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            <div className="flex flex-wrap gap-2 p-3 border rounded-lg bg-muted/30">
+              <Button size="sm" variant="secondary" onClick={handleOpenNextIssue} disabled={openingIssue}>
+                {openingIssue ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
+                Open next issue
+              </Button>
+              <Button size="sm" variant="secondary" onClick={handleOpenNextVolume} disabled={openingIssue}>
+                {openingIssue ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Plus className="h-3 w-3 mr-1" />}
+                Open next volume
+              </Button>
+              <p className="text-xs text-muted-foreground self-center ml-2">Auto-detects highest existing volume/issue.</p>
+            </div>
             <div className="grid gap-3 md:grid-cols-2">
               <div className="p-3 border rounded-lg space-y-2">
                 <Label className="text-sm font-medium">Open a single issue</Label>

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Lock, Upload, Check, Loader2, Pencil, Plus } from "lucide-react";
+import { Lock, Upload, Check, Loader2, Pencil, Plus, BookOpen, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -60,6 +60,14 @@ const EditorPanel = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [suggestedDoi, setSuggestedDoi] = useState("");
 
+  // Journal issues (closed issues can receive a full-issue PDF)
+  const [issues, setIssues] = useState<any[]>([]);
+  const [issuePdfFile, setIssuePdfFile] = useState<File | null>(null);
+  const [issueTargetId, setIssueTargetId] = useState<string | null>(null);
+  const [issueBusyId, setIssueBusyId] = useState<string | null>(null);
+  const [closingId, setClosingId] = useState<string | null>(null);
+  const issuePdfRef = useRef<HTMLInputElement>(null);
+
   const callEdge = async (body: any) => {
     const { data } = await supabase.functions.invoke("publish-article", {
       body,
@@ -70,6 +78,79 @@ const EditorPanel = () => {
   const loadArticles = async () => {
     const res = await callEdge({ passcode, action: "list-articles" });
     if (res?.articles) setExistingArticles(res.articles);
+  };
+
+  const loadIssues = async () => {
+    const { data } = await supabase
+      .from("journal_issues")
+      .select("*")
+      .order("year", { ascending: true })
+      .order("volume", { ascending: true })
+      .order("issue", { ascending: true });
+    setIssues(data || []);
+  };
+
+  const readFileAsBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1]);
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
+
+  const handleCloseIssue = async (iss: any) => {
+    setClosingId(iss.id);
+    try {
+      const { error } = await supabase
+        .from("journal_issues")
+        .update({ status: "closed" })
+        .eq("id", iss.id);
+      if (error) throw error;
+      toast({ title: "Issue closed", description: `Vol ${iss.volume}, Issue ${iss.issue}` });
+      await loadIssues();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setClosingId(null);
+  };
+
+  const handleUploadIssuePdf = async (iss: any) => {
+    if (!issuePdfFile || issueTargetId !== iss.id) {
+      toast({ title: "Select a PDF", description: "Choose the final issue PDF first.", variant: "destructive" });
+      return;
+    }
+    setIssueBusyId(iss.id);
+    try {
+      const base64 = await readFileAsBase64(issuePdfFile);
+      const safeName = issuePdfFile.name.replace(/[^\w\-\.]/g, "-");
+      const { data, error } = await supabase.functions.invoke("admin-extras", {
+        body: {
+          passcode, action: "upload-issue-pdf",
+          payload: { volume: iss.volume, issue: iss.issue, year: iss.year, fileName: safeName, fileData: base64 },
+        },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message || "Upload failed");
+      toast({ title: "Final issue PDF uploaded", description: `Vol ${iss.volume}, Issue ${iss.issue}` });
+      setIssuePdfFile(null);
+      setIssueTargetId(null);
+      if (issuePdfRef.current) issuePdfRef.current.value = "";
+      await loadIssues();
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setIssueBusyId(null);
+  };
+
+  const handleDownloadIssuePdf = async (iss: any) => {
+    if (!iss.issue_pdf_url) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-extras", {
+        body: { passcode, action: "get-issue-pdf-signed-url", payload: { path: iss.issue_pdf_url } },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message || "Download failed");
+      window.open(data.url, "_blank");
+    } catch (err: any) {
+      toast({ title: "Download failed", description: err.message, variant: "destructive" });
+    }
   };
 
   const handleLogin = async () => {
@@ -90,7 +171,7 @@ const EditorPanel = () => {
   };
 
   useEffect(() => {
-    if (authenticated) loadArticles();
+    if (authenticated) { loadArticles(); loadIssues(); }
   }, [authenticated]);
 
   const selectArticleForEdit = (article: DbArticle) => {
@@ -267,6 +348,68 @@ const EditorPanel = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* Journal Issues — upload final PDF when closed */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <BookOpen className="h-4 w-4" /> Journal Issues
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {issues.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No issues yet. Ask an admin to open one.</p>
+            ) : (
+              <div className="space-y-2">
+                {issues.map((iss) => {
+                  const closed = iss.status === "closed";
+                  return (
+                    <div key={iss.id} className="flex flex-wrap items-center gap-3 p-3 border rounded-lg">
+                      <div className="flex-1 min-w-[180px]">
+                        <p className="text-sm font-medium">Vol {iss.volume} · Issue {iss.issue} · {iss.year}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Status: <span className={closed ? "text-primary font-medium" : ""}>{iss.status}</span>
+                          {iss.issue_pdf_url ? " · PDF uploaded" : ""}
+                        </p>
+                      </div>
+                      {!closed && (
+                        <Button size="sm" variant="outline" onClick={() => handleCloseIssue(iss)} disabled={closingId === iss.id}>
+                          {closingId === iss.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Lock className="h-3 w-3 mr-1" />}
+                          Close issue
+                        </Button>
+                      )}
+                      {closed && (
+                        <>
+                          <Input
+                            type="file"
+                            accept=".pdf,application/pdf"
+                            className="h-8 text-xs w-56"
+                            ref={issueTargetId === iss.id ? issuePdfRef : undefined}
+                            onChange={(e) => { setIssuePdfFile(e.target.files?.[0] || null); setIssueTargetId(iss.id); }}
+                          />
+                          <Button
+                            size="sm" variant="outline"
+                            disabled={issueBusyId === iss.id || issueTargetId !== iss.id || !issuePdfFile}
+                            onClick={() => handleUploadIssuePdf(iss)}
+                          >
+                            {issueBusyId === iss.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
+                            Upload final PDF
+                          </Button>
+                          {iss.issue_pdf_url && (
+                            <Button size="sm" variant="outline" onClick={() => handleDownloadIssuePdf(iss)}>
+                              <Download className="h-3 w-3 mr-1" /> Download
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
 
         <Card>
           <CardContent className="p-6 space-y-6">

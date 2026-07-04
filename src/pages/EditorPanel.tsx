@@ -60,6 +60,14 @@ const EditorPanel = () => {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [suggestedDoi, setSuggestedDoi] = useState("");
 
+  // Journal issues (closed issues can receive a full-issue PDF)
+  const [issues, setIssues] = useState<any[]>([]);
+  const [issuePdfFile, setIssuePdfFile] = useState<File | null>(null);
+  const [issueTargetId, setIssueTargetId] = useState<string | null>(null);
+  const [issueBusyId, setIssueBusyId] = useState<string | null>(null);
+  const [closingId, setClosingId] = useState<string | null>(null);
+  const issuePdfRef = useRef<HTMLInputElement>(null);
+
   const callEdge = async (body: any) => {
     const { data } = await supabase.functions.invoke("publish-article", {
       body,

@@ -80,6 +80,79 @@ const EditorPanel = () => {
     if (res?.articles) setExistingArticles(res.articles);
   };
 
+  const loadIssues = async () => {
+    const { data } = await supabase
+      .from("journal_issues")
+      .select("*")
+      .order("year", { ascending: true })
+      .order("volume", { ascending: true })
+      .order("issue", { ascending: true });
+    setIssues(data || []);
+  };
+
+  const readFileAsBase64 = (file: File) => new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1]);
+    reader.onerror = () => reject(new Error("Failed to read file"));
+    reader.readAsDataURL(file);
+  });
+
+  const handleCloseIssue = async (iss: any) => {
+    setClosingId(iss.id);
+    try {
+      const { error } = await supabase
+        .from("journal_issues")
+        .update({ status: "closed" })
+        .eq("id", iss.id);
+      if (error) throw error;
+      toast({ title: "Issue closed", description: `Vol ${iss.volume}, Issue ${iss.issue}` });
+      await loadIssues();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setClosingId(null);
+  };
+
+  const handleUploadIssuePdf = async (iss: any) => {
+    if (!issuePdfFile || issueTargetId !== iss.id) {
+      toast({ title: "Select a PDF", description: "Choose the final issue PDF first.", variant: "destructive" });
+      return;
+    }
+    setIssueBusyId(iss.id);
+    try {
+      const base64 = await readFileAsBase64(issuePdfFile);
+      const safeName = issuePdfFile.name.replace(/[^\w\-\.]/g, "-");
+      const { data, error } = await supabase.functions.invoke("admin-extras", {
+        body: {
+          passcode, action: "upload-issue-pdf",
+          payload: { volume: iss.volume, issue: iss.issue, year: iss.year, fileName: safeName, fileData: base64 },
+        },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message || "Upload failed");
+      toast({ title: "Final issue PDF uploaded", description: `Vol ${iss.volume}, Issue ${iss.issue}` });
+      setIssuePdfFile(null);
+      setIssueTargetId(null);
+      if (issuePdfRef.current) issuePdfRef.current.value = "";
+      await loadIssues();
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setIssueBusyId(null);
+  };
+
+  const handleDownloadIssuePdf = async (iss: any) => {
+    if (!iss.issue_pdf_url) return;
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-extras", {
+        body: { passcode, action: "get-issue-pdf-signed-url", payload: { path: iss.issue_pdf_url } },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message || "Download failed");
+      window.open(data.url, "_blank");
+    } catch (err: any) {
+      toast({ title: "Download failed", description: err.message, variant: "destructive" });
+    }
+  };
+
   const handleLogin = async () => {
     setLoading(true);
     try {
@@ -98,7 +171,7 @@ const EditorPanel = () => {
   };
 
   useEffect(() => {
-    if (authenticated) loadArticles();
+    if (authenticated) { loadArticles(); loadIssues(); }
   }, [authenticated]);
 
   const selectArticleForEdit = (article: DbArticle) => {

@@ -231,7 +231,13 @@ const Archive = () => {
                   </h2>
                 </div>
 
-                {volume.issues.map((issue) => (
+                {volume.issues.map((issue) => {
+                  const meta = journalIssues.find(
+                    (j) => String(j.volume) === String(volume.volume) && String(j.issue) === String(issue.issue)
+                  );
+                  const closed = meta?.status === "closed";
+                  const hasPdf = !!meta?.issue_pdf_url;
+                  return (
                   <Card 
                     key={issue.issue} 
                     className="shadow-soft cursor-pointer hover:shadow-lg transition-shadow"
@@ -240,8 +246,11 @@ const Archive = () => {
                     <CardHeader className="bg-muted/20">
                       <div className="flex items-start justify-between">
                         <div>
-                          <CardTitle className="text-xl">
+                          <CardTitle className="text-xl flex items-center gap-2">
                             Issue {issue.issue}: {issue.title}
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded ${closed ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                              {closed ? "Closed" : "Open"}
+                            </span>
                           </CardTitle>
                           <p className="text-muted-foreground mt-1">{issue.date}</p>
                           <p className="text-sm text-muted-foreground mt-2">
@@ -249,13 +258,28 @@ const Archive = () => {
                           </p>
                         </div>
                         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Button variant="outline" size="sm">
-                            <Download className="h-4 w-4 mr-2" />
-                            Full Issue PDF
-                          </Button>
+                          {closed && hasPdf ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownloadFullIssue(meta)}
+                              disabled={downloadingId === meta.id}
+                            >
+                              {downloadingId === meta.id
+                                ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                : <Download className="h-4 w-4 mr-2" />}
+                              Full Issue PDF
+                            </Button>
+                          ) : (
+                            <Button variant="outline" size="sm" disabled title={closed ? "Final PDF not uploaded" : "Issue still open"}>
+                              <Download className="h-4 w-4 mr-2" />
+                              Full Issue PDF
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </CardHeader>
+
                     <CardContent className="p-6">
                       <div className="space-y-3">
                         {issue.articles.map((article, idx) => (

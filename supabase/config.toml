@@ -18,3 +18,7 @@ verify_jwt = false
 [functions.admin-extras]
 verify_jwt = false
 
+[functions.public-issue-pdf]
+verify_jwt = false
+
+

@@ -1,16 +1,47 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { formatMonthYear } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Download } from "lucide-react";
+import { Search, Download, Loader2 } from "lucide-react";
 import { useArticles } from "@/hooks/useArticles";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
 
 const Archive = () => {
   const navigate = useNavigate();
   const { articles } = useArticles();
+  const { toast } = useToast();
+  const [journalIssues, setJournalIssues] = useState<any[]>([]);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("journal_issues")
+      .select("id,volume,issue,year,status,issue_pdf_url,notes")
+      .order("year", { ascending: false })
+      .order("volume", { ascending: false })
+      .order("issue", { ascending: false })
+      .then(({ data }) => setJournalIssues(data || []));
+  }, []);
+
+  const handleDownloadFullIssue = async (iss: any) => {
+    setDownloadingId(iss.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("public-issue-pdf", {
+        body: { volume: iss.volume, issue: iss.issue },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message || "Download failed");
+      window.open(data.url, "_blank", "noopener,noreferrer");
+    } catch (err: any) {
+      toast({ title: "Download failed", description: err.message, variant: "destructive" });
+    }
+    setDownloadingId(null);
+  };
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
   const [selectedType, setSelectedType] = useState("");
@@ -200,7 +231,13 @@ const Archive = () => {
                   </h2>
                 </div>
 
-                {volume.issues.map((issue) => (
+                {volume.issues.map((issue) => {
+                  const meta = journalIssues.find(
+                    (j) => String(j.volume) === String(volume.volume) && String(j.issue) === String(issue.issue)
+                  );
+                  const closed = meta?.status === "closed";
+                  const hasPdf = !!meta?.issue_pdf_url;
+                  return (
                   <Card 
                     key={issue.issue} 
                     className="shadow-soft cursor-pointer hover:shadow-lg transition-shadow"
@@ -209,8 +246,11 @@ const Archive = () => {
                     <CardHeader className="bg-muted/20">
                       <div className="flex items-start justify-between">
                         <div>
-                          <CardTitle className="text-xl">
+                          <CardTitle className="text-xl flex items-center gap-2">
                             Issue {issue.issue}: {issue.title}
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded ${closed ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                              {closed ? "Closed" : "Open"}
+                            </span>
                           </CardTitle>
                           <p className="text-muted-foreground mt-1">{issue.date}</p>
                           <p className="text-sm text-muted-foreground mt-2">
@@ -218,13 +258,28 @@ const Archive = () => {
                           </p>
                         </div>
                         <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-                          <Button variant="outline" size="sm">
-                            <Download className="h-4 w-4 mr-2" />
-                            Full Issue PDF
-                          </Button>
+                          {closed && hasPdf ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDownloadFullIssue(meta)}
+                              disabled={downloadingId === meta.id}
+                            >
+                              {downloadingId === meta.id
+                                ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                : <Download className="h-4 w-4 mr-2" />}
+                              Full Issue PDF
+                            </Button>
+                          ) : (
+                            <Button variant="outline" size="sm" disabled title={closed ? "Final PDF not uploaded" : "Issue still open"}>
+                              <Download className="h-4 w-4 mr-2" />
+                              Full Issue PDF
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </CardHeader>
+
                     <CardContent className="p-6">
                       <div className="space-y-3">
                         {issue.articles.map((article, idx) => (
@@ -256,7 +311,9 @@ const Archive = () => {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
+
               </div>
             ))}
           </div>

@@ -98,6 +98,10 @@ const EditorPanel = () => {
   });
 
   const handleCloseIssue = async (iss: any) => {
+    if (!iss.issue_pdf_url) {
+      toast({ title: "Upload the final PDF first", description: "An issue can only be closed once the consolidated PDF is uploaded.", variant: "destructive" });
+      return;
+    }
     setClosingId(iss.id);
     try {
       const { error } = await supabase
@@ -112,6 +116,33 @@ const EditorPanel = () => {
     }
     setClosingId(null);
   };
+
+  const handleCloseVolume = async (volume: string) => {
+    const inVol = issues.filter((i) => i.volume === volume);
+    const missing = inVol.filter((i) => !i.issue_pdf_url);
+    if (missing.length > 0) {
+      toast({
+        title: "Cannot close volume",
+        description: `Upload the final PDF for issue(s) ${missing.map((m) => m.issue).join(", ")} first.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    setClosingId(`vol-${volume}`);
+    try {
+      const { error } = await supabase
+        .from("journal_issues")
+        .update({ status: "closed" })
+        .eq("volume", volume);
+      if (error) throw error;
+      toast({ title: "Volume closed", description: `Volume ${volume}` });
+      await loadIssues();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setClosingId(null);
+  };
+
 
   const handleUploadIssuePdf = async (iss: any) => {
     if (!issuePdfFile || issueTargetId !== iss.id) {
@@ -360,48 +391,74 @@ const EditorPanel = () => {
             {issues.length === 0 ? (
               <p className="text-sm text-muted-foreground">No issues yet. Ask an admin to open one.</p>
             ) : (
-              <div className="space-y-2">
-                {issues.map((iss) => {
-                  const closed = iss.status === "closed";
+              <div className="space-y-5">
+                {Array.from(new Set(issues.map((i) => i.volume))).sort((a: any, b: any) => Number(a) - Number(b)).map((vol) => {
+                  const volIssues = issues.filter((i) => i.volume === vol);
+                  const allClosed = volIssues.every((i) => i.status === "closed");
+                  const allHavePdf = volIssues.every((i) => !!i.issue_pdf_url);
                   return (
-                    <div key={iss.id} className="flex flex-wrap items-center gap-3 p-3 border rounded-lg">
-                      <div className="flex-1 min-w-[180px]">
-                        <p className="text-sm font-medium">Vol {iss.volume} · Issue {iss.issue} · {iss.year}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Status: <span className={closed ? "text-primary font-medium" : ""}>{iss.status}</span>
-                          {iss.issue_pdf_url ? " · PDF uploaded" : ""}
-                        </p>
-                      </div>
-                      {!closed && (
-                        <Button size="sm" variant="outline" onClick={() => handleCloseIssue(iss)} disabled={closingId === iss.id}>
-                          {closingId === iss.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Lock className="h-3 w-3 mr-1" />}
-                          Close issue
-                        </Button>
-                      )}
-                      {closed && (
-                        <>
-                          <Input
-                            type="file"
-                            accept=".pdf,application/pdf"
-                            className="h-8 text-xs w-56"
-                            ref={issueTargetId === iss.id ? issuePdfRef : undefined}
-                            onChange={(e) => { setIssuePdfFile(e.target.files?.[0] || null); setIssueTargetId(iss.id); }}
-                          />
+                    <div key={vol} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-sm">Volume {vol}</h4>
+                        {!allClosed && (
                           <Button
-                            size="sm" variant="outline"
-                            disabled={issueBusyId === iss.id || issueTargetId !== iss.id || !issuePdfFile}
-                            onClick={() => handleUploadIssuePdf(iss)}
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleCloseVolume(vol)}
+                            disabled={closingId === `vol-${vol}` || !allHavePdf}
+                            title={!allHavePdf ? "Upload the final PDF for every issue in this volume first" : ""}
                           >
-                            {issueBusyId === iss.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
-                            Upload final PDF
+                            {closingId === `vol-${vol}` ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Lock className="h-3 w-3 mr-1" />}
+                            Close volume
                           </Button>
-                          {iss.issue_pdf_url && (
-                            <Button size="sm" variant="outline" onClick={() => handleDownloadIssuePdf(iss)}>
-                              <Download className="h-3 w-3 mr-1" /> Download
+                        )}
+                      </div>
+                      {volIssues.map((iss) => {
+                        const closed = iss.status === "closed";
+                        const canClose = !!iss.issue_pdf_url;
+                        return (
+                          <div key={iss.id} className="flex flex-wrap items-center gap-3 p-3 border rounded-lg">
+                            <div className="flex-1 min-w-[180px]">
+                              <p className="text-sm font-medium">Vol {iss.volume} · Issue {iss.issue} · {iss.year}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Status: <span className={closed ? "text-primary font-medium" : ""}>{iss.status}</span>
+                                {iss.issue_pdf_url ? " · PDF uploaded" : " · no final PDF yet"}
+                              </p>
+                            </div>
+                            <Input
+                              type="file"
+                              accept=".pdf,application/pdf"
+                              className="h-8 text-xs w-56"
+                              ref={issueTargetId === iss.id ? issuePdfRef : undefined}
+                              onChange={(e) => { setIssuePdfFile(e.target.files?.[0] || null); setIssueTargetId(iss.id); }}
+                            />
+                            <Button
+                              size="sm" variant="outline"
+                              disabled={issueBusyId === iss.id || issueTargetId !== iss.id || !issuePdfFile}
+                              onClick={() => handleUploadIssuePdf(iss)}
+                            >
+                              {issueBusyId === iss.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
+                              {iss.issue_pdf_url ? "Replace PDF" : "Upload final PDF"}
                             </Button>
-                          )}
-                        </>
-                      )}
+                            {iss.issue_pdf_url && (
+                              <Button size="sm" variant="outline" onClick={() => handleDownloadIssuePdf(iss)}>
+                                <Download className="h-3 w-3 mr-1" /> Download
+                              </Button>
+                            )}
+                            {!closed && (
+                              <Button
+                                size="sm"
+                                onClick={() => handleCloseIssue(iss)}
+                                disabled={closingId === iss.id || !canClose}
+                                title={!canClose ? "Upload the final issue PDF first" : ""}
+                              >
+                                {closingId === iss.id ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Lock className="h-3 w-3 mr-1" />}
+                                Close issue
+                              </Button>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   );
                 })}
@@ -409,6 +466,7 @@ const EditorPanel = () => {
             )}
           </CardContent>
         </Card>
+
 
 
         <Card>

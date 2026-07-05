@@ -311,7 +311,9 @@ const Archive = () => {
                       </div>
                     </CardContent>
                   </Card>
-                ))}
+                  );
+                })}
+
               </div>
             ))}
           </div>

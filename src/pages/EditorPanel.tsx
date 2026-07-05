@@ -98,6 +98,10 @@ const EditorPanel = () => {
   });
 
   const handleCloseIssue = async (iss: any) => {
+    if (!iss.issue_pdf_url) {
+      toast({ title: "Upload the final PDF first", description: "An issue can only be closed once the consolidated PDF is uploaded.", variant: "destructive" });
+      return;
+    }
     setClosingId(iss.id);
     try {
       const { error } = await supabase
@@ -112,6 +116,33 @@ const EditorPanel = () => {
     }
     setClosingId(null);
   };
+
+  const handleCloseVolume = async (volume: string) => {
+    const inVol = issues.filter((i) => i.volume === volume);
+    const missing = inVol.filter((i) => !i.issue_pdf_url);
+    if (missing.length > 0) {
+      toast({
+        title: "Cannot close volume",
+        description: `Upload the final PDF for issue(s) ${missing.map((m) => m.issue).join(", ")} first.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    setClosingId(`vol-${volume}`);
+    try {
+      const { error } = await supabase
+        .from("journal_issues")
+        .update({ status: "closed" })
+        .eq("volume", volume);
+      if (error) throw error;
+      toast({ title: "Volume closed", description: `Volume ${volume}` });
+      await loadIssues();
+    } catch (err: any) {
+      toast({ title: "Error", description: err.message, variant: "destructive" });
+    }
+    setClosingId(null);
+  };
+
 
   const handleUploadIssuePdf = async (iss: any) => {
     if (!issuePdfFile || issueTargetId !== iss.id) {

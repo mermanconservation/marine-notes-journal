@@ -14,6 +14,34 @@ import { useToast } from "@/hooks/use-toast";
 const Archive = () => {
   const navigate = useNavigate();
   const { articles } = useArticles();
+  const { toast } = useToast();
+  const [journalIssues, setJournalIssues] = useState<any[]>([]);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from("journal_issues")
+      .select("id,volume,issue,year,status,issue_pdf_url,notes")
+      .order("year", { ascending: false })
+      .order("volume", { ascending: false })
+      .order("issue", { ascending: false })
+      .then(({ data }) => setJournalIssues(data || []));
+  }, []);
+
+  const handleDownloadFullIssue = async (iss: any) => {
+    setDownloadingId(iss.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("public-issue-pdf", {
+        body: { volume: iss.volume, issue: iss.issue },
+      });
+      if (error || data?.error) throw new Error(data?.error || error?.message || "Download failed");
+      window.open(data.url, "_blank", "noopener,noreferrer");
+    } catch (err: any) {
+      toast({ title: "Download failed", description: err.message, variant: "destructive" });
+    }
+    setDownloadingId(null);
+  };
+
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
   const [selectedType, setSelectedType] = useState("");

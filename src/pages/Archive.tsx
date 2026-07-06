@@ -108,7 +108,7 @@ const Archive = () => {
       .sort((a: any, b: any) => a.volume - b.volume);
   }, [articles, journalIssues]);
 
-  const years = ["2026"];
+  const years = Array.from(new Set(volumes.map((v: any) => String(v.year)))).sort();
   const articleTypes = ["All Types", "Research Article", "Review Article", "Short Communication", "Case Study", "Technical Report / Risk Assessment", "Field Notes", "Observational Reports", "Conservation News"];
 
   const filteredVolumes = volumes.filter(volume => {

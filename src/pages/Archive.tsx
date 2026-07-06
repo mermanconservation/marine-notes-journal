@@ -49,45 +49,64 @@ const Archive = () => {
   // Load articles from articles.json and organize by volume/issue
   const volumes = useMemo(() => {
     const volumeMap = new Map();
-    
-    articles.forEach(article => {
-      const volKey = `${article.volume}`;
+
+    const ensureVolume = (volumeStr: string, year: number) => {
+      const volKey = `${volumeStr}`;
       if (!volumeMap.has(volKey)) {
-        const pubYear = new Date(article.publicationDate).getFullYear();
         volumeMap.set(volKey, {
-          year: pubYear,
-          volume: parseInt(article.volume),
-          issues: new Map()
+          year,
+          volume: parseInt(volumeStr),
+          issues: new Map(),
         });
       }
-      
-      const vol = volumeMap.get(volKey);
+      return volumeMap.get(volKey);
+    };
+
+    articles.forEach(article => {
+      const pubYear = new Date(article.publicationDate).getFullYear();
+      const vol = ensureVolume(article.volume, pubYear);
       const issueKey = article.issue;
-      
+
       if (!vol.issues.has(issueKey)) {
         vol.issues.set(issueKey, {
           issue: parseInt(article.issue),
           title: "Issue " + article.issue,
           date: formatMonthYear(article.publicationDate),
-          articles: []
+          articles: [],
         });
       }
-      
+
       vol.issues.get(issueKey).articles.push({
         title: article.title,
         authors: article.authors,
         type: article.type,
         doi: article.doi,
         abstract: article.abstract,
-        pdfUrl: article.pdfUrl
+        pdfUrl: article.pdfUrl,
       });
     });
-    
-    return Array.from(volumeMap.values()).map(vol => ({
-      ...vol,
-      issues: Array.from(vol.issues.values())
-    }));
-  }, [articles]);
+
+    // Include issues from journal_issues even when they have no articles yet
+    journalIssues.forEach((ji) => {
+      const vol = ensureVolume(String(ji.volume), Number(ji.year));
+      const issueKey = String(ji.issue);
+      if (!vol.issues.has(issueKey)) {
+        vol.issues.set(issueKey, {
+          issue: parseInt(String(ji.issue)),
+          title: "Issue " + ji.issue,
+          date: String(ji.year),
+          articles: [],
+        });
+      }
+    });
+
+    return Array.from(volumeMap.values())
+      .map(vol => ({
+        ...vol,
+        issues: Array.from(vol.issues.values()).sort((a: any, b: any) => a.issue - b.issue),
+      }))
+      .sort((a: any, b: any) => a.volume - b.volume);
+  }, [articles, journalIssues]);
 
   const years = ["2026"];
   const articleTypes = ["All Types", "Research Article", "Review Article", "Short Communication", "Case Study", "Technical Report / Risk Assessment", "Field Notes", "Observational Reports", "Conservation News"];

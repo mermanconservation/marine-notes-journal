@@ -582,9 +582,16 @@ const EditorSubmissions = () => {
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <span className="font-medium text-sm line-clamp-2">{sub.title}</span>
-                    <Badge className={`${statusColor(sub.status)} shrink-0 text-xs`}>
-                      {STATUS_OPTIONS.find(s => s.value === sub.status)?.label || sub.status}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <Badge className={`${statusColor(sub.status)} text-xs`}>
+                        {STATUS_OPTIONS.find(s => s.value === sub.status)?.label || sub.status}
+                      </Badge>
+                      {(sub as any).submitted_by_editor && (
+                        <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
+                          Editor upload
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>{sub.corresponding_author_name} · {formatDate(sub.created_at)}</span>

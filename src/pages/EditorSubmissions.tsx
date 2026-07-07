@@ -541,6 +541,9 @@ const EditorSubmissions = () => {
                 </div>
               )}
             </div>
+            <Button variant="outline" size="sm" onClick={() => setShowAuthorUpload(true)}>
+              <Upload className="h-4 w-4 mr-2" /> Upload for Author
+            </Button>
             <Button variant="outline" size="sm" onClick={signOut}>
               <LogOut className="h-4 w-4 mr-2" /> Sign Out
             </Button>

@@ -1460,6 +1460,85 @@ Pages: ${publishData.articleNumber}`}
             }}
           />
         )}
+
+        {/* Upload manuscript on behalf of an author */}
+        <Dialog open={showAuthorUpload} onOpenChange={(o) => { setShowAuthorUpload(o); if (!o) resetAuthorUpload(); }}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Upload Manuscript for an Author</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Use this when an author cannot submit online themselves. The submission will be marked
+                <span className="font-medium"> “Editor upload” </span> and, if the author's email matches a
+                registered account, it will appear in their dashboard automatically.
+              </p>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <Label>Title *</Label>
+                  <Input value={authorUploadForm.title} onChange={(e) => setAuthorUploadForm(p => ({ ...p, title: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>Manuscript Type *</Label>
+                  <Select value={authorUploadForm.manuscript_type} onValueChange={(v) => setAuthorUploadForm(p => ({ ...p, manuscript_type: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectContent>
+                      {MANUSCRIPT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Keywords *</Label>
+                  <Input value={authorUploadForm.keywords} onChange={(e) => setAuthorUploadForm(p => ({ ...p, keywords: e.target.value }))} placeholder="comma separated" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Abstract *</Label>
+                  <Textarea rows={4} value={authorUploadForm.abstract} onChange={(e) => setAuthorUploadForm(p => ({ ...p, abstract: e.target.value }))} />
+                </div>
+
+                <div>
+                  <Label>Corresponding Author *</Label>
+                  <Input value={authorUploadForm.corresponding_author_name} onChange={(e) => setAuthorUploadForm(p => ({ ...p, corresponding_author_name: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>Author Email *</Label>
+                  <Input type="email" value={authorUploadForm.corresponding_author_email} onChange={(e) => setAuthorUploadForm(p => ({ ...p, corresponding_author_email: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>Affiliation *</Label>
+                  <Input value={authorUploadForm.corresponding_author_affiliation} onChange={(e) => setAuthorUploadForm(p => ({ ...p, corresponding_author_affiliation: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>ORCID</Label>
+                  <Input value={authorUploadForm.corresponding_author_orcid} onChange={(e) => setAuthorUploadForm(p => ({ ...p, corresponding_author_orcid: e.target.value }))} placeholder="0000-0000-0000-0000" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>All Authors *</Label>
+                  <Textarea rows={2} value={authorUploadForm.all_authors} onChange={(e) => setAuthorUploadForm(p => ({ ...p, all_authors: e.target.value }))} placeholder="One author per line with affiliation" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Cover Letter</Label>
+                  <Textarea rows={2} value={authorUploadForm.cover_letter} onChange={(e) => setAuthorUploadForm(p => ({ ...p, cover_letter: e.target.value }))} />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Manuscript File (PDF/DOC)</Label>
+                  <Input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setAuthorUploadFile(e.target.files?.[0] || null)} />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => { setShowAuthorUpload(false); resetAuthorUpload(); }} disabled={authorUploadSaving}>
+                  Cancel
+                </Button>
+                <Button onClick={submitForAuthor} disabled={authorUploadSaving}>
+                  {authorUploadSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                  Create Submission
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

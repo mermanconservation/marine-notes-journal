@@ -168,6 +168,8 @@ export type Database = {
           pipeline_results: Json | null
           pipeline_status: string
           status: string
+          submitted_by_editor: boolean
+          submitted_by_user_id: string | null
           title: string
           updated_at: string
           user_id: string | null
@@ -191,6 +193,8 @@ export type Database = {
           pipeline_results?: Json | null
           pipeline_status?: string
           status?: string
+          submitted_by_editor?: boolean
+          submitted_by_user_id?: string | null
           title: string
           updated_at?: string
           user_id?: string | null
@@ -214,6 +218,8 @@ export type Database = {
           pipeline_results?: Json | null
           pipeline_status?: string
           status?: string
+          submitted_by_editor?: boolean
+          submitted_by_user_id?: string | null
           title?: string
           updated_at?: string
           user_id?: string | null

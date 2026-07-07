@@ -102,6 +102,107 @@ const EditorSubmissions = () => {
   const [deleteConfirmTitle, setDeleteConfirmTitle] = useState("");
   const [showFormatter, setShowFormatter] = useState(false);
 
+  // Editor-uploads-for-author dialog
+  const MANUSCRIPT_TYPES = [
+    "research-article", "review", "short-communication", "technical-report",
+    "field-notes", "observational-reports", "conservation-news", "case-study", "methodology",
+  ];
+  const [showAuthorUpload, setShowAuthorUpload] = useState(false);
+  const [authorUploadSaving, setAuthorUploadSaving] = useState(false);
+  const [authorUploadFile, setAuthorUploadFile] = useState<File | null>(null);
+  const [authorUploadForm, setAuthorUploadForm] = useState({
+    title: "",
+    manuscript_type: "",
+    abstract: "",
+    keywords: "",
+    corresponding_author_name: "",
+    corresponding_author_email: "",
+    corresponding_author_affiliation: "",
+    corresponding_author_orcid: "",
+    all_authors: "",
+    cover_letter: "",
+  });
+
+  const resetAuthorUpload = () => {
+    setAuthorUploadFile(null);
+    setAuthorUploadForm({
+      title: "", manuscript_type: "", abstract: "", keywords: "",
+      corresponding_author_name: "", corresponding_author_email: "",
+      corresponding_author_affiliation: "", corresponding_author_orcid: "",
+      all_authors: "", cover_letter: "",
+    });
+  };
+
+  const submitForAuthor = async () => {
+    if (!user) return;
+    const f = authorUploadForm;
+    if (!f.title || !f.manuscript_type || !f.abstract || !f.keywords ||
+        !f.corresponding_author_name || !f.corresponding_author_email ||
+        !f.corresponding_author_affiliation || !f.all_authors) {
+      toast({ title: "Missing fields", description: "Please fill all required fields.", variant: "destructive" });
+      return;
+    }
+    setAuthorUploadSaving(true);
+    try {
+      // Optional: try to resolve author's user_id via existing admin edge function
+      let resolvedUserId: string | null = null;
+      try {
+        const { data: r } = await supabase.functions.invoke("resolve-user-by-email", {
+          body: { email: f.corresponding_author_email },
+        });
+        if (r?.user_id) resolvedUserId = r.user_id;
+      } catch { /* non-admin editors won't be able to; that's fine */ }
+
+      // Upload file (optional) to the editor's own folder — allowed by existing storage policy
+      const file_paths: string[] = [];
+      if (authorUploadFile) {
+        const safe = authorUploadFile.name.replace(/[^\w\-\.]+/g, "-");
+        const path = `submissions/${user.id}/${Date.now()}-${safe}`;
+        const { error: upErr } = await supabase.storage
+          .from("manuscript-submissions")
+          .upload(path, authorUploadFile, { upsert: false, contentType: authorUploadFile.type });
+        if (upErr) throw upErr;
+        file_paths.push(path);
+      }
+
+      const payload: any = {
+        title: f.title,
+        manuscript_type: f.manuscript_type,
+        abstract: f.abstract,
+        keywords: f.keywords,
+        corresponding_author_name: f.corresponding_author_name,
+        corresponding_author_email: f.corresponding_author_email,
+        corresponding_author_affiliation: f.corresponding_author_affiliation,
+        corresponding_author_orcid: f.corresponding_author_orcid || null,
+        all_authors: f.all_authors,
+        cover_letter: f.cover_letter || null,
+        copyright_agreed: true,
+        file_paths,
+        status: "pending",
+        pipeline_status: "pending",
+        user_id: resolvedUserId,
+        submitted_by_editor: true,
+        submitted_by_user_id: user.id,
+      };
+
+      const { error } = await supabase.from("manuscript_submissions").insert(payload);
+      if (error) throw error;
+
+      toast({
+        title: "Submission created",
+        description: resolvedUserId
+          ? "Manuscript uploaded and linked to the author's account."
+          : "Manuscript uploaded. The author does not have an account yet — link it later by resubmitting once they register.",
+      });
+      resetAuthorUpload();
+      setShowAuthorUpload(false);
+      await loadSubmissions();
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setAuthorUploadSaving(false);
+  };
+
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
   }, [user, authLoading, navigate]);
@@ -440,6 +541,9 @@ const EditorSubmissions = () => {
                 </div>
               )}
             </div>
+            <Button variant="outline" size="sm" onClick={() => setShowAuthorUpload(true)}>
+              <Upload className="h-4 w-4 mr-2" /> Upload for Author
+            </Button>
             <Button variant="outline" size="sm" onClick={signOut}>
               <LogOut className="h-4 w-4 mr-2" /> Sign Out
             </Button>
@@ -478,9 +582,16 @@ const EditorSubmissions = () => {
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <span className="font-medium text-sm line-clamp-2">{sub.title}</span>
-                    <Badge className={`${statusColor(sub.status)} shrink-0 text-xs`}>
-                      {STATUS_OPTIONS.find(s => s.value === sub.status)?.label || sub.status}
-                    </Badge>
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <Badge className={`${statusColor(sub.status)} text-xs`}>
+                        {STATUS_OPTIONS.find(s => s.value === sub.status)?.label || sub.status}
+                      </Badge>
+                      {(sub as any).submitted_by_editor && (
+                        <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">
+                          Editor upload
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>{sub.corresponding_author_name} · {formatDate(sub.created_at)}</span>
@@ -1349,6 +1460,85 @@ Pages: ${publishData.articleNumber}`}
             }}
           />
         )}
+
+        {/* Upload manuscript on behalf of an author */}
+        <Dialog open={showAuthorUpload} onOpenChange={(o) => { setShowAuthorUpload(o); if (!o) resetAuthorUpload(); }}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Upload Manuscript for an Author</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Use this when an author cannot submit online themselves. The submission will be marked
+                <span className="font-medium"> “Editor upload” </span> and, if the author's email matches a
+                registered account, it will appear in their dashboard automatically.
+              </p>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <Label>Title *</Label>
+                  <Input value={authorUploadForm.title} onChange={(e) => setAuthorUploadForm(p => ({ ...p, title: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>Manuscript Type *</Label>
+                  <Select value={authorUploadForm.manuscript_type} onValueChange={(v) => setAuthorUploadForm(p => ({ ...p, manuscript_type: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectContent>
+                      {MANUSCRIPT_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Keywords *</Label>
+                  <Input value={authorUploadForm.keywords} onChange={(e) => setAuthorUploadForm(p => ({ ...p, keywords: e.target.value }))} placeholder="comma separated" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Abstract *</Label>
+                  <Textarea rows={4} value={authorUploadForm.abstract} onChange={(e) => setAuthorUploadForm(p => ({ ...p, abstract: e.target.value }))} />
+                </div>
+
+                <div>
+                  <Label>Corresponding Author *</Label>
+                  <Input value={authorUploadForm.corresponding_author_name} onChange={(e) => setAuthorUploadForm(p => ({ ...p, corresponding_author_name: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>Author Email *</Label>
+                  <Input type="email" value={authorUploadForm.corresponding_author_email} onChange={(e) => setAuthorUploadForm(p => ({ ...p, corresponding_author_email: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>Affiliation *</Label>
+                  <Input value={authorUploadForm.corresponding_author_affiliation} onChange={(e) => setAuthorUploadForm(p => ({ ...p, corresponding_author_affiliation: e.target.value }))} />
+                </div>
+                <div>
+                  <Label>ORCID</Label>
+                  <Input value={authorUploadForm.corresponding_author_orcid} onChange={(e) => setAuthorUploadForm(p => ({ ...p, corresponding_author_orcid: e.target.value }))} placeholder="0000-0000-0000-0000" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>All Authors *</Label>
+                  <Textarea rows={2} value={authorUploadForm.all_authors} onChange={(e) => setAuthorUploadForm(p => ({ ...p, all_authors: e.target.value }))} placeholder="One author per line with affiliation" />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Cover Letter</Label>
+                  <Textarea rows={2} value={authorUploadForm.cover_letter} onChange={(e) => setAuthorUploadForm(p => ({ ...p, cover_letter: e.target.value }))} />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Manuscript File (PDF/DOC)</Label>
+                  <Input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setAuthorUploadFile(e.target.files?.[0] || null)} />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => { setShowAuthorUpload(false); resetAuthorUpload(); }} disabled={authorUploadSaving}>
+                  Cancel
+                </Button>
+                <Button onClick={submitForAuthor} disabled={authorUploadSaving}>
+                  {authorUploadSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                  Create Submission
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

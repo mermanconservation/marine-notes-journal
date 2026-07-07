@@ -102,6 +102,107 @@ const EditorSubmissions = () => {
   const [deleteConfirmTitle, setDeleteConfirmTitle] = useState("");
   const [showFormatter, setShowFormatter] = useState(false);
 
+  // Editor-uploads-for-author dialog
+  const MANUSCRIPT_TYPES = [
+    "research-article", "review", "short-communication", "technical-report",
+    "field-notes", "observational-reports", "conservation-news", "case-study", "methodology",
+  ];
+  const [showAuthorUpload, setShowAuthorUpload] = useState(false);
+  const [authorUploadSaving, setAuthorUploadSaving] = useState(false);
+  const [authorUploadFile, setAuthorUploadFile] = useState<File | null>(null);
+  const [authorUploadForm, setAuthorUploadForm] = useState({
+    title: "",
+    manuscript_type: "",
+    abstract: "",
+    keywords: "",
+    corresponding_author_name: "",
+    corresponding_author_email: "",
+    corresponding_author_affiliation: "",
+    corresponding_author_orcid: "",
+    all_authors: "",
+    cover_letter: "",
+  });
+
+  const resetAuthorUpload = () => {
+    setAuthorUploadFile(null);
+    setAuthorUploadForm({
+      title: "", manuscript_type: "", abstract: "", keywords: "",
+      corresponding_author_name: "", corresponding_author_email: "",
+      corresponding_author_affiliation: "", corresponding_author_orcid: "",
+      all_authors: "", cover_letter: "",
+    });
+  };
+
+  const submitForAuthor = async () => {
+    if (!user) return;
+    const f = authorUploadForm;
+    if (!f.title || !f.manuscript_type || !f.abstract || !f.keywords ||
+        !f.corresponding_author_name || !f.corresponding_author_email ||
+        !f.corresponding_author_affiliation || !f.all_authors) {
+      toast({ title: "Missing fields", description: "Please fill all required fields.", variant: "destructive" });
+      return;
+    }
+    setAuthorUploadSaving(true);
+    try {
+      // Optional: try to resolve author's user_id via existing admin edge function
+      let resolvedUserId: string | null = null;
+      try {
+        const { data: r } = await supabase.functions.invoke("resolve-user-by-email", {
+          body: { email: f.corresponding_author_email },
+        });
+        if (r?.user_id) resolvedUserId = r.user_id;
+      } catch { /* non-admin editors won't be able to; that's fine */ }
+
+      // Upload file (optional) to the editor's own folder — allowed by existing storage policy
+      const file_paths: string[] = [];
+      if (authorUploadFile) {
+        const safe = authorUploadFile.name.replace(/[^\w\-\.]+/g, "-");
+        const path = `submissions/${user.id}/${Date.now()}-${safe}`;
+        const { error: upErr } = await supabase.storage
+          .from("manuscript-submissions")
+          .upload(path, authorUploadFile, { upsert: false, contentType: authorUploadFile.type });
+        if (upErr) throw upErr;
+        file_paths.push(path);
+      }
+
+      const payload: any = {
+        title: f.title,
+        manuscript_type: f.manuscript_type,
+        abstract: f.abstract,
+        keywords: f.keywords,
+        corresponding_author_name: f.corresponding_author_name,
+        corresponding_author_email: f.corresponding_author_email,
+        corresponding_author_affiliation: f.corresponding_author_affiliation,
+        corresponding_author_orcid: f.corresponding_author_orcid || null,
+        all_authors: f.all_authors,
+        cover_letter: f.cover_letter || null,
+        copyright_agreed: true,
+        file_paths,
+        status: "pending",
+        pipeline_status: "pending",
+        user_id: resolvedUserId,
+        submitted_by_editor: true,
+        submitted_by_user_id: user.id,
+      };
+
+      const { error } = await supabase.from("manuscript_submissions").insert(payload);
+      if (error) throw error;
+
+      toast({
+        title: "Submission created",
+        description: resolvedUserId
+          ? "Manuscript uploaded and linked to the author's account."
+          : "Manuscript uploaded. The author does not have an account yet — link it later by resubmitting once they register.",
+      });
+      resetAuthorUpload();
+      setShowAuthorUpload(false);
+      await loadSubmissions();
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setAuthorUploadSaving(false);
+  };
+
   useEffect(() => {
     if (!authLoading && !user) navigate("/auth");
   }, [user, authLoading, navigate]);

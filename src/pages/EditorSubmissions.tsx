@@ -184,10 +184,29 @@ const EditorSubmissions = () => {
         user_id: resolvedUserId,
         submitted_by_editor: true,
         submitted_by_user_id: user.id,
+        submitted_by_editor_email: user.email || null,
+        submitted_by_editor_name: (user.user_metadata as any)?.full_name || user.email || null,
       };
 
-      const { error } = await supabase.from("manuscript_submissions").insert(payload);
+      const { data: inserted, error } = await supabase
+        .from("manuscript_submissions").insert(payload).select("id").single();
       if (error) throw error;
+
+      // Fire-and-forget: email the author that a submission was uploaded on their behalf
+      try {
+        await supabase.functions.invoke("notify-author-upload", {
+          body: {
+            authorEmail: f.corresponding_author_email,
+            authorName: f.corresponding_author_name,
+            editorEmail: user.email,
+            editorName: (user.user_metadata as any)?.full_name || user.email,
+            title: f.title,
+            manuscriptType: f.manuscript_type,
+          },
+        });
+      } catch (e) {
+        console.warn("Author notification email failed:", e);
+      }
 
       toast({
         title: "Submission created",

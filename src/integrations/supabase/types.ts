@@ -169,6 +169,8 @@ export type Database = {
           pipeline_status: string
           status: string
           submitted_by_editor: boolean
+          submitted_by_editor_email: string | null
+          submitted_by_editor_name: string | null
           submitted_by_user_id: string | null
           title: string
           updated_at: string
@@ -194,6 +196,8 @@ export type Database = {
           pipeline_status?: string
           status?: string
           submitted_by_editor?: boolean
+          submitted_by_editor_email?: string | null
+          submitted_by_editor_name?: string | null
           submitted_by_user_id?: string | null
           title: string
           updated_at?: string
@@ -219,6 +223,8 @@ export type Database = {
           pipeline_status?: string
           status?: string
           submitted_by_editor?: boolean
+          submitted_by_editor_email?: string | null
+          submitted_by_editor_name?: string | null
           submitted_by_user_id?: string | null
           title?: string
           updated_at?: string

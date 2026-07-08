@@ -82,6 +82,7 @@ const EditorSubmissions = () => {
   const [isEditor, setIsEditor] = useState(false);
   const [selectedSub, setSelectedSub] = useState<Submission | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [editorUploadsOnly, setEditorUploadsOnly] = useState(false);
   const [actionComment, setActionComment] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [aiReviewLoading, setAiReviewLoading] = useState(false);
@@ -183,10 +184,29 @@ const EditorSubmissions = () => {
         user_id: resolvedUserId,
         submitted_by_editor: true,
         submitted_by_user_id: user.id,
+        submitted_by_editor_email: user.email || null,
+        submitted_by_editor_name: (user.user_metadata as any)?.full_name || user.email || null,
       };
 
-      const { error } = await supabase.from("manuscript_submissions").insert(payload);
+      const { data: inserted, error } = await supabase
+        .from("manuscript_submissions").insert(payload).select("id").single();
       if (error) throw error;
+
+      // Fire-and-forget: email the author that a submission was uploaded on their behalf
+      try {
+        await supabase.functions.invoke("notify-author-upload", {
+          body: {
+            authorEmail: f.corresponding_author_email,
+            authorName: f.corresponding_author_name,
+            editorEmail: user.email,
+            editorName: (user.user_metadata as any)?.full_name || user.email,
+            title: f.title,
+            manuscriptType: f.manuscript_type,
+          },
+        });
+      } catch (e) {
+        console.warn("Author notification email failed:", e);
+      }
 
       toast({
         title: "Submission created",
@@ -454,7 +474,11 @@ const EditorSubmissions = () => {
     setDeleteLoading(false);
   };
 
-  const filtered = filterStatus === "all" ? submissions : submissions.filter(s => s.status === filterStatus);
+  const filtered = submissions.filter(s => {
+    if (filterStatus !== "all" && s.status !== filterStatus) return false;
+    if (editorUploadsOnly && !(s as any).submitted_by_editor) return false;
+    return true;
+  });
   const statusColor = (status: string) => STATUS_OPTIONS.find(s => s.value === status)?.color || "bg-muted text-muted-foreground";
 
   if (authLoading || loading) {
@@ -565,6 +589,14 @@ const EditorSubmissions = () => {
                 </Button>
               );
             })}
+            <Button
+              variant={editorUploadsOnly ? "default" : "outline"}
+              size="sm"
+              onClick={() => setEditorUploadsOnly(v => !v)}
+              title="Show only manuscripts uploaded by an editor on behalf of an author"
+            >
+              <Upload className="h-3 w-3 mr-1" /> Editor uploads ({submissions.filter(s => (s as any).submitted_by_editor).length})
+            </Button>
           </div>
         </div>
 
@@ -687,6 +719,27 @@ const EditorSubmissions = () => {
                     <Label className="text-xs text-muted-foreground">Keywords</Label>
                     <p className="text-sm mt-1">{selectedSub.keywords}</p>
                   </div>
+
+                  {(selectedSub as any).submitted_by_editor && (
+                    <div className="p-3 rounded-md border border-primary/30 bg-primary/5 text-sm">
+                      <div className="flex items-center gap-2 font-medium text-primary mb-1">
+                        <Upload className="h-3 w-3" /> Editor Upload — Audit Trail
+                      </div>
+                      <p className="text-muted-foreground">
+                        Uploaded on behalf of <strong>{selectedSub.corresponding_author_name}</strong> ({selectedSub.corresponding_author_email})
+                        {" "}by <strong>{(selectedSub as any).submitted_by_editor_name || "editor"}</strong>
+                        {(selectedSub as any).submitted_by_editor_email && (
+                          <> &lt;{(selectedSub as any).submitted_by_editor_email}&gt;</>
+                        )}
+                        {" "}on {formatDateTime(selectedSub.created_at)}.
+                      </p>
+                      {selectedSub.user_id ? (
+                        <p className="text-xs text-muted-foreground mt-1">Linked to the author's account.</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mt-1">Not yet linked to an author account.</p>
+                      )}
+                    </div>
+                  )}
 
                   {selectedSub.cover_letter && (
                     <div>

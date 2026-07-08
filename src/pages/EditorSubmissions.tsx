@@ -474,7 +474,11 @@ const EditorSubmissions = () => {
     setDeleteLoading(false);
   };
 
-  const filtered = filterStatus === "all" ? submissions : submissions.filter(s => s.status === filterStatus);
+  const filtered = submissions.filter(s => {
+    if (filterStatus !== "all" && s.status !== filterStatus) return false;
+    if (editorUploadsOnly && !(s as any).submitted_by_editor) return false;
+    return true;
+  });
   const statusColor = (status: string) => STATUS_OPTIONS.find(s => s.value === status)?.color || "bg-muted text-muted-foreground";
 
   if (authLoading || loading) {

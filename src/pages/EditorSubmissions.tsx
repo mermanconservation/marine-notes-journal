@@ -720,6 +720,27 @@ const EditorSubmissions = () => {
                     <p className="text-sm mt-1">{selectedSub.keywords}</p>
                   </div>
 
+                  {(selectedSub as any).submitted_by_editor && (
+                    <div className="p-3 rounded-md border border-primary/30 bg-primary/5 text-sm">
+                      <div className="flex items-center gap-2 font-medium text-primary mb-1">
+                        <Upload className="h-3 w-3" /> Editor Upload — Audit Trail
+                      </div>
+                      <p className="text-muted-foreground">
+                        Uploaded on behalf of <strong>{selectedSub.corresponding_author_name}</strong> ({selectedSub.corresponding_author_email})
+                        {" "}by <strong>{(selectedSub as any).submitted_by_editor_name || "editor"}</strong>
+                        {(selectedSub as any).submitted_by_editor_email && (
+                          <> &lt;{(selectedSub as any).submitted_by_editor_email}&gt;</>
+                        )}
+                        {" "}on {formatDateTime(selectedSub.created_at)}.
+                      </p>
+                      {selectedSub.user_id ? (
+                        <p className="text-xs text-muted-foreground mt-1">Linked to the author's account.</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mt-1">Not yet linked to an author account.</p>
+                      )}
+                    </div>
+                  )}
+
                   {selectedSub.cover_letter && (
                     <div>
                       <Label className="text-xs text-muted-foreground">Cover Letter</Label>

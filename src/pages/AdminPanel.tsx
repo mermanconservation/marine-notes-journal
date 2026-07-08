@@ -139,11 +139,25 @@ const AdminPanel = () => {
     }));
     setUnlockRequests(enrichedRequests);
 
-    // Enrich roles with emails
-    const enrichedRoles = ((roles as UserRole[]) || []).map(r => ({
-      ...r,
-      email: emailMap.get(r.user_id) || undefined,
-    }));
+    // Enrich roles with real auth emails via secure edge function; fall back to submission emails
+    let enrichedRoles: UserRole[] = [];
+    try {
+      const { data: rr } = await supabase.functions.invoke("admin-list-roles");
+      if (rr?.roles) {
+        enrichedRoles = (rr.roles as any[]).map(r => ({
+          ...r,
+          email: r.email || emailMap.get(r.user_id) || undefined,
+        }));
+      }
+    } catch (e) {
+      console.warn("admin-list-roles failed, falling back:", e);
+    }
+    if (enrichedRoles.length === 0) {
+      enrichedRoles = ((roles as UserRole[]) || []).map(r => ({
+        ...r,
+        email: emailMap.get(r.user_id) || undefined,
+      }));
+    }
     setUserRoles(enrichedRoles);
 
     // Compute stats

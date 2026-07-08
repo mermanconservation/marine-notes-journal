@@ -82,6 +82,7 @@ const EditorSubmissions = () => {
   const [isEditor, setIsEditor] = useState(false);
   const [selectedSub, setSelectedSub] = useState<Submission | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [editorUploadsOnly, setEditorUploadsOnly] = useState(false);
   const [actionComment, setActionComment] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [aiReviewLoading, setAiReviewLoading] = useState(false);

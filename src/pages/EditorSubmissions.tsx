@@ -589,6 +589,14 @@ const EditorSubmissions = () => {
                 </Button>
               );
             })}
+            <Button
+              variant={editorUploadsOnly ? "default" : "outline"}
+              size="sm"
+              onClick={() => setEditorUploadsOnly(v => !v)}
+              title="Show only manuscripts uploaded by an editor on behalf of an author"
+            >
+              <Upload className="h-3 w-3 mr-1" /> Editor uploads ({submissions.filter(s => (s as any).submitted_by_editor).length})
+            </Button>
           </div>
         </div>
 

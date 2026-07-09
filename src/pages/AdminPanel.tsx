@@ -716,9 +716,17 @@ const AdminPanel = () => {
               <p className="text-muted-foreground text-sm mt-1">Manage unlock requests, roles, and system overview</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={signOut}>
-            <LogOut className="h-4 w-4 mr-2" /> Sign Out
-          </Button>
+          <div className="flex items-center gap-3">
+            {editorPasscode && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                <CheckCircle className="h-4 w-4" />
+                Editor access verified
+              </div>
+            )}
+            <Button variant="outline" size="sm" onClick={signOut}>
+              <LogOut className="h-4 w-4 mr-2" /> Sign Out
+            </Button>
+          </div>
         </div>
 
         {/* Submission Stats */}

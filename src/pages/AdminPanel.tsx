@@ -66,7 +66,21 @@ const AdminPanel = () => {
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteConfirmTitle, setDeleteConfirmTitle] = useState("");
   const [deletingArticle, setDeletingArticle] = useState<string | null>(null);
-  const [editorPasscode, setEditorPasscode] = useState<string | null>(null);
+  const [editorPasscode, setEditorPasscode] = useState<string | null>(
+    typeof window !== "undefined" ? sessionStorage.getItem("editorPasscode") : null
+  );
+  const passcodeRef = useRef<string | null>(
+    typeof window !== "undefined" ? sessionStorage.getItem("editorPasscode") : null
+  );
+  const ensurePasscode = (): string | null => {
+    if (passcodeRef.current) return passcodeRef.current;
+    const code = prompt("Enter editor passcode:");
+    if (!code) return null;
+    passcodeRef.current = code;
+    sessionStorage.setItem("editorPasscode", code);
+    setEditorPasscode(code);
+    return code;
+  };
   const [acceptedSubmissions, setAcceptedSubmissions] = useState<any[]>([]);
   const [publishingSubmission, setPublishingSubmission] = useState<string | null>(null);
   const [publishPdfFile, setPublishPdfFile] = useState<File | null>(null);
@@ -172,7 +186,7 @@ const AdminPanel = () => {
 
     // Load published articles
     try {
-      const code = editorPasscode || prompt("Enter editor passcode to load articles:");
+      const code = ensurePasscode();
       if (code) {
         if (!editorPasscode) setEditorPasscode(code);
         const res = await supabase.functions.invoke("publish-article", {
@@ -210,7 +224,7 @@ const AdminPanel = () => {
     }
     setDeletingArticle(article.doi);
     try {
-      const code = editorPasscode || prompt("Enter editor passcode:");
+      const code = ensurePasscode();
       if (!code) { setDeletingArticle(null); return; }
       if (!editorPasscode) setEditorPasscode(code);
       const res = await supabase.functions.invoke("publish-article", {
@@ -330,7 +344,7 @@ const AdminPanel = () => {
     if (newPages === undefined) return;
     setSavingPages(article.doi);
     try {
-      const code = editorPasscode || prompt("Enter editor passcode:");
+      const code = ensurePasscode();
       if (!code) { setSavingPages(null); return; }
       if (!editorPasscode) setEditorPasscode(code);
       const res = await supabase.functions.invoke("publish-article", {
@@ -383,7 +397,7 @@ const AdminPanel = () => {
     }
     setPublishingSubmission(submission.id);
     try {
-      const code = editorPasscode || prompt("Enter editor passcode:");
+      const code = ensurePasscode();
       if (!code) { setPublishingSubmission(null); return; }
       if (!editorPasscode) setEditorPasscode(code);
 
@@ -501,7 +515,7 @@ const AdminPanel = () => {
     }
     setExtractingMeta(true);
     try {
-      const code = editorPasscode || prompt("Enter editor passcode:");
+      const code = ensurePasscode();
       if (!code) { setExtractingMeta(false); return; }
       if (!editorPasscode) setEditorPasscode(code);
       const base64 = await readFileAsBase64(publishPdfFile);
@@ -532,7 +546,7 @@ const AdminPanel = () => {
     }
     setOpeningIssue(true);
     try {
-      const code = editorPasscode || prompt("Enter editor passcode:");
+      const code = ensurePasscode();
       if (!code) { setOpeningIssue(false); return; }
       if (!editorPasscode) setEditorPasscode(code);
       await safeInvoke("admin-extras", {
@@ -556,7 +570,7 @@ const AdminPanel = () => {
     }
     setOpeningIssue(true);
     try {
-      const code = editorPasscode || prompt("Enter editor passcode:");
+      const code = ensurePasscode();
       if (!code) { setOpeningIssue(false); return; }
       if (!editorPasscode) setEditorPasscode(code);
       const items = Array.from({ length: count }, (_, i) => ({
@@ -584,7 +598,7 @@ const AdminPanel = () => {
     const year = inVol[0]?.year || new Date().getFullYear();
     setOpeningIssue(true);
     try {
-      const code = editorPasscode || prompt("Enter editor passcode:");
+      const code = ensurePasscode();
       if (!code) { setOpeningIssue(false); return; }
       if (!editorPasscode) setEditorPasscode(code);
       await safeInvoke("admin-extras", {
@@ -605,7 +619,7 @@ const AdminPanel = () => {
     const year = new Date().getFullYear() + (issues.length === 0 ? 0 : 1);
     setOpeningIssue(true);
     try {
-      const code = editorPasscode || prompt("Enter editor passcode:");
+      const code = ensurePasscode();
       if (!code) { setOpeningIssue(false); return; }
       if (!editorPasscode) setEditorPasscode(code);
       await safeInvoke("admin-extras", {
@@ -628,7 +642,7 @@ const AdminPanel = () => {
     }
     setUploadingIssuePdf(issueRow.id);
     try {
-      const code = editorPasscode || prompt("Enter editor passcode:");
+      const code = ensurePasscode();
       if (!code) { setUploadingIssuePdf(null); return; }
       if (!editorPasscode) setEditorPasscode(code);
       const base64 = await readFileAsBase64(issuePdfFile);
@@ -651,7 +665,7 @@ const AdminPanel = () => {
   const handleDownloadIssuePdf = async (issueRow: any) => {
     if (!issueRow.issue_pdf_url) return;
     try {
-      const code = editorPasscode || prompt("Enter editor passcode:");
+      const code = ensurePasscode();
       if (!code) return;
       if (!editorPasscode) setEditorPasscode(code);
       const data = await safeInvoke("admin-extras", {

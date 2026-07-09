@@ -66,7 +66,21 @@ const AdminPanel = () => {
   const [deleteReason, setDeleteReason] = useState("");
   const [deleteConfirmTitle, setDeleteConfirmTitle] = useState("");
   const [deletingArticle, setDeletingArticle] = useState<string | null>(null);
-  const [editorPasscode, setEditorPasscode] = useState<string | null>(null);
+  const [editorPasscode, setEditorPasscode] = useState<string | null>(
+    typeof window !== "undefined" ? sessionStorage.getItem("editorPasscode") : null
+  );
+  const passcodeRef = useRef<string | null>(
+    typeof window !== "undefined" ? sessionStorage.getItem("editorPasscode") : null
+  );
+  const ensurePasscode = (): string | null => {
+    if (passcodeRef.current) return passcodeRef.current;
+    const code = prompt("Enter editor passcode:");
+    if (!code) return null;
+    passcodeRef.current = code;
+    sessionStorage.setItem("editorPasscode", code);
+    setEditorPasscode(code);
+    return code;
+  };
   const [acceptedSubmissions, setAcceptedSubmissions] = useState<any[]>([]);
   const [publishingSubmission, setPublishingSubmission] = useState<string | null>(null);
   const [publishPdfFile, setPublishPdfFile] = useState<File | null>(null);

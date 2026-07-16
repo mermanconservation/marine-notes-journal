@@ -785,7 +785,12 @@ const EditorSubmissions = () => {
                   {/* Metadata */}
                   <div className="grid gap-3 sm:grid-cols-2 text-sm">
                     <div>
-                      <Label className="text-xs text-muted-foreground">Corresponding Author</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-muted-foreground">Corresponding Author</Label>
+                        <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={openChangeAuthor}>
+                          <UserCheck className="h-3 w-3 mr-1" /> Change author
+                        </Button>
+                      </div>
                       <p>{selectedSub.corresponding_author_name}</p>
                       <p className="text-muted-foreground">{selectedSub.corresponding_author_email}</p>
                     </div>

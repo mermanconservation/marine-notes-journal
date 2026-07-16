@@ -72,6 +72,11 @@ const About = () => {
       description: "Launched enhanced digital platform with improved manuscript submission system."
     },
     {
+      year: "15/07/2026",
+      title: "ISSN Assigned",
+      description: "Marine Notes Journal received its official ISSN 2979-8841 (Online)."
+    },
+    {
       year: "-",
       title: "Sustainability Focus",
       description: "Launched special issue series on marine sustainability and climate resilience."

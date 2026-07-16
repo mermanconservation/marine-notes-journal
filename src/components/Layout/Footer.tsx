@@ -19,7 +19,7 @@ const Footer = () => {
               and ocean sciences through high-quality research publication.
             </p>
             <p className="text-sm text-primary-foreground/60">
-              ISSN: - (Online)
+              ISSN: 2979-8841 (Online)
             </p>
             <p className="text-sm text-primary-foreground/60">
               ISNI: 0000 0005 2970 8288

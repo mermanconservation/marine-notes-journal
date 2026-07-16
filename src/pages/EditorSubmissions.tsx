@@ -103,6 +103,99 @@ const EditorSubmissions = () => {
   const [deleteConfirmTitle, setDeleteConfirmTitle] = useState("");
   const [showFormatter, setShowFormatter] = useState(false);
 
+  // Change-author dialog (reassign corresponding author on an existing submission)
+  const [showChangeAuthor, setShowChangeAuthor] = useState(false);
+  const [changeAuthorSaving, setChangeAuthorSaving] = useState(false);
+  const [changeAuthorForm, setChangeAuthorForm] = useState({
+    corresponding_author_name: "",
+    corresponding_author_email: "",
+    corresponding_author_affiliation: "",
+    corresponding_author_orcid: "",
+    all_authors: "",
+  });
+
+  const openChangeAuthor = () => {
+    if (!selectedSub) return;
+    setChangeAuthorForm({
+      corresponding_author_name: selectedSub.corresponding_author_name || "",
+      corresponding_author_email: selectedSub.corresponding_author_email || "",
+      corresponding_author_affiliation: selectedSub.corresponding_author_affiliation || "",
+      corresponding_author_orcid: selectedSub.corresponding_author_orcid || "",
+      all_authors: selectedSub.all_authors || "",
+    });
+    setShowChangeAuthor(true);
+  };
+
+  const saveChangeAuthor = async () => {
+    if (!selectedSub || !user) return;
+    const f = changeAuthorForm;
+    if (!f.corresponding_author_name || !f.corresponding_author_email || !f.corresponding_author_affiliation || !f.all_authors) {
+      toast({ title: "Missing fields", description: "Name, email, affiliation and all authors are required.", variant: "destructive" });
+      return;
+    }
+    setChangeAuthorSaving(true);
+    try {
+      // Try to resolve the new author's user account (best-effort; requires admin)
+      let resolvedUserId: string | null = selectedSub.user_id;
+      try {
+        const { data: r } = await supabase.functions.invoke("resolve-user-by-email", {
+          body: { email: f.corresponding_author_email },
+        });
+        if (r?.user_id) resolvedUserId = r.user_id;
+        else if (f.corresponding_author_email.toLowerCase() !== (selectedSub.corresponding_author_email || "").toLowerCase()) {
+          resolvedUserId = null; // new email with no matching account
+        }
+      } catch { /* non-admin editors; keep existing user_id */ }
+
+      const { error } = await supabase
+        .from("manuscript_submissions")
+        .update({
+          corresponding_author_name: f.corresponding_author_name,
+          corresponding_author_email: f.corresponding_author_email,
+          corresponding_author_affiliation: f.corresponding_author_affiliation,
+          corresponding_author_orcid: f.corresponding_author_orcid || null,
+          all_authors: f.all_authors,
+          user_id: resolvedUserId,
+          submitted_by_editor: true,
+          submitted_by_user_id: user.id,
+          submitted_by_editor_email: user.email || null,
+          submitted_by_editor_name: (user.user_metadata as any)?.full_name || user.email || null,
+        } as any)
+        .eq("id", selectedSub.id);
+      if (error) throw error;
+
+      // Notify the new author by email (best effort)
+      try {
+        await supabase.functions.invoke("notify-author-upload", {
+          body: {
+            authorEmail: f.corresponding_author_email,
+            authorName: f.corresponding_author_name,
+            editorEmail: user.email,
+            editorName: (user.user_metadata as any)?.full_name || user.email,
+            title: selectedSub.title,
+            manuscriptType: selectedSub.manuscript_type,
+          },
+        });
+      } catch (e) { console.warn("Notify author failed:", e); }
+
+      toast({
+        title: "Author updated",
+        description: resolvedUserId
+          ? "Corresponding author reassigned and linked to the new account."
+          : "Corresponding author reassigned. No matching account was found for this email yet.",
+      });
+      setShowChangeAuthor(false);
+      await loadSubmissions();
+      // refresh selectedSub view
+      const { data: refreshed } = await supabase
+        .from("manuscript_submissions").select("*").eq("id", selectedSub.id).maybeSingle();
+      if (refreshed) setSelectedSub(refreshed as any);
+    } catch (err: any) {
+      toast({ title: "Update failed", description: err.message, variant: "destructive" });
+    }
+    setChangeAuthorSaving(false);
+  };
+
   // Editor-uploads-for-author dialog
   const MANUSCRIPT_TYPES = [
     "research-article", "review", "short-communication", "technical-report",
@@ -692,7 +785,12 @@ const EditorSubmissions = () => {
                   {/* Metadata */}
                   <div className="grid gap-3 sm:grid-cols-2 text-sm">
                     <div>
-                      <Label className="text-xs text-muted-foreground">Corresponding Author</Label>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs text-muted-foreground">Corresponding Author</Label>
+                        <Button size="sm" variant="ghost" className="h-6 px-2 text-xs" onClick={openChangeAuthor}>
+                          <UserCheck className="h-3 w-3 mr-1" /> Change author
+                        </Button>
+                      </div>
                       <p>{selectedSub.corresponding_author_name}</p>
                       <p className="text-muted-foreground">{selectedSub.corresponding_author_email}</p>
                     </div>
@@ -1589,6 +1687,47 @@ Pages: ${publishData.articleNumber}`}
                   Create Submission
                 </Button>
               </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Change corresponding author */}
+        <Dialog open={showChangeAuthor} onOpenChange={setShowChangeAuthor}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Change corresponding author</DialogTitle>
+            </DialogHeader>
+            <p className="text-xs text-muted-foreground">
+              Reassign this manuscript to a different author. If the new email matches an existing account, the submission will be linked to that account so it appears in their dashboard. The new author will be notified by email.
+            </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <Label>Corresponding Author *</Label>
+                <Input value={changeAuthorForm.corresponding_author_name} onChange={(e) => setChangeAuthorForm(p => ({ ...p, corresponding_author_name: e.target.value }))} />
+              </div>
+              <div>
+                <Label>Author Email *</Label>
+                <Input type="email" value={changeAuthorForm.corresponding_author_email} onChange={(e) => setChangeAuthorForm(p => ({ ...p, corresponding_author_email: e.target.value }))} />
+              </div>
+              <div>
+                <Label>Affiliation *</Label>
+                <Input value={changeAuthorForm.corresponding_author_affiliation} onChange={(e) => setChangeAuthorForm(p => ({ ...p, corresponding_author_affiliation: e.target.value }))} />
+              </div>
+              <div>
+                <Label>ORCID</Label>
+                <Input value={changeAuthorForm.corresponding_author_orcid} onChange={(e) => setChangeAuthorForm(p => ({ ...p, corresponding_author_orcid: e.target.value }))} placeholder="0000-0000-0000-0000" />
+              </div>
+              <div className="md:col-span-2">
+                <Label>All Authors *</Label>
+                <Textarea rows={2} value={changeAuthorForm.all_authors} onChange={(e) => setChangeAuthorForm(p => ({ ...p, all_authors: e.target.value }))} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowChangeAuthor(false)} disabled={changeAuthorSaving}>Cancel</Button>
+              <Button onClick={saveChangeAuthor} disabled={changeAuthorSaving}>
+                {changeAuthorSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserCheck className="h-4 w-4 mr-2" />}
+                Save changes
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

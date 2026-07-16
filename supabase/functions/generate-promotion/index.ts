@@ -15,16 +15,20 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const { type, platform, topic, tone, articleTitle, articleDoi } = await req.json();
+    const { type, platform, topic, tone, articleTitle, articleDoi, articleAuthors } = await req.json();
 
     if (type === "text") {
       const websiteUrl = "https://www.marinenotesjournal.com";
-      
-      let systemPrompt = `You are a social media marketing expert for Marine Notes Journal, the first full AI-Edited and Peer-Reviewed Marine Science Journal dedicated to advancing marine science research and knowledge. 
+
+      let systemPrompt = `You are a social media marketing expert for Marine Notes Journal, the first full AI-Edited and Peer-Reviewed Marine Science Journal dedicated to advancing marine science research and knowledge.
 The journal website is ${websiteUrl}. Always include this URL in promotional content.
 Generate engaging, professional promotional content that drives traffic to the website.
 Do NOT use markdown formatting. Use plain text with emojis where appropriate.
-IMPORTANT: When mentioning authors, if there is only ONE author, refer to them by name only (e.g., "Christos Taklis published..."). Do NOT say "and their team" or "and colleagues" for single authors. Only use "and colleagues" or "et al." when there are multiple authors.`;
+IMPORTANT: When mentioning authors, always use the actual author name(s) provided for the article. Never substitute or invent author names. If there is only ONE author, refer to them by name only (e.g., "[Author Name] published..."). Do NOT say "and their team" or "and colleagues" for single authors. Only use "and colleagues" or "et al." when there are multiple authors listed.`;
+
+      const authorLine = articleAuthors
+        ? `The article author(s) are: ${articleAuthors}. Use these exact names — do NOT substitute any other name.`
+        : "";
 
       let userPrompt = "";
 
@@ -32,37 +36,37 @@ IMPORTANT: When mentioning authors, if there is only ONE author, refer to them b
         userPrompt = `Write a compelling Twitter/X post (max 280 characters) about Marine Notes Journal. 
 Topic focus: ${topic || "general journal promotion"}.
 Tone: ${tone || "professional and engaging"}.
-${articleTitle ? `Mention this specific article: "${articleTitle}" (DOI: ${articleDoi})` : ""}
+${articleTitle ? `Mention this specific article: "${articleTitle}" (DOI: ${articleDoi}). ${authorLine}` : ""}
 Include relevant hashtags and the website URL ${websiteUrl}.`;
       } else if (platform === "linkedin") {
         userPrompt = `Write a professional LinkedIn post (300-600 words) promoting Marine Notes Journal.
 Topic focus: ${topic || "general journal promotion"}.
 Tone: ${tone || "professional and thought-leading"}.
-${articleTitle ? `Highlight this specific article: "${articleTitle}" (DOI: ${articleDoi})` : ""}
+${articleTitle ? `Highlight this specific article: "${articleTitle}" (DOI: ${articleDoi}). ${authorLine}` : ""}
 Include a call-to-action directing readers to ${websiteUrl}.`;
       } else if (platform === "facebook") {
         userPrompt = `Write an engaging Facebook post (150-300 words) about Marine Notes Journal.
 Topic focus: ${topic || "general journal promotion"}.
 Tone: ${tone || "friendly and informative"}.
-${articleTitle ? `Feature this specific article: "${articleTitle}" (DOI: ${articleDoi})` : ""}
+${articleTitle ? `Feature this specific article: "${articleTitle}" (DOI: ${articleDoi}). ${authorLine}` : ""}
 Include the website link ${websiteUrl}.`;
       } else if (platform === "instagram") {
         userPrompt = `Write an Instagram caption (150-300 words) for Marine Notes Journal.
 Topic focus: ${topic || "general journal promotion"}.
 Tone: ${tone || "inspiring and visual"}.
-${articleTitle ? `Highlight this specific article: "${articleTitle}" (DOI: ${articleDoi})` : ""}
+${articleTitle ? `Highlight this specific article: "${articleTitle}" (DOI: ${articleDoi}). ${authorLine}` : ""}
 Include 10-15 relevant hashtags at the end and mention ${websiteUrl} in bio reference.`;
       } else if (platform === "email") {
         userPrompt = `Write a short email newsletter snippet (200-400 words) promoting Marine Notes Journal.
 Topic focus: ${topic || "general journal promotion"}.
 Tone: ${tone || "professional and welcoming"}.
-${articleTitle ? `Feature this specific article: "${articleTitle}" (DOI: ${articleDoi})` : ""}
+${articleTitle ? `Feature this specific article: "${articleTitle}" (DOI: ${articleDoi}). ${authorLine}` : ""}
 Include a clear CTA button text and link to ${websiteUrl}.`;
       } else {
         userPrompt = `Write a general promotional text for Marine Notes Journal.
 Topic focus: ${topic || "general journal promotion"}.
 Tone: ${tone || "professional"}.
-${articleTitle ? `About this article: "${articleTitle}" (DOI: ${articleDoi})` : ""}
+${articleTitle ? `About this article: "${articleTitle}" (DOI: ${articleDoi}). ${authorLine}` : ""}
 Include the website URL ${websiteUrl}.`;
       }
 

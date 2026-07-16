@@ -65,6 +65,7 @@ const Promote = () => {
           tone,
           articleTitle: selectedArticle?.title || "",
           articleDoi: selectedArticle?.doi || "",
+          articleAuthors: selectedArticle?.authors || "",
         },
       });
       if (error) throw error;

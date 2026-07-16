@@ -1690,6 +1690,47 @@ Pages: ${publishData.articleNumber}`}
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Change corresponding author */}
+        <Dialog open={showChangeAuthor} onOpenChange={setShowChangeAuthor}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Change corresponding author</DialogTitle>
+            </DialogHeader>
+            <p className="text-xs text-muted-foreground">
+              Reassign this manuscript to a different author. If the new email matches an existing account, the submission will be linked to that account so it appears in their dashboard. The new author will be notified by email.
+            </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <Label>Corresponding Author *</Label>
+                <Input value={changeAuthorForm.corresponding_author_name} onChange={(e) => setChangeAuthorForm(p => ({ ...p, corresponding_author_name: e.target.value }))} />
+              </div>
+              <div>
+                <Label>Author Email *</Label>
+                <Input type="email" value={changeAuthorForm.corresponding_author_email} onChange={(e) => setChangeAuthorForm(p => ({ ...p, corresponding_author_email: e.target.value }))} />
+              </div>
+              <div>
+                <Label>Affiliation *</Label>
+                <Input value={changeAuthorForm.corresponding_author_affiliation} onChange={(e) => setChangeAuthorForm(p => ({ ...p, corresponding_author_affiliation: e.target.value }))} />
+              </div>
+              <div>
+                <Label>ORCID</Label>
+                <Input value={changeAuthorForm.corresponding_author_orcid} onChange={(e) => setChangeAuthorForm(p => ({ ...p, corresponding_author_orcid: e.target.value }))} placeholder="0000-0000-0000-0000" />
+              </div>
+              <div className="md:col-span-2">
+                <Label>All Authors *</Label>
+                <Textarea rows={2} value={changeAuthorForm.all_authors} onChange={(e) => setChangeAuthorForm(p => ({ ...p, all_authors: e.target.value }))} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowChangeAuthor(false)} disabled={changeAuthorSaving}>Cancel</Button>
+              <Button onClick={saveChangeAuthor} disabled={changeAuthorSaving}>
+                {changeAuthorSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserCheck className="h-4 w-4 mr-2" />}
+                Save changes
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

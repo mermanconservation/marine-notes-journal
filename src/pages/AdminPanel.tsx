@@ -15,8 +15,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Loader2, Shield, LogOut, CheckCircle, XCircle, Lock, Unlock, Users, FileText, UserPlus, Trash2, BarChart3, Upload, BookOpen, Download, Mail, Eye, Sparkles, Plus,
+  Loader2, Shield, LogOut, CheckCircle, XCircle, Lock, Unlock, Users, FileText, UserPlus, Trash2, BarChart3, Upload, BookOpen, Download, Mail, Eye, Sparkles, Plus, Image as ImageIcon, AlertTriangle,
 } from "lucide-react";
+import { stampPdf, buildCitation } from "@/utils/stampPdf";
+import pdfBanner from "@/assets/pdf-banner.png";
+
 
 
 interface UnlockRequest {
@@ -107,6 +110,12 @@ const AdminPanel = () => {
   const [uploadingIssuePdf, setUploadingIssuePdf] = useState<string | null>(null);
   const issuePdfRef = useRef<HTMLInputElement>(null);
   const [issueUploadTargetId, setIssueUploadTargetId] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverTargetId, setCoverTargetId] = useState<string | null>(null);
+  const [uploadingCover, setUploadingCover] = useState<string | null>(null);
+  // Target issue for publishing (value = "volume|issue")
+  const [targetIssueKey, setTargetIssueKey] = useState<string>("");
+
 
 
   useEffect(() => {
@@ -208,6 +217,14 @@ const AdminPanel = () => {
       .order("volume", { ascending: true })
       .order("issue", { ascending: true });
     setIssues(issuesData || []);
+
+    // Default the publishing target to the currently open issue (latest one)
+    const open = (issuesData || []).filter((i: any) => i.status === "open");
+    if (open.length > 0) {
+      const latest = open[open.length - 1];
+      setTargetIssueKey((prev) => prev || `${latest.volume}|${latest.issue}`);
+    }
+
 
     setLoading(false);
   };
@@ -390,9 +407,28 @@ const AdminPanel = () => {
     return res.data;
   };
 
+  const buildStampedPreview = async (data: any) => {
+    const raw = await data.originalFile.arrayBuffer();
+    const bytes = await stampPdf(raw, pdfBanner, {
+      doi: data.doi,
+      title: data.title,
+      authors: data.authors,
+      volume: data.volume,
+      issue: data.issue,
+      pages: data.pages,
+      publicationDate: data.publicationDate,
+    });
+    const blob = new Blob([new Uint8Array(bytes)], { type: "application/pdf" });
+    return { bytes, blobUrl: URL.createObjectURL(blob) };
+  };
+
   const handlePreparePreview = async (submission: any) => {
     if (!publishPdfFile) {
       toast({ title: "PDF Required", description: "Please select the final manuscript PDF to publish.", variant: "destructive" });
+      return;
+    }
+    if (!targetIssueKey) {
+      toast({ title: "Select an issue", description: "Choose the volume/issue this article will be published in.", variant: "destructive" });
       return;
     }
     setPublishingSubmission(submission.id);
@@ -405,18 +441,6 @@ const AdminPanel = () => {
       const doi = doiData.doi;
       if (!doi) throw new Error("Could not generate DOI");
 
-      const base64 = await readFileAsBase64(publishPdfFile);
-      const year = new Date().getFullYear();
-      const safeName = submission.title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").substring(0, 80);
-      const fileName = `${year}/${doi}-${safeName}.pdf`;
-
-      const uploadData = await safeInvoke("publish-article", {
-        passcode: code, action: "upload-pdf", article: { fileName, fileData: base64 },
-      });
-      const pdfUrl = uploadData.url;
-      if (!pdfUrl) throw new Error("PDF upload returned no URL");
-
-      const meta = submission.pipeline_results?.prepared_metadata || {};
       const orcids = submission.corresponding_author_orcid ? [submission.corresponding_author_orcid] : [];
       const typeMap: Record<string, string> = {
         research_article: "Research Article", review_article: "Review Article",
@@ -426,8 +450,9 @@ const AdminPanel = () => {
         methodology: "Methodology Paper",
       };
       const articleType = typeMap[submission.manuscript_type] || submission.manuscript_type || "Research Article";
+      const [tVol, tIss] = targetIssueKey.split("|");
 
-      setPreviewData({
+      const draft = {
         submission,
         code,
         doi,
@@ -435,14 +460,18 @@ const AdminPanel = () => {
         authors: submission.all_authors || submission.corresponding_author_name,
         orcids,
         articleType,
-        volume: meta.volume || "1",
-        issue: meta.issue || "1",
+        volume: tVol,
+        issue: tIss,
         abstract: submission.abstract,
         pages: publishPages || "",
-        pdfUrl,
         publicationDate: new Date().toISOString().split("T")[0],
         recipient: submission.corresponding_author_email,
-      });
+        originalFile: publishPdfFile,
+        blobUrl: "",
+      };
+
+      const { blobUrl } = await buildStampedPreview(draft);
+      setPreviewData({ ...draft, blobUrl });
       setPreviewOpen(true);
     } catch (err: any) {
       toast({ title: "Preview Failed", description: err.message, variant: "destructive" });
@@ -450,10 +479,59 @@ const AdminPanel = () => {
     setPublishingSubmission(null);
   };
 
-  const handleConfirmPublish = async () => {
+  const handleRefreshPreview = async () => {
     if (!previewData) return;
     setConfirmingPublish(true);
     try {
+      if (previewData.blobUrl) URL.revokeObjectURL(previewData.blobUrl);
+      const { blobUrl } = await buildStampedPreview(previewData);
+      setPreviewData({ ...previewData, blobUrl });
+    } catch (err: any) {
+      toast({ title: "Preview failed", description: err.message, variant: "destructive" });
+    }
+    setConfirmingPublish(false);
+  };
+
+  const handleConfirmPublish = async () => {
+    if (!previewData) return;
+    const targetIssue = issues.find(
+      (i: any) => String(i.volume) === String(previewData.volume) && String(i.issue) === String(previewData.issue)
+    );
+    if (!targetIssue) {
+      toast({
+        title: "Issue not open",
+        description: `Volume ${previewData.volume}, Issue ${previewData.issue} does not exist yet. Open it first in Volumes & Issues.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    if (targetIssue.status !== "open") {
+      toast({
+        title: "Issue is closed",
+        description: `Volume ${previewData.volume}, Issue ${previewData.issue} is closed. Pick an open issue.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    setConfirmingPublish(true);
+    try {
+      // Stamp the final PDF with the confirmed metadata, then upload it
+      const { bytes } = await buildStampedPreview(previewData);
+      let binary = "";
+      const arr = new Uint8Array(bytes);
+      for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i]);
+      const base64 = btoa(binary);
+
+      const year = new Date(previewData.publicationDate).getFullYear();
+      const safeName = previewData.title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").substring(0, 80);
+      const fileName = `${year}/${previewData.doi}-${safeName}.pdf`;
+
+      const uploadData = await safeInvoke("publish-article", {
+        passcode: previewData.code, action: "upload-pdf", article: { fileName, fileData: base64 },
+      });
+      const pdfUrl = uploadData.url;
+      if (!pdfUrl) throw new Error("PDF upload returned no URL");
+
       await safeInvoke("publish-article", {
         passcode: previewData.code, action: "publish",
         article: {
@@ -466,10 +544,12 @@ const AdminPanel = () => {
           issue: previewData.issue,
           abstract: previewData.abstract,
           publicationDate: previewData.publicationDate,
-          pdfUrl: previewData.pdfUrl,
+          pdfUrl,
           pages: previewData.pages || null,
         },
       });
+      previewData.pdfUrl = pdfUrl;
+
 
       // Send confirmation email if enabled
       if (sendAuthorEmail && previewData.recipient) {
@@ -676,6 +756,36 @@ const AdminPanel = () => {
       toast({ title: "Download failed", description: err.message, variant: "destructive" });
     }
   };
+
+  const handleUploadCover = async (issueRow: any) => {
+    if (!coverFile || coverTargetId !== issueRow.id) {
+      toast({ title: "Select an image", description: "Choose a cover image for this issue first.", variant: "destructive" });
+      return;
+    }
+    setUploadingCover(issueRow.id);
+    try {
+      const code = ensurePasscode();
+      if (!code) { setUploadingCover(null); return; }
+      if (!editorPasscode) setEditorPasscode(code);
+      const base64 = await readFileAsBase64(coverFile);
+      await safeInvoke("admin-extras", {
+        passcode: code, action: "upload-issue-cover",
+        payload: {
+          volume: issueRow.volume, issue: issueRow.issue, year: issueRow.year,
+          fileName: coverFile.name.replace(/[^\w\-\.]/g, "-"),
+          fileData: base64, contentType: coverFile.type,
+        },
+      });
+      toast({ title: "Cover uploaded", description: `Vol ${issueRow.volume}, Issue ${issueRow.issue}` });
+      setCoverFile(null);
+      setCoverTargetId(null);
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Cover upload failed", description: err.message, variant: "destructive" });
+    }
+    setUploadingCover(null);
+  };
+
 
 
 
@@ -922,14 +1032,38 @@ const AdminPanel = () => {
                       onChange={(e) => setPublishPdfFile(e.target.files?.[0] || null)}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">Pages (e.g. "43-58")</Label>
-                    <Input
-                      placeholder="e.g. 43-58"
-                      value={publishPages}
-                      onChange={(e) => setPublishPages(e.target.value)}
-                    />
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Publish into (open issues)</Label>
+                      <Select value={targetIssueKey} onValueChange={setTargetIssueKey}>
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Select an open issue" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {issues.filter((i: any) => i.status === "open").map((i: any) => (
+                            <SelectItem key={i.id} value={`${i.volume}|${i.issue}`}>
+                              Vol {i.volume} · Issue {i.issue} · {i.year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Pages (e.g. "43-58")</Label>
+                      <Input
+                        className="h-9"
+                        placeholder="e.g. 43-58"
+                        value={publishPages}
+                        onChange={(e) => setPublishPages(e.target.value)}
+                      />
+                    </div>
                   </div>
+                  {issues.filter((i: any) => i.status === "open").length === 0 && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" /> No open issue. Open one below before publishing.
+                    </p>
+                  )}
+
                   <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-muted-foreground" />
@@ -1015,30 +1149,53 @@ const AdminPanel = () => {
               {issues.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No issues yet.</p>
               ) : issues.map((iss: any) => (
-                <div key={iss.id} className="flex flex-wrap items-center gap-3 p-3 border rounded-lg">
-                  <div className="flex-1 min-w-[180px]">
-                    <p className="text-sm font-medium">Vol {iss.volume} · Issue {iss.issue} · {iss.year}</p>
-                    <p className="text-xs text-muted-foreground">Status: {iss.status}{iss.issue_pdf_url ? " · PDF uploaded" : ""}</p>
-                  </div>
-                  <Input
-                    type="file"
-                    accept=".pdf,application/pdf"
-                    className="h-8 text-xs w-56"
-                    ref={issueUploadTargetId === iss.id ? issuePdfRef : undefined}
-                    onChange={(e) => { setIssuePdfFile(e.target.files?.[0] || null); setIssueUploadTargetId(iss.id); }}
-                  />
-                  <Button size="sm" variant="outline"
-                    disabled={uploadingIssuePdf === iss.id || issueUploadTargetId !== iss.id || !issuePdfFile}
-                    onClick={() => handleUploadIssuePdf(iss)}>
-                    {uploadingIssuePdf === iss.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
-                    Upload
-                  </Button>
-                  {iss.issue_pdf_url && (
-                    <Button size="sm" variant="outline" onClick={() => handleDownloadIssuePdf(iss)}>
-                      <Download className="h-3 w-3 mr-1" /> Download
+                <div key={iss.id} className="p-3 border rounded-lg space-y-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    {iss.cover_url && (
+                      <img src={iss.cover_url} alt={`Volume ${iss.volume} Issue ${iss.issue} cover`} loading="lazy" className="h-14 w-auto rounded border" />
+                    )}
+                    <div className="flex-1 min-w-[180px]">
+                      <p className="text-sm font-medium">Vol {iss.volume} · Issue {iss.issue} · {iss.year}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Status: {iss.status}{iss.issue_pdf_url ? " · PDF uploaded" : ""}{iss.cover_url ? " · Cover set" : ""}
+                      </p>
+                    </div>
+                    <Input
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      className="h-8 text-xs w-56"
+                      ref={issueUploadTargetId === iss.id ? issuePdfRef : undefined}
+                      onChange={(e) => { setIssuePdfFile(e.target.files?.[0] || null); setIssueUploadTargetId(iss.id); }}
+                    />
+                    <Button size="sm" variant="outline"
+                      disabled={uploadingIssuePdf === iss.id || issueUploadTargetId !== iss.id || !issuePdfFile}
+                      onClick={() => handleUploadIssuePdf(iss)}>
+                      {uploadingIssuePdf === iss.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
+                      Issue PDF
                     </Button>
-                  )}
+                    {iss.issue_pdf_url && (
+                      <Button size="sm" variant="outline" onClick={() => handleDownloadIssuePdf(iss)}>
+                        <Download className="h-3 w-3 mr-1" /> Download
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Label className="text-xs text-muted-foreground w-24">Cover page</Label>
+                    <Input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="h-8 text-xs w-56"
+                      onChange={(e) => { setCoverFile(e.target.files?.[0] || null); setCoverTargetId(iss.id); }}
+                    />
+                    <Button size="sm" variant="outline"
+                      disabled={uploadingCover === iss.id || coverTargetId !== iss.id || !coverFile}
+                      onClick={() => handleUploadCover(iss)}>
+                      {uploadingCover === iss.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3 mr-1" />}
+                      Upload cover
+                    </Button>
+                  </div>
                 </div>
+
               ))}
             </div>
           </CardContent>
@@ -1046,21 +1203,36 @@ const AdminPanel = () => {
 
         {/* Preview Modal */}
         <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Preview before publish</DialogTitle>
-              <DialogDescription>Verify the metadata and PDF, then confirm to make the article live.</DialogDescription>
+              <DialogDescription>
+                Verify the volume, issue and metadata, then check the branded PDF (banner + footer) before it goes live.
+              </DialogDescription>
             </DialogHeader>
             {previewData && (
               <div className="space-y-3 text-sm">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label className="text-xs">DOI</Label><p className="font-mono text-xs">{previewData.doi}</p></div>
+                  <div><Label className="text-xs">Article ID</Label><p className="font-mono text-xs">{previewData.doi}</p></div>
                   <div><Label className="text-xs">Type</Label><p>{previewData.articleType}</p></div>
-                  <div><Label className="text-xs">Volume</Label>
-                    <Input value={previewData.volume} onChange={e => setPreviewData({ ...previewData, volume: e.target.value })} className="h-8" />
-                  </div>
-                  <div><Label className="text-xs">Issue</Label>
-                    <Input value={previewData.issue} onChange={e => setPreviewData({ ...previewData, issue: e.target.value })} className="h-8" />
+                  <div className="col-span-2">
+                    <Label className="text-xs">Volume &amp; Issue (verify before publishing)</Label>
+                    <Select
+                      value={`${previewData.volume}|${previewData.issue}`}
+                      onValueChange={(v) => {
+                        const [vol, iss] = v.split("|");
+                        setPreviewData({ ...previewData, volume: vol, issue: iss });
+                      }}
+                    >
+                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {issues.map((i: any) => (
+                          <SelectItem key={i.id} value={`${i.volume}|${i.issue}`} disabled={i.status !== "open"}>
+                            Vol {i.volume} · Issue {i.issue} · {i.year} {i.status !== "open" ? "(closed)" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div><Label className="text-xs">Pages</Label>
                     <Input value={previewData.pages} onChange={e => setPreviewData({ ...previewData, pages: e.target.value })} className="h-8" placeholder="e.g. 43-58" />
@@ -1078,10 +1250,26 @@ const AdminPanel = () => {
                 <div><Label className="text-xs">Abstract</Label>
                   <Textarea rows={5} value={previewData.abstract} onChange={e => setPreviewData({ ...previewData, abstract: e.target.value })} />
                 </div>
-                <div className="p-2 bg-muted/50 rounded flex items-center justify-between">
-                  <span className="text-xs">PDF uploaded ✓</span>
-                  <a href={previewData.pdfUrl} target="_blank" rel="noreferrer" className="text-xs text-primary underline">Open PDF</a>
+                <div className="rounded border">
+                  <div className="flex items-center justify-between p-2 bg-muted/50">
+                    <span className="text-xs font-medium">Branded PDF preview (banner + footer)</span>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={handleRefreshPreview} disabled={confirmingPublish}>
+                        {confirmingPublish ? <Loader2 className="h-3 w-3 animate-spin" /> : "Refresh preview"}
+                      </Button>
+                      {previewData.blobUrl && (
+                        <a href={previewData.blobUrl} target="_blank" rel="noreferrer" className="text-xs text-primary underline">Open in new tab</a>
+                      )}
+                    </div>
+                  </div>
+                  {previewData.blobUrl && (
+                    <iframe title="Branded PDF preview" src={previewData.blobUrl} className="w-full h-[420px]" />
+                  )}
+                  <p className="text-xs text-muted-foreground p-2">
+                    Footer: {buildCitation(previewData)}
+                  </p>
                 </div>
+
                 <div className="p-2 bg-muted/50 rounded flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4" />

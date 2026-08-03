@@ -114,6 +114,7 @@ export type Database = {
       }
       journal_issues: {
         Row: {
+          cover_url: string | null
           created_at: string
           id: string
           issue: string
@@ -125,6 +126,7 @@ export type Database = {
           year: number
         }
         Insert: {
+          cover_url?: string | null
           created_at?: string
           id?: string
           issue: string
@@ -136,6 +138,7 @@ export type Database = {
           year: number
         }
         Update: {
+          cover_url?: string | null
           created_at?: string
           id?: string
           issue?: string

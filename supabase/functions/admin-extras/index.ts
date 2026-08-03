@@ -164,6 +164,41 @@ Deno.serve(async (req) => {
       return json({ success: true, path });
     }
 
+    // ---------- Upload volume/issue cover image ----------
+    if (action === "upload-issue-cover") {
+      const { volume, issue, year, fileName, fileData, contentType } = payload || {};
+      if (!volume || !issue || !fileName || !fileData) return json({ error: "Missing fields" }, 400);
+      const bytes = Uint8Array.from(atob(fileData), (c) => c.charCodeAt(0));
+      if (bytes.length > 10 * 1024 * 1024) return json({ error: "Image too large (max 10MB)" }, 400);
+
+      const isPng = bytes[0] === 0x89 && bytes[1] === 0x50;
+      const isJpg = bytes[0] === 0xff && bytes[1] === 0xd8;
+      const isWebp = bytes[8] === 0x57 && bytes[9] === 0x45;
+      if (!isPng && !isJpg && !isWebp) return json({ error: "File must be a PNG, JPEG or WebP image" }, 400);
+
+      const safeName = String(fileName).replace(/[^\w\-\.]/g, "-");
+      const path = `covers/vol${volume}-iss${issue}-${safeName}`;
+      const { error: upErr } = await supabase.storage.from("manuscripts")
+        .upload(path, bytes, { contentType: contentType || (isPng ? "image/png" : "image/jpeg"), upsert: true });
+      if (upErr) return json({ error: upErr.message }, 500);
+
+      const { data: pub } = supabase.storage.from("manuscripts").getPublicUrl(path);
+      const coverUrl = pub.publicUrl;
+
+      const { error: updErr } = await supabase.from("journal_issues").upsert(
+        {
+          volume: String(volume),
+          issue: String(issue),
+          year: Number(year) || new Date().getFullYear(),
+          cover_url: coverUrl,
+        },
+        { onConflict: "volume,issue" },
+      );
+      if (updErr) return json({ error: updErr.message }, 500);
+      return json({ success: true, coverUrl });
+    }
+
+
     // ---------- Get signed download URL for issue PDF ----------
     if (action === "get-issue-pdf-signed-url") {
       const { path } = payload || {};

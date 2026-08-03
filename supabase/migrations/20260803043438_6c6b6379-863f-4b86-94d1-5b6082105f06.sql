@@ -1,0 +1,1 @@
+ALTER TABLE public.journal_issues ADD COLUMN IF NOT EXISTS cover_url text;

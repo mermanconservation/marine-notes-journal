@@ -407,9 +407,28 @@ const AdminPanel = () => {
     return res.data;
   };
 
+  const buildStampedPreview = async (data: any) => {
+    const raw = await data.originalFile.arrayBuffer();
+    const bytes = await stampPdf(raw, pdfBanner, {
+      doi: data.doi,
+      title: data.title,
+      authors: data.authors,
+      volume: data.volume,
+      issue: data.issue,
+      pages: data.pages,
+      publicationDate: data.publicationDate,
+    });
+    const blob = new Blob([new Uint8Array(bytes)], { type: "application/pdf" });
+    return { bytes, blobUrl: URL.createObjectURL(blob) };
+  };
+
   const handlePreparePreview = async (submission: any) => {
     if (!publishPdfFile) {
       toast({ title: "PDF Required", description: "Please select the final manuscript PDF to publish.", variant: "destructive" });
+      return;
+    }
+    if (!targetIssueKey) {
+      toast({ title: "Select an issue", description: "Choose the volume/issue this article will be published in.", variant: "destructive" });
       return;
     }
     setPublishingSubmission(submission.id);
@@ -422,18 +441,6 @@ const AdminPanel = () => {
       const doi = doiData.doi;
       if (!doi) throw new Error("Could not generate DOI");
 
-      const base64 = await readFileAsBase64(publishPdfFile);
-      const year = new Date().getFullYear();
-      const safeName = submission.title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").substring(0, 80);
-      const fileName = `${year}/${doi}-${safeName}.pdf`;
-
-      const uploadData = await safeInvoke("publish-article", {
-        passcode: code, action: "upload-pdf", article: { fileName, fileData: base64 },
-      });
-      const pdfUrl = uploadData.url;
-      if (!pdfUrl) throw new Error("PDF upload returned no URL");
-
-      const meta = submission.pipeline_results?.prepared_metadata || {};
       const orcids = submission.corresponding_author_orcid ? [submission.corresponding_author_orcid] : [];
       const typeMap: Record<string, string> = {
         research_article: "Research Article", review_article: "Review Article",
@@ -443,8 +450,9 @@ const AdminPanel = () => {
         methodology: "Methodology Paper",
       };
       const articleType = typeMap[submission.manuscript_type] || submission.manuscript_type || "Research Article";
+      const [tVol, tIss] = targetIssueKey.split("|");
 
-      setPreviewData({
+      const draft = {
         submission,
         code,
         doi,
@@ -452,14 +460,18 @@ const AdminPanel = () => {
         authors: submission.all_authors || submission.corresponding_author_name,
         orcids,
         articleType,
-        volume: meta.volume || "1",
-        issue: meta.issue || "1",
+        volume: tVol,
+        issue: tIss,
         abstract: submission.abstract,
         pages: publishPages || "",
-        pdfUrl,
         publicationDate: new Date().toISOString().split("T")[0],
         recipient: submission.corresponding_author_email,
-      });
+        originalFile: publishPdfFile,
+        blobUrl: "",
+      };
+
+      const { blobUrl } = await buildStampedPreview(draft);
+      setPreviewData({ ...draft, blobUrl });
       setPreviewOpen(true);
     } catch (err: any) {
       toast({ title: "Preview Failed", description: err.message, variant: "destructive" });
@@ -467,10 +479,59 @@ const AdminPanel = () => {
     setPublishingSubmission(null);
   };
 
-  const handleConfirmPublish = async () => {
+  const handleRefreshPreview = async () => {
     if (!previewData) return;
     setConfirmingPublish(true);
     try {
+      if (previewData.blobUrl) URL.revokeObjectURL(previewData.blobUrl);
+      const { blobUrl } = await buildStampedPreview(previewData);
+      setPreviewData({ ...previewData, blobUrl });
+    } catch (err: any) {
+      toast({ title: "Preview failed", description: err.message, variant: "destructive" });
+    }
+    setConfirmingPublish(false);
+  };
+
+  const handleConfirmPublish = async () => {
+    if (!previewData) return;
+    const targetIssue = issues.find(
+      (i: any) => String(i.volume) === String(previewData.volume) && String(i.issue) === String(previewData.issue)
+    );
+    if (!targetIssue) {
+      toast({
+        title: "Issue not open",
+        description: `Volume ${previewData.volume}, Issue ${previewData.issue} does not exist yet. Open it first in Volumes & Issues.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    if (targetIssue.status !== "open") {
+      toast({
+        title: "Issue is closed",
+        description: `Volume ${previewData.volume}, Issue ${previewData.issue} is closed. Pick an open issue.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    setConfirmingPublish(true);
+    try {
+      // Stamp the final PDF with the confirmed metadata, then upload it
+      const { bytes } = await buildStampedPreview(previewData);
+      let binary = "";
+      const arr = new Uint8Array(bytes);
+      for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i]);
+      const base64 = btoa(binary);
+
+      const year = new Date(previewData.publicationDate).getFullYear();
+      const safeName = previewData.title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").substring(0, 80);
+      const fileName = `${year}/${previewData.doi}-${safeName}.pdf`;
+
+      const uploadData = await safeInvoke("publish-article", {
+        passcode: previewData.code, action: "upload-pdf", article: { fileName, fileData: base64 },
+      });
+      const pdfUrl = uploadData.url;
+      if (!pdfUrl) throw new Error("PDF upload returned no URL");
+
       await safeInvoke("publish-article", {
         passcode: previewData.code, action: "publish",
         article: {
@@ -483,10 +544,12 @@ const AdminPanel = () => {
           issue: previewData.issue,
           abstract: previewData.abstract,
           publicationDate: previewData.publicationDate,
-          pdfUrl: previewData.pdfUrl,
+          pdfUrl,
           pages: previewData.pages || null,
         },
       });
+      previewData.pdfUrl = pdfUrl;
+
 
       // Send confirmation email if enabled
       if (sendAuthorEmail && previewData.recipient) {

@@ -1032,14 +1032,38 @@ const AdminPanel = () => {
                       onChange={(e) => setPublishPdfFile(e.target.files?.[0] || null)}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs">Pages (e.g. "43-58")</Label>
-                    <Input
-                      placeholder="e.g. 43-58"
-                      value={publishPages}
-                      onChange={(e) => setPublishPages(e.target.value)}
-                    />
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Publish into (open issues)</Label>
+                      <Select value={targetIssueKey} onValueChange={setTargetIssueKey}>
+                        <SelectTrigger className="h-9">
+                          <SelectValue placeholder="Select an open issue" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {issues.filter((i: any) => i.status === "open").map((i: any) => (
+                            <SelectItem key={i.id} value={`${i.volume}|${i.issue}`}>
+                              Vol {i.volume} · Issue {i.issue} · {i.year}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Pages (e.g. "43-58")</Label>
+                      <Input
+                        className="h-9"
+                        placeholder="e.g. 43-58"
+                        value={publishPages}
+                        onChange={(e) => setPublishPages(e.target.value)}
+                      />
+                    </div>
                   </div>
+                  {issues.filter((i: any) => i.status === "open").length === 0 && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" /> No open issue. Open one below before publishing.
+                    </p>
+                  )}
+
                   <div className="flex items-center justify-between p-2 bg-muted/50 rounded">
                     <div className="flex items-center gap-2">
                       <Mail className="h-4 w-4 text-muted-foreground" />

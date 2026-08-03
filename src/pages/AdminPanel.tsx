@@ -218,6 +218,14 @@ const AdminPanel = () => {
       .order("issue", { ascending: true });
     setIssues(issuesData || []);
 
+    // Default the publishing target to the currently open issue (latest one)
+    const open = (issuesData || []).filter((i: any) => i.status === "open");
+    if (open.length > 0) {
+      const latest = open[open.length - 1];
+      setTargetIssueKey((prev) => prev || `${latest.volume}|${latest.issue}`);
+    }
+
+
     setLoading(false);
   };
 

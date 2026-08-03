@@ -110,6 +110,12 @@ const AdminPanel = () => {
   const [uploadingIssuePdf, setUploadingIssuePdf] = useState<string | null>(null);
   const issuePdfRef = useRef<HTMLInputElement>(null);
   const [issueUploadTargetId, setIssueUploadTargetId] = useState<string | null>(null);
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+  const [coverTargetId, setCoverTargetId] = useState<string | null>(null);
+  const [uploadingCover, setUploadingCover] = useState<string | null>(null);
+  // Target issue for publishing (value = "volume|issue")
+  const [targetIssueKey, setTargetIssueKey] = useState<string>("");
+
 
 
   useEffect(() => {

@@ -1149,30 +1149,53 @@ const AdminPanel = () => {
               {issues.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No issues yet.</p>
               ) : issues.map((iss: any) => (
-                <div key={iss.id} className="flex flex-wrap items-center gap-3 p-3 border rounded-lg">
-                  <div className="flex-1 min-w-[180px]">
-                    <p className="text-sm font-medium">Vol {iss.volume} · Issue {iss.issue} · {iss.year}</p>
-                    <p className="text-xs text-muted-foreground">Status: {iss.status}{iss.issue_pdf_url ? " · PDF uploaded" : ""}</p>
-                  </div>
-                  <Input
-                    type="file"
-                    accept=".pdf,application/pdf"
-                    className="h-8 text-xs w-56"
-                    ref={issueUploadTargetId === iss.id ? issuePdfRef : undefined}
-                    onChange={(e) => { setIssuePdfFile(e.target.files?.[0] || null); setIssueUploadTargetId(iss.id); }}
-                  />
-                  <Button size="sm" variant="outline"
-                    disabled={uploadingIssuePdf === iss.id || issueUploadTargetId !== iss.id || !issuePdfFile}
-                    onClick={() => handleUploadIssuePdf(iss)}>
-                    {uploadingIssuePdf === iss.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
-                    Upload
-                  </Button>
-                  {iss.issue_pdf_url && (
-                    <Button size="sm" variant="outline" onClick={() => handleDownloadIssuePdf(iss)}>
-                      <Download className="h-3 w-3 mr-1" /> Download
+                <div key={iss.id} className="p-3 border rounded-lg space-y-3">
+                  <div className="flex flex-wrap items-center gap-3">
+                    {iss.cover_url && (
+                      <img src={iss.cover_url} alt={`Volume ${iss.volume} Issue ${iss.issue} cover`} loading="lazy" className="h-14 w-auto rounded border" />
+                    )}
+                    <div className="flex-1 min-w-[180px]">
+                      <p className="text-sm font-medium">Vol {iss.volume} · Issue {iss.issue} · {iss.year}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Status: {iss.status}{iss.issue_pdf_url ? " · PDF uploaded" : ""}{iss.cover_url ? " · Cover set" : ""}
+                      </p>
+                    </div>
+                    <Input
+                      type="file"
+                      accept=".pdf,application/pdf"
+                      className="h-8 text-xs w-56"
+                      ref={issueUploadTargetId === iss.id ? issuePdfRef : undefined}
+                      onChange={(e) => { setIssuePdfFile(e.target.files?.[0] || null); setIssueUploadTargetId(iss.id); }}
+                    />
+                    <Button size="sm" variant="outline"
+                      disabled={uploadingIssuePdf === iss.id || issueUploadTargetId !== iss.id || !issuePdfFile}
+                      onClick={() => handleUploadIssuePdf(iss)}>
+                      {uploadingIssuePdf === iss.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3 mr-1" />}
+                      Issue PDF
                     </Button>
-                  )}
+                    {iss.issue_pdf_url && (
+                      <Button size="sm" variant="outline" onClick={() => handleDownloadIssuePdf(iss)}>
+                        <Download className="h-3 w-3 mr-1" /> Download
+                      </Button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <Label className="text-xs text-muted-foreground w-24">Cover page</Label>
+                    <Input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      className="h-8 text-xs w-56"
+                      onChange={(e) => { setCoverFile(e.target.files?.[0] || null); setCoverTargetId(iss.id); }}
+                    />
+                    <Button size="sm" variant="outline"
+                      disabled={uploadingCover === iss.id || coverTargetId !== iss.id || !coverFile}
+                      onClick={() => handleUploadCover(iss)}>
+                      {uploadingCover === iss.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3 mr-1" />}
+                      Upload cover
+                    </Button>
+                  </div>
                 </div>
+
               ))}
             </div>
           </CardContent>

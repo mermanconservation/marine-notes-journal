@@ -757,6 +757,36 @@ const AdminPanel = () => {
     }
   };
 
+  const handleUploadCover = async (issueRow: any) => {
+    if (!coverFile || coverTargetId !== issueRow.id) {
+      toast({ title: "Select an image", description: "Choose a cover image for this issue first.", variant: "destructive" });
+      return;
+    }
+    setUploadingCover(issueRow.id);
+    try {
+      const code = ensurePasscode();
+      if (!code) { setUploadingCover(null); return; }
+      if (!editorPasscode) setEditorPasscode(code);
+      const base64 = await readFileAsBase64(coverFile);
+      await safeInvoke("admin-extras", {
+        passcode: code, action: "upload-issue-cover",
+        payload: {
+          volume: issueRow.volume, issue: issueRow.issue, year: issueRow.year,
+          fileName: coverFile.name.replace(/[^\w\-\.]/g, "-"),
+          fileData: base64, contentType: coverFile.type,
+        },
+      });
+      toast({ title: "Cover uploaded", description: `Vol ${issueRow.volume}, Issue ${issueRow.issue}` });
+      setCoverFile(null);
+      setCoverTargetId(null);
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Cover upload failed", description: err.message, variant: "destructive" });
+    }
+    setUploadingCover(null);
+  };
+
+
 
 
   if (authLoading || loading) {

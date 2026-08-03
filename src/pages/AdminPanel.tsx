@@ -1203,21 +1203,36 @@ const AdminPanel = () => {
 
         {/* Preview Modal */}
         <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-          <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Preview before publish</DialogTitle>
-              <DialogDescription>Verify the metadata and PDF, then confirm to make the article live.</DialogDescription>
+              <DialogDescription>
+                Verify the volume, issue and metadata, then check the branded PDF (banner + footer) before it goes live.
+              </DialogDescription>
             </DialogHeader>
             {previewData && (
               <div className="space-y-3 text-sm">
                 <div className="grid grid-cols-2 gap-3">
-                  <div><Label className="text-xs">DOI</Label><p className="font-mono text-xs">{previewData.doi}</p></div>
+                  <div><Label className="text-xs">Article ID</Label><p className="font-mono text-xs">{previewData.doi}</p></div>
                   <div><Label className="text-xs">Type</Label><p>{previewData.articleType}</p></div>
-                  <div><Label className="text-xs">Volume</Label>
-                    <Input value={previewData.volume} onChange={e => setPreviewData({ ...previewData, volume: e.target.value })} className="h-8" />
-                  </div>
-                  <div><Label className="text-xs">Issue</Label>
-                    <Input value={previewData.issue} onChange={e => setPreviewData({ ...previewData, issue: e.target.value })} className="h-8" />
+                  <div className="col-span-2">
+                    <Label className="text-xs">Volume &amp; Issue (verify before publishing)</Label>
+                    <Select
+                      value={`${previewData.volume}|${previewData.issue}`}
+                      onValueChange={(v) => {
+                        const [vol, iss] = v.split("|");
+                        setPreviewData({ ...previewData, volume: vol, issue: iss });
+                      }}
+                    >
+                      <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {issues.map((i: any) => (
+                          <SelectItem key={i.id} value={`${i.volume}|${i.issue}`} disabled={i.status !== "open"}>
+                            Vol {i.volume} · Issue {i.issue} · {i.year} {i.status !== "open" ? "(closed)" : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div><Label className="text-xs">Pages</Label>
                     <Input value={previewData.pages} onChange={e => setPreviewData({ ...previewData, pages: e.target.value })} className="h-8" placeholder="e.g. 43-58" />
@@ -1235,10 +1250,26 @@ const AdminPanel = () => {
                 <div><Label className="text-xs">Abstract</Label>
                   <Textarea rows={5} value={previewData.abstract} onChange={e => setPreviewData({ ...previewData, abstract: e.target.value })} />
                 </div>
-                <div className="p-2 bg-muted/50 rounded flex items-center justify-between">
-                  <span className="text-xs">PDF uploaded ✓</span>
-                  <a href={previewData.pdfUrl} target="_blank" rel="noreferrer" className="text-xs text-primary underline">Open PDF</a>
+                <div className="rounded border">
+                  <div className="flex items-center justify-between p-2 bg-muted/50">
+                    <span className="text-xs font-medium">Branded PDF preview (banner + footer)</span>
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={handleRefreshPreview} disabled={confirmingPublish}>
+                        {confirmingPublish ? <Loader2 className="h-3 w-3 animate-spin" /> : "Refresh preview"}
+                      </Button>
+                      {previewData.blobUrl && (
+                        <a href={previewData.blobUrl} target="_blank" rel="noreferrer" className="text-xs text-primary underline">Open in new tab</a>
+                      )}
+                    </div>
+                  </div>
+                  {previewData.blobUrl && (
+                    <iframe title="Branded PDF preview" src={previewData.blobUrl} className="w-full h-[420px]" />
+                  )}
+                  <p className="text-xs text-muted-foreground p-2">
+                    Footer: {buildCitation(previewData)}
+                  </p>
                 </div>
+
                 <div className="p-2 bg-muted/50 rounded flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Mail className="h-4 w-4" />

@@ -15,8 +15,11 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Loader2, Shield, LogOut, CheckCircle, XCircle, Lock, Unlock, Users, FileText, UserPlus, Trash2, BarChart3, Upload, BookOpen, Download, Mail, Eye, Sparkles, Plus,
+  Loader2, Shield, LogOut, CheckCircle, XCircle, Lock, Unlock, Users, FileText, UserPlus, Trash2, BarChart3, Upload, BookOpen, Download, Mail, Eye, Sparkles, Plus, Image as ImageIcon, AlertTriangle,
 } from "lucide-react";
+import { stampPdf, buildCitation } from "@/utils/stampPdf";
+import pdfBanner from "@/assets/pdf-banner.png";
+
 
 
 interface UnlockRequest {

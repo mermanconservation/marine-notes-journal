@@ -164,19 +164,47 @@ const EditorSubmissions = () => {
         .eq("id", selectedSub.id);
       if (error) throw error;
 
-      // Notify the new author by email (best effort)
+      const prev = {
+        name: selectedSub.corresponding_author_name,
+        email: selectedSub.corresponding_author_email,
+        affiliation: selectedSub.corresponding_author_affiliation,
+        all_authors: selectedSub.all_authors,
+      };
+      const changedFields: string[] = [];
+      if (prev.name !== f.corresponding_author_name) changedFields.push(`Name: "${prev.name}" → "${f.corresponding_author_name}"`);
+      if (prev.email !== f.corresponding_author_email) changedFields.push(`Email: "${prev.email}" → "${f.corresponding_author_email}"`);
+      if (prev.affiliation !== f.corresponding_author_affiliation) changedFields.push(`Affiliation: "${prev.affiliation}" → "${f.corresponding_author_affiliation}"`);
+      if (prev.all_authors !== f.all_authors) changedFields.push(`All authors: "${prev.all_authors}" → "${f.all_authors}"`);
+
+      // Record the audit trail entry (who, from → to, when)
+      if (changedFields.length > 0) {
+        try {
+          await supabase.from("submission_reviews").insert({
+            submission_id: selectedSub.id,
+            reviewer_id: user.id,
+            action: "author_changed",
+            comment: `Corresponding author changed by ${(user.user_metadata as any)?.full_name || user.email}\n${changedFields.join("\n")}`,
+          });
+        } catch (e) { console.warn("Audit entry failed:", e); }
+      }
+
+      // Notify the previous and the new corresponding author (best effort)
       try {
-        await supabase.functions.invoke("notify-author-upload", {
+        await supabase.functions.invoke("notify-author-change", {
           body: {
-            authorEmail: f.corresponding_author_email,
-            authorName: f.corresponding_author_name,
-            editorEmail: user.email,
-            editorName: (user.user_metadata as any)?.full_name || user.email,
             title: selectedSub.title,
             manuscriptType: selectedSub.manuscript_type,
+            editorEmail: user.email,
+            editorName: (user.user_metadata as any)?.full_name || user.email,
+            oldAuthorName: prev.name,
+            oldAuthorEmail: prev.email,
+            newAuthorName: f.corresponding_author_name,
+            newAuthorEmail: f.corresponding_author_email,
+            changedAt: new Date().toISOString(),
           },
         });
-      } catch (e) { console.warn("Notify author failed:", e); }
+      } catch (e) { console.warn("Notify author change failed:", e); }
+
 
       toast({
         title: "Author updated",

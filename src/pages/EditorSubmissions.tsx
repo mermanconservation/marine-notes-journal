@@ -869,6 +869,36 @@ const EditorSubmissions = () => {
                     </div>
                   )}
 
+                  {(reviews[selectedSub.id] || []).some(r => r.action === "author_changed") && (
+                    <div className="p-3 rounded-md border border-amber-300 bg-amber-50 text-sm">
+                      <div className="flex items-center gap-2 font-medium text-amber-800 mb-2">
+                        <UserCheck className="h-3 w-3" /> Corresponding Author — Change History
+                      </div>
+                      <ul className="space-y-2">
+                        {(reviews[selectedSub.id] || [])
+                          .filter(r => r.action === "author_changed")
+                          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                          .map(r => {
+                            const lines = (r.comment || "").split("\n");
+                            return (
+                              <li key={r.id} className="text-xs text-amber-900/90">
+                                <div className="font-medium">{lines[0]}</div>
+                                {lines.slice(1).map((l, i) => (
+                                  <div key={i} className="pl-3">• {l}</div>
+                                ))}
+                                <div className="pl-3 text-amber-900/60">{formatDateTime(r.created_at)}</div>
+                              </li>
+                            );
+                          })}
+                      </ul>
+                      <p className="text-[11px] text-amber-900/70 mt-2">
+                        Both the previous and the new corresponding author are notified by email for every change.
+                      </p>
+                    </div>
+                  )}
+
+
+
                   {selectedSub.cover_letter && (
                     <div>
                       <Label className="text-xs text-muted-foreground">Cover Letter</Label>

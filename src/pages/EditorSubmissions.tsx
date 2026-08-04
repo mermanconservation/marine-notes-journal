@@ -38,6 +38,8 @@ const ACTION_LABELS: Record<string, string> = {
   reject: "Rejected",
   assign_reviewer: "Reviewer Assigned",
   unlock: "Unlocked",
+  author_changed: "Corresponding Author Changed",
+
 };
 
 interface Submission {
@@ -164,19 +166,47 @@ const EditorSubmissions = () => {
         .eq("id", selectedSub.id);
       if (error) throw error;
 
-      // Notify the new author by email (best effort)
+      const prev = {
+        name: selectedSub.corresponding_author_name,
+        email: selectedSub.corresponding_author_email,
+        affiliation: selectedSub.corresponding_author_affiliation,
+        all_authors: selectedSub.all_authors,
+      };
+      const changedFields: string[] = [];
+      if (prev.name !== f.corresponding_author_name) changedFields.push(`Name: "${prev.name}" → "${f.corresponding_author_name}"`);
+      if (prev.email !== f.corresponding_author_email) changedFields.push(`Email: "${prev.email}" → "${f.corresponding_author_email}"`);
+      if (prev.affiliation !== f.corresponding_author_affiliation) changedFields.push(`Affiliation: "${prev.affiliation}" → "${f.corresponding_author_affiliation}"`);
+      if (prev.all_authors !== f.all_authors) changedFields.push(`All authors: "${prev.all_authors}" → "${f.all_authors}"`);
+
+      // Record the audit trail entry (who, from → to, when)
+      if (changedFields.length > 0) {
+        try {
+          await supabase.from("submission_reviews").insert({
+            submission_id: selectedSub.id,
+            reviewer_id: user.id,
+            action: "author_changed",
+            comment: `Corresponding author changed by ${(user.user_metadata as any)?.full_name || user.email}\n${changedFields.join("\n")}`,
+          });
+        } catch (e) { console.warn("Audit entry failed:", e); }
+      }
+
+      // Notify the previous and the new corresponding author (best effort)
       try {
-        await supabase.functions.invoke("notify-author-upload", {
+        await supabase.functions.invoke("notify-author-change", {
           body: {
-            authorEmail: f.corresponding_author_email,
-            authorName: f.corresponding_author_name,
-            editorEmail: user.email,
-            editorName: (user.user_metadata as any)?.full_name || user.email,
             title: selectedSub.title,
             manuscriptType: selectedSub.manuscript_type,
+            editorEmail: user.email,
+            editorName: (user.user_metadata as any)?.full_name || user.email,
+            oldAuthorName: prev.name,
+            oldAuthorEmail: prev.email,
+            newAuthorName: f.corresponding_author_name,
+            newAuthorEmail: f.corresponding_author_email,
+            changedAt: new Date().toISOString(),
           },
         });
-      } catch (e) { console.warn("Notify author failed:", e); }
+      } catch (e) { console.warn("Notify author change failed:", e); }
+
 
       toast({
         title: "Author updated",
@@ -838,6 +868,36 @@ const EditorSubmissions = () => {
                       )}
                     </div>
                   )}
+
+                  {(reviews[selectedSub.id] || []).some(r => r.action === "author_changed") && (
+                    <div className="p-3 rounded-md border border-amber-300 bg-amber-50 text-sm">
+                      <div className="flex items-center gap-2 font-medium text-amber-800 mb-2">
+                        <UserCheck className="h-3 w-3" /> Corresponding Author — Change History
+                      </div>
+                      <ul className="space-y-2">
+                        {(reviews[selectedSub.id] || [])
+                          .filter(r => r.action === "author_changed")
+                          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                          .map(r => {
+                            const lines = (r.comment || "").split("\n");
+                            return (
+                              <li key={r.id} className="text-xs text-amber-900/90">
+                                <div className="font-medium">{lines[0]}</div>
+                                {lines.slice(1).map((l, i) => (
+                                  <div key={i} className="pl-3">• {l}</div>
+                                ))}
+                                <div className="pl-3 text-amber-900/60">{formatDateTime(r.created_at)}</div>
+                              </li>
+                            );
+                          })}
+                      </ul>
+                      <p className="text-[11px] text-amber-900/70 mt-2">
+                        Both the previous and the new corresponding author are notified by email for every change.
+                      </p>
+                    </div>
+                  )}
+
+
 
                   {selectedSub.cover_letter && (
                     <div>

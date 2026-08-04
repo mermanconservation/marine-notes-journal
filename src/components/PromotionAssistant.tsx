@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { formatDateLong } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Megaphone, Copy, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { Megaphone, Copy, Check, ChevronDown, ChevronUp, Pencil, RotateCcw, Download } from "lucide-react";
 import { Article } from "@/types/article";
 import { useToast } from "@/hooks/use-toast";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -12,118 +14,177 @@ interface PromotionAssistantProps {
   article: Article;
 }
 
+const ISSN = "2979-8841";
+const ABOUT_JOURNAL =
+  "Marine Notes Journal is the first full AI-Edited and Peer-Reviewed Marine Science Journal dedicated to advancing marine science research and knowledge. ISSN " +
+  ISSN +
+  " (Online).";
+
+/** Splits an author string into individual names (handles commas, "&" and "and"). */
+export const splitAuthors = (authors: string): string[] =>
+  (authors || "")
+    .split(/,| and | & |;/i)
+    .map((a) => a.trim())
+    .filter(Boolean);
+
+/** Full, human-readable author list: "A", "A and B", "A, B and C". */
+export const formatAuthorList = (authors: string): string => {
+  const list = splitAuthors(authors);
+  if (list.length === 0) return "";
+  if (list.length === 1) return list[0];
+  return `${list.slice(0, -1).join(", ")} and ${list[list.length - 1]}`;
+};
+
+/** Short citation-style tag: "A" or "A et al.". */
+export const formatAuthorTag = (authors: string): string => {
+  const list = splitAuthors(authors);
+  if (list.length === 0) return "";
+  return list.length === 1 ? list[0] : `${list[0]} et al.`;
+};
+
 export const PromotionAssistant = ({ article }: PromotionAssistantProps) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
   const { toast } = useToast();
 
-  const getAuthorDisplay = () => {
-    const authorList = article.authors.split(',').map(a => a.trim());
-    if (authorList.length === 1) return authorList[0];
-    return `${authorList[0]} and colleagues`;
-  };
+  const authorsFull = formatAuthorList(article.authors);
+  const authorTag = formatAuthorTag(article.authors);
+  const authorCount = splitAuthors(article.authors).length;
 
-  const generatePressRelease = () => {
+  const generated = useMemo(() => {
     const date = formatDateLong(article.publicationDate);
-    const authorDisplay = getAuthorDisplay();
-    
-    return `FOR IMMEDIATE RELEASE
+    const pageRef = article.pages ? `, pp. ${article.pages}` : "";
+
+    const press = `FOR IMMEDIATE RELEASE
 
 ${date}
 
 New Research Published in Marine Notes Journal: ${article.title}
 
-${authorDisplay} published groundbreaking research in Marine Notes Journal that advances our understanding of marine science.
+${authorsFull} published new research in Marine Notes Journal that advances our understanding of marine science.
 
 ${article.abstract}
 
-The study, titled "${article.title}," represents a significant contribution to the field and is now available for review. This ${article.type.toLowerCase()} article has been peer-reviewed and published in Volume ${article.volume}, Issue ${article.issue} of Marine Notes Journal.
+The study, titled "${article.title}," is now available for review. This ${article.type.toLowerCase()} article has been peer-reviewed and published in Volume ${article.volume}, Issue ${article.issue}${pageRef} of Marine Notes Journal (ISSN ${ISSN}).
 
 For more information and to access the full paper, visit: ${article.resolverUrl}
 
-DOI: ${article.doi}
+Article ID: ${article.doi}
+ISSN: ${ISSN} (Online)
 
 About Marine Notes Journal:
-Marine Notes Journal is the first full AI-Edited and Peer-Reviewed Marine Science Journal dedicated to advancing marine science research and knowledge.
+${ABOUT_JOURNAL}
 
 ###`;
-  };
 
-  const generatePlainLanguageSummary = () => {
-    const authorDisplay = getAuthorDisplay();
-    return `🌊 What did researchers discover?
+    const summary = `🌊 What did the researchers discover?
 
-${authorDisplay} published new research that helps us better understand our oceans. 
+${authorsFull} published new research that helps us better understand our oceans.
 
 ${article.abstract}
 
-This research was published in Marine Notes Journal and has been carefully reviewed by experts in the field.
+This research was published in Marine Notes Journal (ISSN ${ISSN}) and has been carefully reviewed by experts in the field.
 
 Why does this matter?
 Every piece of marine research helps us protect and understand our oceans better. This ${article.type.toLowerCase()} contributes valuable knowledge to the scientific community.
 
 Want to learn more? Read the full paper: ${article.resolverUrl}`;
-  };
 
-  const generateSocialMediaPosts = () => {
-    const authorList = article.authors.split(',').map(a => a.trim());
-    const firstAuthor = authorList[0];
-    const authorTag = authorList.length === 1 ? firstAuthor : `${firstAuthor} et al.`;
-    
-    return {
-      twitter: `🔬 New research alert! "${article.title}" by ${authorTag} now published in Marine Notes Journal 🌊
+    const twitter = `🔬 New research alert! "${article.title}" by ${authorTag} now published in Marine Notes Journal 🌊
 
 Read the full paper: ${article.resolverUrl}
 
-#MarineScience #Research #Ocean #Science`,
-      
-      linkedin: `I'm pleased to share that our latest research has been published in Marine Notes Journal!
+#MarineScience #Research #Ocean #Science`;
+
+    const linkedin = `New research has been published in Marine Notes Journal (ISSN ${ISSN}).
 
 📄 ${article.title}
-
-${article.abstract.substring(0, 150)}...
-
-This ${article.type.toLowerCase()} represents important progress in marine science research. I'm grateful to my co-authors ${article.authors} for their collaboration.
-
-Read the full paper here: ${article.resolverUrl}
-
-#MarineScience #Research #AcademicPublishing`,
-      
-      facebook: `🌊 Exciting news from the world of marine science!
-
-New research titled "${article.title}" has just been published in Marine Notes Journal.
+✍️ ${authorsFull}
 
 ${article.abstract.substring(0, 200)}...
 
-This important work by ${authorList.length === 1 ? firstAuthor : `${firstAuthor} and colleagues`} advances our understanding of marine ecosystems.
+This ${article.type.toLowerCase()} appears in Volume ${article.volume}, Issue ${article.issue}${pageRef}.
+
+Read the full paper here: ${article.resolverUrl}
+
+#MarineScience #Research #AcademicPublishing`;
+
+    const facebook = `🌊 News from the world of marine science!
+
+New research titled "${article.title}" has just been published in Marine Notes Journal (ISSN ${ISSN}).
+
+${article.abstract.substring(0, 200)}...
+
+This work by ${authorsFull} advances our understanding of marine ecosystems.
 
 Learn more: ${article.resolverUrl}
 
-#MarineScience #OceanResearch #Science`
-    };
-  };
+#MarineScience #OceanResearch #Science`;
+
+    return { press, summary, twitter, linkedin, facebook };
+  }, [article, authorsFull, authorTag]);
+
+  const [draft, setDraft] = useState(generated);
+
+  // Reset the editable draft whenever the source article changes
+  useEffect(() => {
+    setDraft(generated);
+    setConfirmed(false);
+  }, [generated]);
 
   const handleCopy = async (text: string, id: string) => {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedId(id);
-      toast({
-        title: "Copied to clipboard!",
-        description: "Content has been copied successfully.",
-      });
+      toast({ title: "Copied to clipboard", description: "Content has been copied successfully." });
       setTimeout(() => setCopiedId(null), 2000);
-    } catch (err) {
-      toast({
-        title: "Failed to copy",
-        description: "Please try again.",
-        variant: "destructive",
-      });
+    } catch {
+      toast({ title: "Failed to copy", description: "Please try again.", variant: "destructive" });
     }
   };
 
-  const pressRelease = generatePressRelease();
-  const plainSummary = generatePlainLanguageSummary();
-  const socialPosts = generateSocialMediaPosts();
+  const downloadAll = () => {
+    const body = [
+      "PRESS RELEASE", draft.press, "",
+      "PLAIN LANGUAGE SUMMARY", draft.summary, "",
+      "TWITTER / X", draft.twitter, "",
+      "LINKEDIN", draft.linkedin, "",
+      "FACEBOOK", draft.facebook,
+    ].join("\n\n");
+    const url = URL.createObjectURL(new Blob([body], { type: "text/plain" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${article.doi}-promotion.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const block = (id: keyof typeof draft, label?: string) => (
+    <div className="relative">
+      {label && <h4 className="font-semibold mb-2">{label}</h4>}
+      {confirmed ? (
+        <pre className="bg-muted p-4 rounded-lg text-sm whitespace-pre-wrap overflow-auto max-h-96">
+          {draft[id]}
+        </pre>
+      ) : (
+        <Textarea
+          value={draft[id]}
+          onChange={(e) => setDraft({ ...draft, [id]: e.target.value })}
+          className="text-sm font-mono min-h-[220px]"
+        />
+      )}
+      <Button
+        size="sm"
+        variant="secondary"
+        className={`absolute right-2 ${label ? "top-8" : "top-2"}`}
+        disabled={!confirmed}
+        onClick={() => handleCopy(draft[id], id)}
+      >
+        {copiedId === id ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+      </Button>
+    </div>
+  );
 
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -135,16 +196,54 @@ Learn more: ${article.resolverUrl}
                 <Megaphone className="h-5 w-5" />
                 AI Promotion Assistant
               </div>
-              {isOpen ? (
-                <ChevronUp className="h-5 w-5 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="h-5 w-5 text-muted-foreground" />
-              )}
+              {isOpen ? <ChevronUp className="h-5 w-5 text-muted-foreground" /> : <ChevronDown className="h-5 w-5 text-muted-foreground" />}
             </CardTitle>
           </CardHeader>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <CardContent>
+          <CardContent className="space-y-4">
+            {/* Preview / confirmation bar */}
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="text-sm">
+                  <span className="font-medium">Step 1 — Review the draft.</span>{" "}
+                  <span className="text-muted-foreground">
+                    Author{authorCount > 1 ? "s" : ""} used: <strong>{authorsFull || "—"}</strong>
+                    {authorCount > 1 && <> ({authorCount} authors)</>}
+                  </span>
+                </div>
+                <Badge variant={confirmed ? "default" : "outline"}>
+                  {confirmed ? "Confirmed" : "Draft — not confirmed"}
+                </Badge>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {confirmed ? (
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => setConfirmed(false)}>
+                      <Pencil className="h-4 w-4 mr-1" /> Edit again
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={downloadAll}>
+                      <Download className="h-4 w-4 mr-1" /> Download all texts
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button size="sm" onClick={() => setConfirmed(true)}>
+                      <Check className="h-4 w-4 mr-1" /> Confirm final text
+                    </Button>
+                    <Button size="sm" variant="ghost" onClick={() => setDraft(generated)}>
+                      <RotateCcw className="h-4 w-4 mr-1" /> Reset to generated
+                    </Button>
+                  </>
+                )}
+              </div>
+              {!confirmed && (
+                <p className="text-xs text-muted-foreground">
+                  Edit any text above the copy buttons. Copying is enabled once you confirm the final wording.
+                </p>
+              )}
+            </div>
+
             <Tabs defaultValue="press" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="press">Press Release</TabsTrigger>
@@ -152,105 +251,12 @@ Learn more: ${article.resolverUrl}
                 <TabsTrigger value="social">Social Media</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="press" className="space-y-4">
-                <div className="relative">
-                  <pre className="bg-muted p-4 rounded-lg text-sm whitespace-pre-wrap overflow-auto max-h-96">
-                    {pressRelease}
-                  </pre>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="absolute top-2 right-2"
-                    onClick={() => handleCopy(pressRelease, "press")}
-                  >
-                    {copiedId === "press" ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="summary" className="space-y-4">
-                <div className="relative">
-                  <pre className="bg-muted p-4 rounded-lg text-sm whitespace-pre-wrap overflow-auto max-h-96">
-                    {plainSummary}
-                  </pre>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    className="absolute top-2 right-2"
-                    onClick={() => handleCopy(plainSummary, "summary")}
-                  >
-                    {copiedId === "summary" ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              </TabsContent>
-
+              <TabsContent value="press" className="space-y-4">{block("press")}</TabsContent>
+              <TabsContent value="summary" className="space-y-4">{block("summary")}</TabsContent>
               <TabsContent value="social" className="space-y-4">
-                <div className="space-y-4">
-                  <div className="relative">
-                    <h4 className="font-semibold mb-2">Twitter/X</h4>
-                    <pre className="bg-muted p-4 rounded-lg text-sm whitespace-pre-wrap">
-                      {socialPosts.twitter}
-                    </pre>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="absolute top-8 right-2"
-                      onClick={() => handleCopy(socialPosts.twitter, "twitter")}
-                    >
-                      {copiedId === "twitter" ? (
-                        <Check className="h-4 w-4" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-
-                  <div className="relative">
-                    <h4 className="font-semibold mb-2">LinkedIn</h4>
-                    <pre className="bg-muted p-4 rounded-lg text-sm whitespace-pre-wrap">
-                      {socialPosts.linkedin}
-                    </pre>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="absolute top-8 right-2"
-                      onClick={() => handleCopy(socialPosts.linkedin, "linkedin")}
-                    >
-                      {copiedId === "linkedin" ? (
-                        <Check className="h-4 w-4" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-
-                  <div className="relative">
-                    <h4 className="font-semibold mb-2">Facebook</h4>
-                    <pre className="bg-muted p-4 rounded-lg text-sm whitespace-pre-wrap">
-                      {socialPosts.facebook}
-                    </pre>
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="absolute top-8 right-2"
-                      onClick={() => handleCopy(socialPosts.facebook, "facebook")}
-                    >
-                      {copiedId === "facebook" ? (
-                        <Check className="h-4 w-4" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
+                {block("twitter", "Twitter/X")}
+                {block("linkedin", "LinkedIn")}
+                {block("facebook", "Facebook")}
               </TabsContent>
             </Tabs>
           </CardContent>

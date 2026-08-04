@@ -1279,13 +1279,25 @@ const AdminPanel = () => {
                 </div>
               </div>
             )}
-            <DialogFooter>
+            <DialogFooter className="flex-wrap gap-2">
               <Button variant="outline" onClick={() => setPreviewOpen(false)} disabled={confirmingPublish}>Cancel</Button>
+              {previewData?.blobUrl && (
+                <Button variant="outline" asChild>
+                  <a
+                    href={previewData.blobUrl}
+                    download={`${previewData.doi}-final.pdf`}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download final PDF
+                  </a>
+                </Button>
+              )}
               <Button onClick={handleConfirmPublish} disabled={confirmingPublish} className="bg-green-600 hover:bg-green-700 text-white">
                 {confirmingPublish ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
-                Confirm & Publish
+                Confirm &amp; Publish now
               </Button>
             </DialogFooter>
+
           </DialogContent>
         </Dialog>
 

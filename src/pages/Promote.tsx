@@ -3,6 +3,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { splitAuthors, formatAuthorList } from "@/components/PromotionAssistant";
+
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useArticles } from "@/hooks/useArticles";
@@ -39,8 +42,12 @@ const Promote = () => {
   const [selectedArticleDoi, setSelectedArticleDoi] = useState<string>("");
   const [generatedText, setGeneratedText] = useState("");
   const [isGeneratingText, setIsGeneratingText] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
 
   const selectedArticle = articles.find(a => a.doi === selectedArticleDoi);
+  const authorNames = splitAuthors(selectedArticle?.authors || "");
+  const authorDisplay = formatAuthorList(selectedArticle?.authors || "");
+
 
   const handleCopy = async (text: string, id: string) => {
     try {
@@ -56,6 +63,7 @@ const Promote = () => {
   const generateText = async () => {
     setIsGeneratingText(true);
     setGeneratedText("");
+    setConfirmed(false);
     try {
       const { data, error } = await supabase.functions.invoke("generate-promotion", {
         body: {
@@ -65,9 +73,11 @@ const Promote = () => {
           tone,
           articleTitle: selectedArticle?.title || "",
           articleDoi: selectedArticle?.doi || "",
-          articleAuthors: selectedArticle?.authors || "",
+          articleAuthors: authorDisplay || selectedArticle?.authors || "",
+          journalIssn: "2979-8841",
         },
       });
+
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setGeneratedText(data.text);
@@ -187,46 +197,68 @@ const Promote = () => {
           </CardContent>
         </Card>
 
-        {/* Generated text result */}
+        {/* Generated text result — review & confirm */}
         {generatedText && (
           <Card className="mt-6 border-primary/30">
             <CardHeader>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <PlatformIcon className="h-5 w-5" />
-                  Generated Post
-                  <Badge variant="outline">{PLATFORMS.find(p => p.id === platform)?.label}</Badge>
+                  {confirmed ? "Final Post" : "Preview — Review Before Confirming"}
+                  <Badge variant={confirmed ? "default" : "outline"}>
+                    {confirmed ? "Confirmed" : PLATFORMS.find(p => p.id === platform)?.label}
+                  </Badge>
                 </CardTitle>
                 <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={generateText}
-                    disabled={isGeneratingText}
-                  >
+                  <Button size="sm" variant="outline" onClick={generateText} disabled={isGeneratingText}>
                     <RefreshCw className="h-4 w-4" />
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => handleCopy(generatedText, "generated-text")}
-                  >
-                    {copiedId === "generated-text" ? (
-                      <Check className="mr-1 h-4 w-4" />
-                    ) : (
-                      <Copy className="mr-1 h-4 w-4" />
-                    )}
-                    Copy
-                  </Button>
+                  {confirmed ? (
+                    <>
+                      <Button size="sm" variant="outline" onClick={() => setConfirmed(false)}>
+                        Edit again
+                      </Button>
+                      <Button size="sm" onClick={() => handleCopy(generatedText, "generated-text")}>
+                        {copiedId === "generated-text" ? <Check className="mr-1 h-4 w-4" /> : <Copy className="mr-1 h-4 w-4" />}
+                        Copy
+                      </Button>
+                    </>
+                  ) : (
+                    <Button size="sm" onClick={() => setConfirmed(true)}>
+                      <Check className="mr-1 h-4 w-4" /> Confirm final text
+                    </Button>
+                  )}
                 </div>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="bg-muted p-4 rounded-lg whitespace-pre-wrap text-sm leading-relaxed">
-                {generatedText}
-              </div>
+            <CardContent className="space-y-3">
+              {selectedArticle && (
+                <p className="text-xs text-muted-foreground">
+                  Author{authorNames.length > 1 ? "s" : ""} credited:{" "}
+                  <strong className="text-foreground">{authorDisplay}</strong>
+                  {authorNames.length > 1 && <> ({authorNames.length} authors)</>} · Marine Notes Journal, ISSN 2979-8841
+                </p>
+              )}
+              {confirmed ? (
+                <div className="bg-muted p-4 rounded-lg whitespace-pre-wrap text-sm leading-relaxed">
+                  {generatedText}
+                </div>
+              ) : (
+                <>
+                  <Textarea
+                    value={generatedText}
+                    onChange={(e) => setGeneratedText(e.target.value)}
+                    className="min-h-[200px] text-sm leading-relaxed"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Edit the wording, check the author names, then confirm. Copying is enabled after you confirm.
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
         )}
+
 
         {/* Tips section */}
         <Card className="mt-12 bg-muted/30">

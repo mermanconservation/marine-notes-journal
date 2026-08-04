@@ -38,6 +38,8 @@ const ACTION_LABELS: Record<string, string> = {
   reject: "Rejected",
   assign_reviewer: "Reviewer Assigned",
   unlock: "Unlocked",
+  author_changed: "Corresponding Author Changed",
+
 };
 
 interface Submission {

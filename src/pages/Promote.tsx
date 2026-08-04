@@ -39,8 +39,12 @@ const Promote = () => {
   const [selectedArticleDoi, setSelectedArticleDoi] = useState<string>("");
   const [generatedText, setGeneratedText] = useState("");
   const [isGeneratingText, setIsGeneratingText] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
 
   const selectedArticle = articles.find(a => a.doi === selectedArticleDoi);
+  const authorNames = splitAuthors(selectedArticle?.authors || "");
+  const authorDisplay = formatAuthorList(selectedArticle?.authors || "");
+
 
   const handleCopy = async (text: string, id: string) => {
     try {

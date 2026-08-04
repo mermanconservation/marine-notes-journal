@@ -59,17 +59,31 @@ const DOIResolver = () => {
         <meta name="citation_title" content={article.title} />
         <meta name="citation_publication_date" content={article.publicationDate} />
         <meta name="citation_journal_title" content="Marine Notes Journal" />
+        <meta name="citation_journal_abbrev" content="Mar. Notes J." />
+        <meta name="citation_issn" content="2979-8841" />
         <meta name="citation_volume" content={article.volume} />
         <meta name="citation_issue" content={article.issue} />
+        {article.pages && <meta name="citation_firstpage" content={article.pages.split("-")[0]} />}
+        {article.pages && article.pages.includes("-") && (
+          <meta name="citation_lastpage" content={article.pages.split("-")[1]} />
+        )}
         <meta name="citation_doi" content={article.doi} />
         <meta name="citation_pdf_url" content={pdfFullUrl} />
         <meta name="citation_publisher" content="Marine Notes Journal" />
         <meta name="DC.title" content={article.title} />
         <meta name="DC.date" content={article.publicationDate} />
         <meta name="DC.publisher" content="Marine Notes Journal" />
+        <meta name="DC.source" content="Marine Notes Journal, ISSN 2979-8841" />
         <meta name="DC.type" content="Text" />
         <meta name="DC.format" content="application/pdf" />
         <meta name="DC.identifier" content={`doi:${article.doi}`} />
+        <meta name="prism.issn" content="2979-8841" />
+        <meta property="og:title" content={`${article.title} | Marine Notes Journal`} />
+        <meta property="og:description" content={article.abstract.substring(0, 160)} />
+        <meta property="og:url" content={`https://www.marinenotesjournal.com/doi/${article.doi}`} />
+        <meta property="og:type" content="article" />
+        <link rel="canonical" href={`https://www.marinenotesjournal.com/doi/${article.doi}`} />
+
       </Helmet>
       {/* Render author meta tags outside Helmet using portal-free approach */}
       {authorList.map((author, i) => (

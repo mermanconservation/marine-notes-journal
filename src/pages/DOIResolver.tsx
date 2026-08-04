@@ -142,6 +142,11 @@ const DOIResolver = () => {
             <p className="text-sm text-muted-foreground mt-2">
               Permanent link: {article.resolverUrl}
             </p>
+            <p className="text-sm text-muted-foreground">
+              Marine Notes Journal · ISSN 2979-8841 (Online)
+              {article.pages ? ` · pp. ${article.pages}` : ""}
+            </p>
+
           </div>
 
           <div className="mb-6">

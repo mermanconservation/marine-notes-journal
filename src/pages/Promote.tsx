@@ -63,6 +63,7 @@ const Promote = () => {
   const generateText = async () => {
     setIsGeneratingText(true);
     setGeneratedText("");
+    setConfirmed(false);
     try {
       const { data, error } = await supabase.functions.invoke("generate-promotion", {
         body: {
@@ -72,9 +73,11 @@ const Promote = () => {
           tone,
           articleTitle: selectedArticle?.title || "",
           articleDoi: selectedArticle?.doi || "",
-          articleAuthors: selectedArticle?.authors || "",
+          articleAuthors: authorDisplay || selectedArticle?.authors || "",
+          journalIssn: "2979-8841",
         },
       });
+
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
       setGeneratedText(data.text);

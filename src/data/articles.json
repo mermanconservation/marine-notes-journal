@@ -73,7 +73,37 @@
       "issue": "1",
       "abstract": "We report 152 georeferenced observations of nudibranch molluscs (Gastropoda: Nudibranchia) recorded in the shallow coastal waters of South-East Pelion, Magnesia, Greece between June 2017 and June 2025. Systematic monitoring was conducted primarily via snorkelling and freediving at depths of 0.5–3.0 m across nine survey sites spanning approximately 9.5 km of coastline from Ammitsa to Platanias. A total of 13 confirmed species were identified, with 83% of records attaining Research Grade status on the iNaturalist citizen science platform under the BiodiversityGR project. The assemblage is dominated by aeolid nudibranchs (suborder Aeolidina, 93% of records), particularly Cratena peregrina (53 records, 40.2%) and Flabellina affinis (36 records, 27.3%). Observations are strongly seasonal, with 72% of records in June.",
       "pages": "21-33"
+    },
+    {
+      "id": 5,
+      "doi": "MNJ-2026-005",
+      "title": "Shark Sightings and Strandings Along the UK South Coast and Adjacent Waters, January 2025–June 2026: An Observational Compilation from Citizen Science and Media Reports",
+      "authors": "Oliver Taylor",
+      "orcidIds": [],
+      "type": "Observational Reports",
+      "publicationDate": "2026-06-29",
+      "pdfUrl": "/manuscripts/2026/vol1-iss1-shark-sightings-strandings-uk-south-coast-2025-2026.pdf",
+      "resolverUrl": "https://www.marinenotesjournal.com/doi/MNJ-2026-005",
+      "volume": "1",
+      "issue": "1",
+      "abstract": "This report compiles thirteen shark sighting and stranding records from the UK South Coast and adjacent waters (Cornwall, Devon, Dorset, the Isle of Wight, Sussex, Wales, and the Channel Islands) reported between January 2025 and June 2026. Records were drawn from wildlife trust bulletins, local news outlets, an observatory sightings log, a rescue charity stranding report, university research news, and public social media posts, and were assigned a three-tier confidence rating (High, Medium, Low) based on source reliability and corroboration. Eight species or species groups are represented, including thresher shark (Alopias vulpinus), basking shark (Cetorhinus maximus), porbeagle shark, small-spotted catshark (Scyliorhinus canicula), smooth-hound shark, and a smalltooth sand tiger shark (Odontaspis ferox) stranding on Jersey, a species only first confirmed in UK and Irish waters in 2023. The compilation illustrates both the value and the limitations of media- and citizen-sourced elasmobranch records for regional monitoring, and is offered as a descriptive baseline to support further verification and longer-term trend analysis.",
+      "pages": "34-43"
+    },
+    {
+      "id": 6,
+      "doi": "MNJ-2026-006",
+      "title": "First documented occurrence and evidence of local establishment of the non-indigenous crab Percnon gibbesi at Theotokos, southeastern Pelion, Greece",
+      "authors": "Christos Taklis",
+      "orcidIds": ["0000-0001-9181-0292"],
+      "type": "Research Article",
+      "publicationDate": "2026-08-02",
+      "pdfUrl": "/manuscripts/2026/vol2-iss1-percnon-gibbesi-theotokos-southeastern-pelion-greece.pdf",
+      "resolverUrl": "https://www.marinenotesjournal.com/doi/MNJ-2026-006",
+      "volume": "2",
+      "issue": "1",
+      "abstract": "The non-indigenous nimble spray crab Percnon gibbesi (H. Milne Edwards, 1853) has expanded rapidly across the Mediterranean Sea, including the Aegean and Ionian Seas, since its first regional record in 1999. We report the first documented occurrence of the species at Theotokos, southeastern Pelion, central Aegean Sea, Greece. An initial coastal biodiversity survey conducted under the NATIV-PELION monitoring programme recorded and photographed two individuals on 21 July 2026. A targeted follow-up survey on 22 July 2026 recorded 32 individuals at and around 39.19358894° N, 23.34314461° E, spanning size classes from small juveniles to large adults. Several specimens occupied crevices and sheltered interstices within the shallow rocky substrate, forming a dense local aggregation consistent with a probable settlement and refuge site. The co-occurrence of multiple size classes indicates that the record reflects more than the arrival of one or two transient individuals, and instead constitutes preliminary evidence of an established or actively establishing local population. Quantitative follow-up surveys are needed to characterise population density, spatial extent, reproductive status, and potential ecological interactions with native shallow-water grazers and benthic assemblages.",
+      "pages": "1-7"
     }
   ],
-  "nextSequence": 5
+  "nextSequence": 7
 }

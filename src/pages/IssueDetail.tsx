@@ -7,6 +7,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import { AuthorWithOrcid } from "@/components/AuthorWithOrcid";
 import { useArticles } from "@/hooks/useArticles";
+import { findStaticIssue } from "@/hooks/useIssues";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import volumeCover from "@/assets/volume-1-issue-1-cover.png";
@@ -23,21 +24,24 @@ const IssueDetail = () => {
 
   useEffect(() => {
     let active = true;
+    // Static (git-backed) record first, so the page works without the backend
+    const staticIssue = findStaticIssue(volume, issue);
+    setIssueRow(staticIssue);
+    setLoadingIssue(false);
     (async () => {
-      setLoadingIssue(true);
       const { data } = await supabase
         .from("journal_issues")
         .select("*")
         .eq("volume", String(volume))
         .eq("issue", String(issue))
         .maybeSingle();
-      if (active) {
-        setIssueRow(data || null);
-        setLoadingIssue(false);
+      if (active && data) {
+        setIssueRow({ ...staticIssue, ...data });
       }
     })();
     return () => { active = false; };
   }, [volume, issue]);
+
 
   const articles = allArticles.filter(
     (a) => a.volume.toString() === volume && a.issue.toString() === issue

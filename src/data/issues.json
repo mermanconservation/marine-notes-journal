@@ -1,0 +1,23 @@
+{
+  "_comment": "Canonical, git-backed record of journal volumes and issues. This file is the source of truth for the public website; the backend database is only an optional supplement for editorial workflows.",
+  "issues": [
+    {
+      "volume": "1",
+      "issue": "1",
+      "year": 2026,
+      "status": "closed",
+      "title": "Issue 1",
+      "issuePdfUrl": "",
+      "notes": "Inaugural issue"
+    },
+    {
+      "volume": "2",
+      "issue": "1",
+      "year": 2026,
+      "status": "open",
+      "title": "Issue 1",
+      "issuePdfUrl": "",
+      "notes": ""
+    }
+  ]
+}

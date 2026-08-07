@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Download, Loader2 } from "lucide-react";
 import { useArticles } from "@/hooks/useArticles";
+import { useIssues } from "@/hooks/useIssues";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,18 +16,9 @@ const Archive = () => {
   const navigate = useNavigate();
   const { articles } = useArticles();
   const { toast } = useToast();
-  const [journalIssues, setJournalIssues] = useState<any[]>([]);
+  const journalIssues = useIssues();
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    supabase
-      .from("journal_issues")
-      .select("id,volume,issue,year,status,issue_pdf_url,notes")
-      .order("year", { ascending: false })
-      .order("volume", { ascending: false })
-      .order("issue", { ascending: false })
-      .then(({ data }) => setJournalIssues(data || []));
-  }, []);
 
   const handleDownloadFullIssue = async (iss: any) => {
     setDownloadingId(iss.id);

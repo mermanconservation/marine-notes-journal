@@ -7,6 +7,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import { AuthorWithOrcid } from "@/components/AuthorWithOrcid";
 import { useArticles } from "@/hooks/useArticles";
+import { findStaticIssue } from "@/hooks/useIssues";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import volumeCover from "@/assets/volume-1-issue-1-cover.png";

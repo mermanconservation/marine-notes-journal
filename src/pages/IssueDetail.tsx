@@ -23,21 +23,24 @@ const IssueDetail = () => {
 
   useEffect(() => {
     let active = true;
+    // Static (git-backed) record first, so the page works without the backend
+    const staticIssue = findStaticIssue(volume, issue);
+    setIssueRow(staticIssue);
+    setLoadingIssue(false);
     (async () => {
-      setLoadingIssue(true);
       const { data } = await supabase
         .from("journal_issues")
         .select("*")
         .eq("volume", String(volume))
         .eq("issue", String(issue))
         .maybeSingle();
-      if (active) {
-        setIssueRow(data || null);
-        setLoadingIssue(false);
+      if (active && data) {
+        setIssueRow({ ...staticIssue, ...data });
       }
     })();
     return () => { active = false; };
   }, [volume, issue]);
+
 
   const articles = allArticles.filter(
     (a) => a.volume.toString() === volume && a.issue.toString() === issue

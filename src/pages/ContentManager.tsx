@@ -125,57 +125,100 @@ export default function ContentManager() {
     [articles]
   );
 
-  /* ---------------- publish check ---------------- */
+  /* ---------------- repo consistency check ---------------- */
 
   const runPublishCheck = async () => {
     setChecking(true);
     const results: CheckResult[] = [];
+
+    const doiCount = new Map<string, number>();
+    const pathCount = new Map<string, number>();
+    articles.forEach((a) => {
+      doiCount.set(a.doi, (doiCount.get(a.doi) || 0) + 1);
+      if (a.pdfUrl) pathCount.set(a.pdfUrl, (pathCount.get(a.pdfUrl) || 0) + 1);
+    });
+
     for (const article of articles) {
       const expected = expectedPath(article);
       const url: string = article.pdfUrl || "";
       const filename = url.split("/").pop() || "";
       const prefix = `vol${article.volume}-iss${article.issue}-`;
+      const year = yearFor(String(article.volume), String(article.issue));
+      const errors: string[] = [];
       let state: CheckState = "ok";
-      let message = "PDF found and correctly named.";
+
+      if ((doiCount.get(article.doi) || 0) > 1) {
+        state = "misnamed";
+        errors.push(`Duplicate DOI ${article.doi} in articles.json.`);
+      }
+      if (url && (pathCount.get(url) || 0) > 1) {
+        state = "misnamed";
+        errors.push("Two articles point at the same PDF file.");
+      }
+      if (!issueKeys.includes(`${article.volume}-${article.issue}`)) {
+        state = "misnamed";
+        errors.push(
+          `Volume ${article.volume}, Issue ${article.issue} is not declared in issues.json.`
+        );
+      }
 
       if (!url) {
         state = "missing";
-        message = "No pdfUrl set on this article.";
-      } else if (!url.startsWith("/manuscripts/")) {
-        state = "misnamed";
-        message = "PDF is not stored under public/manuscripts/.";
-      } else if (!filename.toLowerCase().startsWith(prefix.toLowerCase())) {
-        state = "misnamed";
-        message = `Filename must start with "${prefix}" to match Volume ${article.volume}, Issue ${article.issue}.`;
-      } else if (filename.includes(" ")) {
-        state = "misnamed";
-        message = "Filename contains spaces — use dashes instead.";
-      } else if (!issueKeys.includes(`${article.volume}-${article.issue}`)) {
-        state = "misnamed";
-        message = `Volume ${article.volume}, Issue ${article.issue} does not exist in issues.json.`;
+        errors.push("No pdfUrl set on this article.");
       } else {
+        if (!url.startsWith("/manuscripts/")) {
+          state = "misnamed";
+          errors.push("PDF is not stored under public/manuscripts/.");
+        } else if (!url.startsWith(`/manuscripts/${year}/`)) {
+          state = state === "missing" ? state : "misnamed";
+          errors.push(`PDF should sit in the year folder public/manuscripts/${year}/.`);
+        }
+        if (!filename.toLowerCase().endsWith(".pdf")) {
+          state = "misnamed";
+          errors.push("File must be a .pdf.");
+        }
+        if (!filename.toLowerCase().startsWith(prefix.toLowerCase())) {
+          state = "misnamed";
+          errors.push(
+            `Filename must start with "${prefix}" to match Volume ${article.volume}, Issue ${article.issue}.`
+          );
+        }
+        if (/\s|%20/.test(url)) {
+          state = "misnamed";
+          errors.push("Filename contains spaces — use dashes instead.");
+        }
+
         try {
           const res = await fetch(url, { method: "HEAD" });
           const type = res.headers.get("content-type") || "";
           if (!res.ok || type.includes("text/html")) {
             state = "missing";
-            message = "File not found in public/manuscripts/ — commit the PDF to the repo.";
+            errors.push("File not found in public/manuscripts/ — commit the PDF to the repo.");
           }
         } catch {
           state = "missing";
-          message = "Could not reach the PDF file.";
+          errors.push("Could not reach the PDF file.");
         }
       }
 
-      results.push({ doi: article.doi, title: article.title, state, message, expected });
+      results.push({
+        doi: article.doi,
+        title: article.title,
+        state,
+        message: errors.length ? errors.join(" ") : "PDF found, correctly named and linked.",
+        expected,
+      });
     }
+
     setChecks(results);
     setChecking(false);
+    setHasRun(true);
     const bad = results.filter((r) => r.state !== "ok").length;
     toast[bad ? "warning" : "success"](
       bad ? `${bad} manuscript(s) need attention` : "All manuscripts verified"
     );
   };
+
 
   /* ---------------- issue editing ---------------- */
 

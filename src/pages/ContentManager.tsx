@@ -278,13 +278,15 @@ export default function ContentManager() {
     const target = issues[index];
     const ext = file.name.split(".").pop()?.toLowerCase() === "png" ? "png" : "jpg";
     const filename = `vol${target.volume}-iss${target.issue}.${ext}`;
+    const objectUrl = URL.createObjectURL(file);
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(file);
+    a.href = objectUrl;
     a.download = filename;
     a.click();
-    URL.revokeObjectURL(a.href);
+    // keep the object URL alive so the issue card previews the new cover immediately
+    setCoverPreviews((prev) => ({ ...prev, [`${target.volume}-${target.issue}`]: objectUrl }));
     updateIssue(index, { coverUrl: `/covers/${filename}` });
-    toast.success(`Cover renamed to ${filename} — commit it to public/covers/`);
+    toast.success(`Cover saved as ${filename} — commit it to public/covers/`);
   };
 
   /* ---------------- article linking ---------------- */
@@ -296,6 +298,32 @@ export default function ContentManager() {
     updateArticle(article.id, { pdfUrl: expectedPath(article) });
     toast.success("pdfUrl updated to the expected repository path.");
   };
+
+  const handleManuscript = (article: any, file: File | null) => {
+    if (!file) return;
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      toast.error("Please choose a PDF file.");
+      return;
+    }
+    if (!issueKeys.includes(`${article.volume}-${article.issue}`)) {
+      toast.error(
+        `Declare Volume ${article.volume}, Issue ${article.issue} in the issues section first.`
+      );
+      return;
+    }
+    const path = expectedPath(article);
+    const filename = path.split("/").pop() as string;
+    const objectUrl = URL.createObjectURL(file);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(objectUrl);
+    updateArticle(article.id, { pdfUrl: path });
+    setPdfPending((prev) => ({ ...prev, [article.id]: path }));
+    toast.success(`Saved as ${filename} — drop it into public${path.replace(filename, "")}`);
+  };
+
 
   const copy = async (label: string, text: string) => {
     await navigator.clipboard.writeText(text);

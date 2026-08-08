@@ -22,6 +22,7 @@ function mapStaticIssues(): JournalIssue[] {
     status: i.status,
     issue_pdf_url: i.issuePdfUrl || null,
     notes: i.notes || null,
+    cover_url: (i as any).coverUrl || null,
   }));
 }
 

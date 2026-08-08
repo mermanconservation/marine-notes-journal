@@ -460,14 +460,18 @@ export default function ContentManager() {
                 <Badge variant={iss.status === "closed" ? "secondary" : "default"}>
                   {iss.status}
                 </Badge>
-                {iss.coverUrl && (
+                {(coverPreviews[`${iss.volume}-${iss.issue}`] || iss.coverUrl) && (
                   <img
-                    src={iss.coverUrl}
+                    src={coverPreviews[`${iss.volume}-${iss.issue}`] || iss.coverUrl}
                     alt={`Volume ${iss.volume} Issue ${iss.issue} cover`}
                     loading="lazy"
                     className="h-12 w-auto rounded border"
                   />
                 )}
+                {coverPreviews[`${iss.volume}-${iss.issue}`] && (
+                  <Badge variant="outline">new cover — commit to public/covers/</Badge>
+                )}
+
               </div>
               <div className="grid gap-3 md:grid-cols-4">
                 <Input

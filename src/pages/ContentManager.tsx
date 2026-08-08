@@ -75,6 +75,11 @@ export default function ContentManager() {
   const [articles, setArticles] = useState<any[]>(articlesSource.articles as any[]);
   const [checks, setChecks] = useState<CheckResult[]>([]);
   const [checking, setChecking] = useState(false);
+  const [hasRun, setHasRun] = useState(false);
+  // Local object URLs so newly chosen covers / PDFs show immediately, before the commit
+  const [coverPreviews, setCoverPreviews] = useState<Record<string, string>>({});
+  const [pdfPending, setPdfPending] = useState<Record<number, string>>({});
+
 
   const issueKeys = useMemo(
     () => issues.map((i) => `${i.volume}-${i.issue}`),
@@ -120,57 +125,100 @@ export default function ContentManager() {
     [articles]
   );
 
-  /* ---------------- publish check ---------------- */
+  /* ---------------- repo consistency check ---------------- */
 
   const runPublishCheck = async () => {
     setChecking(true);
     const results: CheckResult[] = [];
+
+    const doiCount = new Map<string, number>();
+    const pathCount = new Map<string, number>();
+    articles.forEach((a) => {
+      doiCount.set(a.doi, (doiCount.get(a.doi) || 0) + 1);
+      if (a.pdfUrl) pathCount.set(a.pdfUrl, (pathCount.get(a.pdfUrl) || 0) + 1);
+    });
+
     for (const article of articles) {
       const expected = expectedPath(article);
       const url: string = article.pdfUrl || "";
       const filename = url.split("/").pop() || "";
       const prefix = `vol${article.volume}-iss${article.issue}-`;
+      const year = yearFor(String(article.volume), String(article.issue));
+      const errors: string[] = [];
       let state: CheckState = "ok";
-      let message = "PDF found and correctly named.";
+
+      if ((doiCount.get(article.doi) || 0) > 1) {
+        state = "misnamed";
+        errors.push(`Duplicate DOI ${article.doi} in articles.json.`);
+      }
+      if (url && (pathCount.get(url) || 0) > 1) {
+        state = "misnamed";
+        errors.push("Two articles point at the same PDF file.");
+      }
+      if (!issueKeys.includes(`${article.volume}-${article.issue}`)) {
+        state = "misnamed";
+        errors.push(
+          `Volume ${article.volume}, Issue ${article.issue} is not declared in issues.json.`
+        );
+      }
 
       if (!url) {
         state = "missing";
-        message = "No pdfUrl set on this article.";
-      } else if (!url.startsWith("/manuscripts/")) {
-        state = "misnamed";
-        message = "PDF is not stored under public/manuscripts/.";
-      } else if (!filename.toLowerCase().startsWith(prefix.toLowerCase())) {
-        state = "misnamed";
-        message = `Filename must start with "${prefix}" to match Volume ${article.volume}, Issue ${article.issue}.`;
-      } else if (filename.includes(" ")) {
-        state = "misnamed";
-        message = "Filename contains spaces — use dashes instead.";
-      } else if (!issueKeys.includes(`${article.volume}-${article.issue}`)) {
-        state = "misnamed";
-        message = `Volume ${article.volume}, Issue ${article.issue} does not exist in issues.json.`;
+        errors.push("No pdfUrl set on this article.");
       } else {
+        if (!url.startsWith("/manuscripts/")) {
+          state = "misnamed";
+          errors.push("PDF is not stored under public/manuscripts/.");
+        } else if (!url.startsWith(`/manuscripts/${year}/`)) {
+          state = "misnamed";
+          errors.push(`PDF should sit in the year folder public/manuscripts/${year}/.`);
+        }
+        if (!filename.toLowerCase().endsWith(".pdf")) {
+          state = "misnamed";
+          errors.push("File must be a .pdf.");
+        }
+        if (!filename.toLowerCase().startsWith(prefix.toLowerCase())) {
+          state = "misnamed";
+          errors.push(
+            `Filename must start with "${prefix}" to match Volume ${article.volume}, Issue ${article.issue}.`
+          );
+        }
+        if (/\s|%20/.test(url)) {
+          state = "misnamed";
+          errors.push("Filename contains spaces — use dashes instead.");
+        }
+
         try {
           const res = await fetch(url, { method: "HEAD" });
           const type = res.headers.get("content-type") || "";
           if (!res.ok || type.includes("text/html")) {
             state = "missing";
-            message = "File not found in public/manuscripts/ — commit the PDF to the repo.";
+            errors.push("File not found in public/manuscripts/ — commit the PDF to the repo.");
           }
         } catch {
           state = "missing";
-          message = "Could not reach the PDF file.";
+          errors.push("Could not reach the PDF file.");
         }
       }
 
-      results.push({ doi: article.doi, title: article.title, state, message, expected });
+      results.push({
+        doi: article.doi,
+        title: article.title,
+        state,
+        message: errors.length ? errors.join(" ") : "PDF found, correctly named and linked.",
+        expected,
+      });
     }
+
     setChecks(results);
     setChecking(false);
+    setHasRun(true);
     const bad = results.filter((r) => r.state !== "ok").length;
     toast[bad ? "warning" : "success"](
       bad ? `${bad} manuscript(s) need attention` : "All manuscripts verified"
     );
   };
+
 
   /* ---------------- issue editing ---------------- */
 
@@ -230,13 +278,15 @@ export default function ContentManager() {
     const target = issues[index];
     const ext = file.name.split(".").pop()?.toLowerCase() === "png" ? "png" : "jpg";
     const filename = `vol${target.volume}-iss${target.issue}.${ext}`;
+    const objectUrl = URL.createObjectURL(file);
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(file);
+    a.href = objectUrl;
     a.download = filename;
     a.click();
-    URL.revokeObjectURL(a.href);
+    // keep the object URL alive so the issue card previews the new cover immediately
+    setCoverPreviews((prev) => ({ ...prev, [`${target.volume}-${target.issue}`]: objectUrl }));
     updateIssue(index, { coverUrl: `/covers/${filename}` });
-    toast.success(`Cover renamed to ${filename} — commit it to public/covers/`);
+    toast.success(`Cover saved as ${filename} — commit it to public/covers/`);
   };
 
   /* ---------------- article linking ---------------- */
@@ -248,6 +298,32 @@ export default function ContentManager() {
     updateArticle(article.id, { pdfUrl: expectedPath(article) });
     toast.success("pdfUrl updated to the expected repository path.");
   };
+
+  const handleManuscript = (article: any, file: File | null) => {
+    if (!file) return;
+    if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+      toast.error("Please choose a PDF file.");
+      return;
+    }
+    if (!issueKeys.includes(`${article.volume}-${article.issue}`)) {
+      toast.error(
+        `Declare Volume ${article.volume}, Issue ${article.issue} in the issues section first.`
+      );
+      return;
+    }
+    const path = expectedPath(article);
+    const filename = path.split("/").pop() as string;
+    const objectUrl = URL.createObjectURL(file);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(objectUrl);
+    updateArticle(article.id, { pdfUrl: path });
+    setPdfPending((prev) => ({ ...prev, [article.id]: path }));
+    toast.success(`Saved as ${filename} — drop it into public${path.replace(filename, "")}`);
+  };
+
 
   const copy = async (label: string, text: string) => {
     await navigator.clipboard.writeText(text);
@@ -303,18 +379,35 @@ export default function ContentManager() {
       {/* Publish check */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-xl">1. Publish check</CardTitle>
+          <CardTitle className="text-xl">1. Repo consistency check</CardTitle>
           <Button onClick={runPublishCheck} disabled={checking}>
             {checking ? "Checking…" : "Run check"}
           </Button>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Verifies every manuscript PDF exists under <code>public/manuscripts/</code>, uses the
-            <code> vol&#123;n&#125;-iss&#123;n&#125;-title.pdf</code> convention, and belongs to an
-            issue declared in <code>issues.json</code>.
+            Verifies every manuscript PDF exists under <code>public/manuscripts/</code>, sits in the
+            right year folder, uses the{" "}
+            <code>vol&#123;n&#125;-iss&#123;n&#125;-title.pdf</code> convention, is unique, and
+            belongs to a volume and issue declared in <code>issues.json</code>.
           </p>
+          {hasRun && (
+            <div className="rounded border p-3 text-sm">
+              {checks.filter((c) => c.state !== "ok").length === 0 ? (
+                <span className="font-medium">
+                  ✅ All {checks.length} articles pass — repository is consistent.
+                </span>
+              ) : (
+                <span className="font-medium text-destructive">
+                  {checks.filter((c) => c.state !== "ok").length} of {checks.length} articles have
+                  errors ({checks.filter((c) => c.state === "missing").length} missing file,{" "}
+                  {checks.filter((c) => c.state === "misnamed").length} naming/linking).
+                </span>
+              )}
+            </div>
+          )}
           {checks.map((c) => (
+
             <div key={c.doi} className="rounded border p-3 text-sm space-y-1">
               <div className="flex items-center gap-2">
                 <Badge variant={c.state === "ok" ? "secondary" : "destructive"}>
@@ -367,14 +460,18 @@ export default function ContentManager() {
                 <Badge variant={iss.status === "closed" ? "secondary" : "default"}>
                   {iss.status}
                 </Badge>
-                {iss.coverUrl && (
+                {(coverPreviews[`${iss.volume}-${iss.issue}`] || iss.coverUrl) && (
                   <img
-                    src={iss.coverUrl}
+                    src={coverPreviews[`${iss.volume}-${iss.issue}`] || iss.coverUrl}
                     alt={`Volume ${iss.volume} Issue ${iss.issue} cover`}
                     loading="lazy"
                     className="h-12 w-auto rounded border"
                   />
                 )}
+                {coverPreviews[`${iss.volume}-${iss.issue}`] && (
+                  <Badge variant="outline">new cover — commit to public/covers/</Badge>
+                )}
+
               </div>
               <div className="grid gap-3 md:grid-cols-4">
                 <Input
@@ -475,6 +572,22 @@ export default function ContentManager() {
                 onChange={(e) => updateArticle(a.id, { pdfUrl: e.target.value })}
                 placeholder="/manuscripts/2026/vol1-iss1-title.pdf"
               />
+              <label className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-muted-foreground">Upload manuscript PDF:</span>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  className="text-sm"
+                  onChange={(e) => handleManuscript(a, e.target.files?.[0] || null)}
+                />
+              </label>
+              {pdfPending[a.id] && (
+                <p className="text-xs text-muted-foreground">
+                  Saved as <code>public{pdfPending[a.id]}</code> — commit that file, the link is
+                  already set in articles.json.
+                </p>
+              )}
+
             </div>
           ))}
         </CardContent>

@@ -572,6 +572,22 @@ export default function ContentManager() {
                 onChange={(e) => updateArticle(a.id, { pdfUrl: e.target.value })}
                 placeholder="/manuscripts/2026/vol1-iss1-title.pdf"
               />
+              <label className="flex flex-wrap items-center gap-2 text-sm">
+                <span className="text-muted-foreground">Upload manuscript PDF:</span>
+                <input
+                  type="file"
+                  accept="application/pdf"
+                  className="text-sm"
+                  onChange={(e) => handleManuscript(a, e.target.files?.[0] || null)}
+                />
+              </label>
+              {pdfPending[a.id] && (
+                <p className="text-xs text-muted-foreground">
+                  Saved as <code>public{pdfPending[a.id]}</code> — commit that file, the link is
+                  already set in articles.json.
+                </p>
+              )}
+
             </div>
           ))}
         </CardContent>

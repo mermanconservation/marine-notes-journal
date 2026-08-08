@@ -75,6 +75,11 @@ export default function ContentManager() {
   const [articles, setArticles] = useState<any[]>(articlesSource.articles as any[]);
   const [checks, setChecks] = useState<CheckResult[]>([]);
   const [checking, setChecking] = useState(false);
+  const [hasRun, setHasRun] = useState(false);
+  // Local object URLs so newly chosen covers / PDFs show immediately, before the commit
+  const [coverPreviews, setCoverPreviews] = useState<Record<string, string>>({});
+  const [pdfPending, setPdfPending] = useState<Record<number, string>>({});
+
 
   const issueKeys = useMemo(
     () => issues.map((i) => `${i.volume}-${i.issue}`),

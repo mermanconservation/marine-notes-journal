@@ -170,7 +170,7 @@ export default function ContentManager() {
           state = "misnamed";
           errors.push("PDF is not stored under public/manuscripts/.");
         } else if (!url.startsWith(`/manuscripts/${year}/`)) {
-          state = state === "missing" ? state : "misnamed";
+          state = "misnamed";
           errors.push(`PDF should sit in the year folder public/manuscripts/${year}/.`);
         }
         if (!filename.toLowerCase().endsWith(".pdf")) {

@@ -21,6 +21,7 @@ import AuthorDashboard from "./pages/AuthorDashboard";
 import EditorSubmissions from "./pages/EditorSubmissions";
 import AdminPanel from "./pages/AdminPanel";
 import Promote from "./pages/Promote";
+import ContentManager from "./pages/ContentManager";
 import Layout from "./components/Layout/Layout";
 import { AccessibilityProvider } from "./context/AccessibilityContext";
 
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/editor-submissions" element={<EditorSubmissions />} />
             <Route path="/admin-panel" element={<AdminPanel />} />
             <Route path="/promote" element={<Promote />} />
+            <Route path="/admin/content" element={<ContentManager />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>

@@ -22,6 +22,7 @@ function mapStaticIssues(): JournalIssue[] {
     status: i.status,
     issue_pdf_url: i.issuePdfUrl || null,
     notes: i.notes || null,
+    cover_url: (i as any).coverUrl || null,
   }));
 }
 
@@ -50,7 +51,12 @@ export function useIssues() {
         const enriched = staticIssues.map((i) => {
           const row = byKey.get(`${i.volume}-${i.issue}`);
           return row
-            ? { ...i, issue_pdf_url: i.issue_pdf_url || row.issue_pdf_url, cover_url: row.cover_url }
+            ? {
+                ...i,
+                issue_pdf_url: i.issue_pdf_url || row.issue_pdf_url,
+                // git-backed cover always wins over cloud storage
+                cover_url: i.cover_url || row.cover_url,
+              }
             : i;
         });
         setIssues([...enriched, ...extra]);

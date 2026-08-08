@@ -1,5 +1,5 @@
 {
-  "_comment": "Canonical, git-backed record of journal volumes and issues. This file is the source of truth for the public website; the backend database is only an optional supplement for editorial workflows.",
+  "_comment": "Canonical, git-backed record of journal volumes and issues. This file is the source of truth for the public website; the backend database is only an optional supplement for editorial workflows. Covers live in public/covers/ and are referenced by coverUrl.",
   "issues": [
     {
       "volume": "1",
@@ -8,6 +8,7 @@
       "status": "closed",
       "title": "Issue 1",
       "issuePdfUrl": "",
+      "coverUrl": "",
       "notes": "Inaugural issue"
     },
     {
@@ -17,6 +18,7 @@
       "status": "open",
       "title": "Issue 1",
       "issuePdfUrl": "",
+      "coverUrl": "",
       "notes": ""
     }
   ]

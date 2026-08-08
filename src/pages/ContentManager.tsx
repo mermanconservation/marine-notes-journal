@@ -379,18 +379,35 @@ export default function ContentManager() {
       {/* Publish check */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-xl">1. Publish check</CardTitle>
+          <CardTitle className="text-xl">1. Repo consistency check</CardTitle>
           <Button onClick={runPublishCheck} disabled={checking}>
             {checking ? "Checking…" : "Run check"}
           </Button>
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Verifies every manuscript PDF exists under <code>public/manuscripts/</code>, uses the
-            <code> vol&#123;n&#125;-iss&#123;n&#125;-title.pdf</code> convention, and belongs to an
-            issue declared in <code>issues.json</code>.
+            Verifies every manuscript PDF exists under <code>public/manuscripts/</code>, sits in the
+            right year folder, uses the{" "}
+            <code>vol&#123;n&#125;-iss&#123;n&#125;-title.pdf</code> convention, is unique, and
+            belongs to a volume and issue declared in <code>issues.json</code>.
           </p>
+          {hasRun && (
+            <div className="rounded border p-3 text-sm">
+              {checks.filter((c) => c.state !== "ok").length === 0 ? (
+                <span className="font-medium">
+                  ✅ All {checks.length} articles pass — repository is consistent.
+                </span>
+              ) : (
+                <span className="font-medium text-destructive">
+                  {checks.filter((c) => c.state !== "ok").length} of {checks.length} articles have
+                  errors ({checks.filter((c) => c.state === "missing").length} missing file,{" "}
+                  {checks.filter((c) => c.state === "misnamed").length} naming/linking).
+                </span>
+              )}
+            </div>
+          )}
           {checks.map((c) => (
+
             <div key={c.doi} className="rounded border p-3 text-sm space-y-1">
               <div className="flex items-center gap-2">
                 <Badge variant={c.state === "ok" ? "secondary" : "destructive"}>

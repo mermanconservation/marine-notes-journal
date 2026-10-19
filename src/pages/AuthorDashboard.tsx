@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, FileText, Clock, CheckCircle, XCircle, RotateCcw, LogOut, Upload, Check, Bot, Heart } from "lucide-react";
+import { Loader2, Plus, FileText, Clock, CheckCircle, XCircle, RotateCcw, LogOut, Upload, Check, Bot, Heart, Paperclip } from "lucide-react";
 import { AiReviewNote, isAiReviewComment } from "@/components/AiReviewNote";
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
@@ -73,6 +73,7 @@ const AuthorDashboard = () => {
   const [activeTab, setActiveTab] = useState("my-submissions");
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [supplementaryFiles, setSupplementaryFiles] = useState<File[]>([]);
 
   const [form, setForm] = useState({
     title: "",
@@ -177,6 +178,18 @@ const AuthorDashboard = () => {
         filePaths.push(path);
       }
 
+      // Upload supplementary material files if any
+      const supplementaryPaths: string[] = [];
+      for (const file of supplementaryFiles) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+        const path = `submissions/${user.id}/supplementary/${Date.now()}-${safeName}`;
+        const { error: uploadError } = await supabase.storage
+          .from("manuscript-submissions")
+          .upload(path, file, { upsert: true });
+        if (uploadError) throw uploadError;
+        supplementaryPaths.push(path);
+      }
+
       const { data: insertedSub, error } = await supabase.from("manuscript_submissions").insert({
         user_id: user.id,
         title: form.title,
@@ -191,6 +204,7 @@ const AuthorDashboard = () => {
         cover_letter: form.coverLetter || null,
         copyright_agreed: true,
         file_paths: filePaths,
+        supplementary_paths: supplementaryPaths,
         status: "pending",
       }).select().single();
 
@@ -232,6 +246,7 @@ const AuthorDashboard = () => {
       toast({ title: "Submitted!", description: "Your manuscript has been submitted for review." });
       setForm({ title: "", manuscriptType: "", abstract: "", keywords: "", authorName: form.authorName, authorEmail: form.authorEmail, affiliation: form.affiliation, orcid: form.orcid, allAuthors: "", coverLetter: "", copyrightOriginal: false, copyrightApproved: false, copyrightTransfer: false, copyrightCC: false, copyrightSignature: "" });
       setSelectedFiles([]);
+      setSupplementaryFiles([]);
       setActiveTab("my-submissions");
       await loadSubmissions();
     } catch (err: any) {
@@ -329,6 +344,20 @@ const AuthorDashboard = () => {
                                 <p className="text-sm mt-1">{sub.all_authors}</p>
                               </div>
                             </div>
+
+                            {(sub as any).supplementary_paths?.length > 0 && (
+                              <div>
+                                <Label className="text-xs text-muted-foreground">Supplementary Material</Label>
+                                <div className="mt-1 space-y-1">
+                                  {((sub as any).supplementary_paths as string[]).map((p, i) => (
+                                    <p key={i} className="text-sm flex items-center gap-1">
+                                      <Paperclip className="h-3 w-3 text-muted-foreground" />
+                                      {p.split("/").pop()}
+                                    </p>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
 
                             {/* Donation Card for Accepted Manuscripts */}
                             {sub.status === "accepted" && (
@@ -589,6 +618,36 @@ const AuthorDashboard = () => {
                         <div className="mt-3 space-y-1">
                           {selectedFiles.map((f, i) => (
                             <p key={i} className="text-sm text-muted-foreground">{f.name}</p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Supplementary Material (optional)</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Datasets, tables, figures, videos or any supporting files. They will be published alongside the article as separate downloads.
+                    </p>
+                    <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
+                      <Paperclip className="mx-auto h-6 w-6 text-muted-foreground mb-2" />
+                      <input
+                        type="file"
+                        id="supplementaryFiles"
+                        onChange={e => { if (e.target.files) setSupplementaryFiles(prev => [...prev, ...Array.from(e.target.files!)]); e.target.value = ""; }}
+                        multiple
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip,.png,.jpg,.jpeg,.mp4"
+                        className="hidden"
+                      />
+                      <Button type="button" variant="outline" size="sm" onClick={() => document.getElementById("supplementaryFiles")?.click()}>
+                        Add Supplementary Files
+                      </Button>
+                      {supplementaryFiles.length > 0 && (
+                        <div className="mt-3 space-y-1">
+                          {supplementaryFiles.map((f, i) => (
+                            <div key={i} className="flex items-center justify-center gap-2">
+                              <p className="text-sm text-muted-foreground">{f.name}</p>
+                              <button type="button" className="text-xs text-destructive hover:underline" onClick={() => setSupplementaryFiles(prev => prev.filter((_, j) => j !== i))}>remove</button>
+                            </div>
                           ))}
                         </div>
                       )}

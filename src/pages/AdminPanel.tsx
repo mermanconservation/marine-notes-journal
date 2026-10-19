@@ -467,6 +467,10 @@ const AdminPanel = () => {
         publicationDate: new Date().toISOString().split("T")[0],
         recipient: submission.corresponding_author_email,
         originalFile: publishPdfFile,
+        supplementaryFiles: ((submission as any).supplementary_paths || []).map((p: string) => ({
+          name: p.split("/").pop() || "supplementary-file",
+          url: supabase.storage.from("manuscript-submissions").getPublicUrl(p).data.publicUrl,
+        })),
         blobUrl: "",
       };
 
@@ -546,6 +550,7 @@ const AdminPanel = () => {
           publicationDate: previewData.publicationDate,
           pdfUrl,
           pages: previewData.pages || null,
+          supplementaryFiles: previewData.supplementaryFiles || [],
         },
       });
       previewData.pdfUrl = pdfUrl;

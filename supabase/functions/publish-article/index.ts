@@ -75,6 +75,18 @@ function validateArticle(article: any, requireDoi: boolean): { valid: boolean; e
   if (article.pages != null && typeof article.pages !== "string") {
     return { valid: false, error: "Pages must be a string (e.g. '1-15')" };
   }
+  if (article.supplementaryFiles != null) {
+    if (!Array.isArray(article.supplementaryFiles) || article.supplementaryFiles.length > 20) {
+      return { valid: false, error: "Supplementary files must be an array of up to 20 items" };
+    }
+    for (const f of article.supplementaryFiles) {
+      if (!f || typeof f.name !== "string" || f.name.length < 1 || f.name.length > 200 ||
+          typeof f.url !== "string" || f.url.length > 1000 ||
+          !/^(https?:\/\/|\/)/.test(f.url)) {
+        return { valid: false, error: "Invalid supplementary file entry" };
+      }
+    }
+  }
   return { valid: true };
 }
 
@@ -92,6 +104,10 @@ function sanitizeArticle(article: any) {
     pdfUrl: article.pdfUrl,
     externalDoi: article.externalDoi || null,
     pages: article.pages || null,
+    supplementaryFiles: (article.supplementaryFiles || []).map((f: any) => ({
+      name: stripHtml(f.name),
+      url: f.url,
+    })),
   };
 }
 
@@ -272,6 +288,7 @@ Deno.serve(async (req) => {
         abstract: clean.abstract,
         external_doi: clean.externalDoi,
         pages: clean.pages,
+        supplementary_files: clean.supplementaryFiles,
       }).select().single();
 
       if (error) {
@@ -307,6 +324,7 @@ Deno.serve(async (req) => {
         pages: clean.pages,
       };
       if (clean.pdfUrl) updatePayload.pdf_url = clean.pdfUrl;
+      if (article.supplementaryFiles != null) updatePayload.supplementary_files = clean.supplementaryFiles;
 
       const { data, error } = await supabase.from("articles")
         .update(updatePayload)

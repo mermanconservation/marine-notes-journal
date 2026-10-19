@@ -20,6 +20,7 @@ import {
 const SubmitManuscript = () => {
   const { toast } = useToast();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [supplementaryFiles, setSupplementaryFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [emailData, setEmailData] = useState({ subject: "", body: "" });
@@ -79,6 +80,9 @@ const SubmitManuscript = () => {
 
       // Prepare email content with full submission details
       const filesList = selectedFiles.map(f => f.name).join('\n   - ');
+      const suppList = supplementaryFiles.length > 0
+        ? `\n\nSUPPLEMENTARY MATERIAL (please attach too):\n   - ${supplementaryFiles.map(f => f.name).join('\n   - ')}`
+        : '';
       const emailSubject = `New Manuscript Submission: ${formData.title}`;
       const emailBody = `Dear Editor,
 
@@ -115,7 +119,7 @@ Signature: ${copyrightData.authorSignature}
 Date: ${copyrightData.date}
 
 IMPORTANT - PLEASE ATTACH THE FOLLOWING FILES:
-   - ${filesList}
+   - ${filesList}${suppList}
 
 Best regards,
 ${formData.correspondingAuthor}`;
@@ -151,6 +155,7 @@ ${formData.correspondingAuthor}`;
         creativeCommons: false
       });
       setSelectedFiles([]);
+      setSupplementaryFiles([]);
 
     } catch (error: any) {
       console.error('Submission error:', error);
@@ -453,6 +458,51 @@ ${formData.correspondingAuthor}`;
                         ))}
                       </div>
                     )}
+
+                    {/* Supplementary Material */}
+                    <div className="border-2 border-dashed border-border rounded-lg p-6 text-center">
+                      <FileText className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
+                      <p className="font-medium mb-1">Supplementary Material (optional)</p>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Datasets, tables, figures, videos or other supporting files. If the article is published, these become separate downloads on the article page.
+                      </p>
+                      <input
+                        type="file"
+                        id="supplementaryUpload"
+                        onChange={(e) => {
+                          if (e.target.files) setSupplementaryFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                          e.target.value = "";
+                        }}
+                        multiple
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip,.png,.jpg,.jpeg,.mp4"
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => document.getElementById('supplementaryUpload')?.click()}
+                      >
+                        Add Supplementary Files
+                      </Button>
+                      {supplementaryFiles.length > 0 && (
+                        <div className="mt-3 space-y-2 text-left">
+                          <Label>Supplementary Files:</Label>
+                          {supplementaryFiles.map((file, index) => (
+                            <div key={index} className="flex items-center justify-between p-2 bg-muted rounded-md">
+                              <span className="text-sm truncate flex-1">{file.name}</span>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setSupplementaryFiles(prev => prev.filter((_, i) => i !== index))}
+                              >
+                                Remove
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
 

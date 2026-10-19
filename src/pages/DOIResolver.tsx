@@ -105,9 +105,9 @@ const DOIResolver = () => {
         <CardHeader className="border-b">
           <div className="flex items-start justify-between">
             <div className="flex-1">
-              <CardTitle className="text-3xl font-academic mb-4">
+              <h1 className="text-3xl font-academic font-semibold tracking-tight mb-4">
                 {article.title}
-              </CardTitle>
+              </h1>
               <AuthorWithOrcid authors={article.authors} orcidIds={article.orcidIds} />
               <div className="flex flex-wrap gap-4 text-sm">
                 <span className="text-muted-foreground">

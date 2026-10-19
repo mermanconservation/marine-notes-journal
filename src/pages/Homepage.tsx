@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { FileText, Users, Globe, BookOpen, ArrowRight } from "lucide-react";
 import heroImage from "@/assets/hero-ocean.jpg";
 import { useArticles } from "@/hooks/useArticles";
@@ -42,6 +43,10 @@ const Homepage = () => {
     }));
 
   return (
+    <>
+      <Helmet>
+        <link rel="canonical" href="https://www.marinenotesjournal.com/" />
+      </Helmet>
     <div>
       {/* Hero Section */}
       <section className="relative py-20 lg:py-32 bg-gradient-waves overflow-hidden">
@@ -183,6 +188,7 @@ const Homepage = () => {
         </div>
       </section>
     </div>
+    </>
   );
 };
 

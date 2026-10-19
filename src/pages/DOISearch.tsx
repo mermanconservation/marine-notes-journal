@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardDescription } from "@/components/ui/card";
 import { Search } from "lucide-react";
 import articlesData from "@/data/articles.json";
 
@@ -22,9 +22,9 @@ const DOISearch = () => {
     <div className="container mx-auto px-4 py-20">
       <Card className="max-w-2xl mx-auto">
         <CardHeader>
-          <CardTitle className="text-3xl font-academic">Article ID Lookup</CardTitle>
+          <h1 className="text-3xl font-academic font-semibold tracking-tight">Article ID Lookup</h1>
           <CardDescription>
-            Search for articles using their Article ID
+            Find any article published in Marine Notes Journal by entering its Article ID or pasting its full resolver link
           </CardDescription>
         </CardHeader>
         <CardContent>

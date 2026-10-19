@@ -1,3 +1,8 @@
+export interface SupplementaryFile {
+  name: string;
+  url: string;
+}
+
 export interface ArticleMetrics {
   citations: number;
   downloads: number;
@@ -21,6 +26,7 @@ export interface Article {
   issue: string;
   abstract: string;
   pages?: string;
+  supplementaryFiles?: SupplementaryFile[];
   metrics?: ArticleMetrics;
 }
 

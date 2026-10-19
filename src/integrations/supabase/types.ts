@@ -28,6 +28,7 @@ export type Database = {
           pdf_url: string | null
           publication_date: string
           resolver_url: string
+          supplementary_files: Json
           title: string
           type: string
           volume: string
@@ -45,6 +46,7 @@ export type Database = {
           pdf_url?: string | null
           publication_date?: string
           resolver_url: string
+          supplementary_files?: Json
           title: string
           type: string
           volume: string
@@ -62,6 +64,7 @@ export type Database = {
           pdf_url?: string | null
           publication_date?: string
           resolver_url?: string
+          supplementary_files?: Json
           title?: string
           type?: string
           volume?: string
@@ -175,6 +178,7 @@ export type Database = {
           submitted_by_editor_email: string | null
           submitted_by_editor_name: string | null
           submitted_by_user_id: string | null
+          supplementary_paths: string[]
           title: string
           updated_at: string
           user_id: string | null
@@ -202,6 +206,7 @@ export type Database = {
           submitted_by_editor_email?: string | null
           submitted_by_editor_name?: string | null
           submitted_by_user_id?: string | null
+          supplementary_paths?: string[]
           title: string
           updated_at?: string
           user_id?: string | null
@@ -229,6 +234,7 @@ export type Database = {
           submitted_by_editor_email?: string | null
           submitted_by_editor_name?: string | null
           submitted_by_user_id?: string | null
+          supplementary_paths?: string[]
           title?: string
           updated_at?: string
           user_id?: string | null

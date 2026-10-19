@@ -403,19 +403,49 @@ const AuthorDashboard = () => {
                               </div>
                             </div>
 
-                            {(sub as any).supplementary_paths?.length > 0 && (
-                              <div>
-                                <Label className="text-xs text-muted-foreground">Supplementary Material</Label>
+                            {/* Supplementary Material — authors manage their own files at any stage */}
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Supplementary Material</Label>
+                              {(sub as any).supplementary_paths?.length > 0 ? (
                                 <div className="mt-1 space-y-1">
                                   {((sub as any).supplementary_paths as string[]).map((p, i) => (
-                                    <p key={i} className="text-sm flex items-center gap-1">
-                                      <Paperclip className="h-3 w-3 text-muted-foreground" />
+                                    <button
+                                      key={i}
+                                      onClick={() => downloadSupplementary(p)}
+                                      className="text-sm flex items-center gap-1 text-primary hover:underline"
+                                    >
+                                      <Download className="h-3 w-3" />
                                       {p.split("/").pop()}
-                                    </p>
+                                    </button>
                                   ))}
                                 </div>
+                              ) : (
+                                <p className="text-xs text-muted-foreground mt-1">No supplementary files yet.</p>
+                              )}
+                              <div className="mt-2">
+                                <input
+                                  type="file"
+                                  multiple
+                                  className="hidden"
+                                  id={`supp-add-${sub.id}`}
+                                  onChange={(e) => { addSupplementaryFiles(sub.id, e.target.files); e.target.value = ""; }}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={suppUploadingFor === sub.id}
+                                  onClick={() => document.getElementById(`supp-add-${sub.id}`)?.click()}
+                                >
+                                  {suppUploadingFor === sub.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                                  ) : (
+                                    <Paperclip className="h-3 w-3 mr-1" />
+                                  )}
+                                  Add Supplementary Files
+                                </Button>
                               </div>
-                            )}
+                            </div>
 
                             {/* Donation Card for Accepted Manuscripts */}
                             {sub.status === "accepted" && (

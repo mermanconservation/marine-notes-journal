@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   Loader2, FileText, Clock, CheckCircle, XCircle, RotateCcw,
   LogOut, MessageSquare, UserCheck, Filter, ExternalLink, Bot, Lock, Bell, BellDot,
-  Zap, Send, ChevronDown, Download, Copy, Play, Upload, Trash2, Wand2,
+  Zap, Send, ChevronDown, Download, Copy, Play, Upload, Trash2, Wand2, Paperclip,
 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";

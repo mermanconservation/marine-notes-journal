@@ -3,7 +3,7 @@ import { formatDateLong } from "@/lib/utils";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Download, ArrowLeft, Quote } from "lucide-react";
+import { FileText, Download, ArrowLeft, Quote, Paperclip } from "lucide-react";
 import type { Article } from "@/types/article";
 import { PromotionAssistant } from "@/components/PromotionAssistant";
 import { AuthorWithOrcid } from "@/components/AuthorWithOrcid";
@@ -163,6 +163,37 @@ const DOIResolver = () => {
               {article.authors} ({new Date(article.publicationDate).getFullYear()}). {article.title}. <em>Marine Notes Journal</em>, <em>{article.volume}</em>({article.issue}){article.pages ? `, ${article.pages}` : ""}. {(article as any).externalDoi ? `https://doi.org/${(article as any).externalDoi}` : article.doi}
             </p>
           </div>
+
+          {article.supplementaryFiles && article.supplementaryFiles.length > 0 && (
+            <div className="mb-6 p-4 border rounded-lg">
+              <div className="flex items-center gap-2 mb-3">
+                <Paperclip className="h-5 w-5 text-primary" />
+                <h3 className="text-lg font-semibold">Supplementary Material</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Supporting files provided by the author(s), published alongside this article.
+              </p>
+              <div className="space-y-2">
+                {article.supplementaryFiles.map((f, i) => (
+                  <div key={i} className="flex items-center justify-between gap-3 p-2 rounded-md bg-muted/50">
+                    <span className="text-sm font-medium truncate flex-1">{f.name}</span>
+                    <div className="flex gap-2 shrink-0">
+                      <Button asChild size="sm" variant="outline">
+                        <a href={f.url} target="_blank" rel="noopener noreferrer">
+                          <FileText className="mr-1 h-3 w-3" /> View
+                        </a>
+                      </Button>
+                      <Button asChild size="sm" variant="outline">
+                        <a href={f.url} download>
+                          <Download className="mr-1 h-3 w-3" /> Download
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="mb-6">
             <PromotionAssistant article={article} />

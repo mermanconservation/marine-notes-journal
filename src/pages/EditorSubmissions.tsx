@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { formatDate, formatDateTime } from "@/lib/utils";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -773,6 +773,100 @@ const EditorSubmissions = () => {
             </Button>
           </div>
         </div>
+
+        {/* Overview dashboard — track all submissions at a glance */}
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Submissions Overview</CardTitle>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/submit">
+                  <FileText className="h-3 w-3 mr-1" /> Submission Form
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border text-left text-xs text-muted-foreground">
+                    <th className="px-4 py-2 font-medium">Title</th>
+                    <th className="px-4 py-2 font-medium">Author</th>
+                    <th className="px-4 py-2 font-medium">Status</th>
+                    <th className="px-4 py-2 font-medium">Supplementary</th>
+                    <th className="px-4 py-2 font-medium">Submitted</th>
+                    <th className="px-4 py-2 font-medium"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {submissions.map(sub => {
+                    const suppPaths = ((sub as any).supplementary_paths as string[]) || [];
+                    return (
+                      <tr
+                        key={sub.id}
+                        className={`border-b border-border last:border-b-0 hover:bg-accent/40 cursor-pointer ${selectedSub?.id === sub.id ? "bg-accent/30" : ""}`}
+                        onClick={() => { setSelectedSub(sub); setActionComment(""); setAiReviewResult(null); }}
+                      >
+                        <td className="px-4 py-2 max-w-[260px]">
+                          <span className="line-clamp-1 font-medium">{sub.title}</span>
+                          {(sub as any).submitted_by_editor && (
+                            <span className="text-[10px] text-primary">Editor upload</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap">
+                          <span className="block">{sub.corresponding_author_name}</span>
+                          <span className="text-xs text-muted-foreground">{sub.corresponding_author_email}</span>
+                        </td>
+                        <td className="px-4 py-2">
+                          <Badge className={`${statusColor(sub.status)} text-xs whitespace-nowrap`}>
+                            {STATUS_OPTIONS.find(s => s.value === sub.status)?.label || sub.status}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-2">
+                          {suppPaths.length === 0 ? (
+                            <span className="text-xs text-muted-foreground">None</span>
+                          ) : (
+                            <div className="space-y-0.5">
+                              {suppPaths.map((p, i) => (
+                                <button
+                                  key={i}
+                                  onClick={(e) => { e.stopPropagation(); handleFileClick(p, sub.user_id); }}
+                                  className="flex items-center gap-1 text-xs text-primary hover:underline"
+                                >
+                                  <Paperclip className="h-3 w-3" />
+                                  <span className="max-w-[160px] truncate">{p.split("/").pop()}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-4 py-2 whitespace-nowrap text-xs text-muted-foreground">
+                          {formatDate(sub.created_at)}
+                        </td>
+                        <td className="px-4 py-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs"
+                            onClick={(e) => { e.stopPropagation(); setSelectedSub(sub); setActionComment(""); setAiReviewResult(null); }}
+                          >
+                            Open
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {submissions.length === 0 && (
+                    <tr>
+                      <td colSpan={6} className="px-4 py-6 text-center text-muted-foreground">No submissions yet</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-6 lg:grid-cols-5">
           {/* Submissions list */}

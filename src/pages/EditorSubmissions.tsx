@@ -235,6 +235,41 @@ const EditorSubmissions = () => {
   const [authorUploadSaving, setAuthorUploadSaving] = useState(false);
   const [authorUploadFile, setAuthorUploadFile] = useState<File | null>(null);
   const [authorUploadSupplementary, setAuthorUploadSupplementary] = useState<File[]>([]);
+  // Add supplementary files to an existing editor-uploaded submission (any status, before publishing)
+  const [addSuppFiles, setAddSuppFiles] = useState<File[]>([]);
+  const [addSuppSaving, setAddSuppSaving] = useState(false);
+
+  const addSupplementaryToSubmission = async () => {
+    if (!user || !selectedSub || addSuppFiles.length === 0) return;
+    setAddSuppSaving(true);
+    try {
+      const newPaths: string[] = [];
+      for (const file of addSuppFiles) {
+        const safe = file.name.replace(/[^\w\-\.]+/g, "-");
+        const path = `submissions/${user.id}/supplementary/${Date.now()}-${safe}`;
+        const { error: upErr } = await supabase.storage
+          .from("manuscript-submissions")
+          .upload(path, file, { upsert: false, contentType: file.type });
+        if (upErr) throw upErr;
+        newPaths.push(path);
+      }
+      const merged = [...(((selectedSub as any).supplementary_paths as string[]) || []), ...newPaths];
+      const { error } = await supabase
+        .from("manuscript_submissions")
+        .update({ supplementary_paths: merged } as any)
+        .eq("id", selectedSub.id);
+      if (error) throw error;
+      toast({ title: "Supplementary material added", description: `${newPaths.length} file(s) attached to this submission.` });
+      setAddSuppFiles([]);
+      const { data: refreshed } = await supabase
+        .from("manuscript_submissions").select("*").eq("id", selectedSub.id).maybeSingle();
+      if (refreshed) setSelectedSub(refreshed as any);
+      await loadSubmissions();
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setAddSuppSaving(false);
+  };
   const [authorUploadForm, setAuthorUploadForm] = useState({
     title: "",
     manuscript_type: "",

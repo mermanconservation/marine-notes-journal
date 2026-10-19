@@ -20,6 +20,7 @@ import {
 const SubmitManuscript = () => {
   const { toast } = useToast();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [supplementaryFiles, setSupplementaryFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [emailData, setEmailData] = useState({ subject: "", body: "" });
@@ -79,6 +80,9 @@ const SubmitManuscript = () => {
 
       // Prepare email content with full submission details
       const filesList = selectedFiles.map(f => f.name).join('\n   - ');
+      const suppList = supplementaryFiles.length > 0
+        ? `\n\nSUPPLEMENTARY MATERIAL (please attach too):\n   - ${supplementaryFiles.map(f => f.name).join('\n   - ')}`
+        : '';
       const emailSubject = `New Manuscript Submission: ${formData.title}`;
       const emailBody = `Dear Editor,
 
@@ -115,7 +119,7 @@ Signature: ${copyrightData.authorSignature}
 Date: ${copyrightData.date}
 
 IMPORTANT - PLEASE ATTACH THE FOLLOWING FILES:
-   - ${filesList}
+   - ${filesList}${suppList}
 
 Best regards,
 ${formData.correspondingAuthor}`;
@@ -151,6 +155,7 @@ ${formData.correspondingAuthor}`;
         creativeCommons: false
       });
       setSelectedFiles([]);
+      setSupplementaryFiles([]);
 
     } catch (error: any) {
       console.error('Submission error:', error);

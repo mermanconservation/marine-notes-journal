@@ -13,7 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, Plus, FileText, Clock, CheckCircle, XCircle, RotateCcw, LogOut, Upload, Check, Bot, Heart, Paperclip } from "lucide-react";
+import { Loader2, Plus, FileText, Clock, CheckCircle, XCircle, RotateCcw, LogOut, Upload, Check, Bot, Heart, Paperclip, Download, Link2 } from "lucide-react";
 import { AiReviewNote, isAiReviewComment } from "@/components/AiReviewNote";
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: any }> = {
@@ -101,7 +101,19 @@ const AuthorDashboard = () => {
 
   useEffect(() => {
     if (user) {
-      loadSubmissions();
+      // Link any manuscripts an editor uploaded under this author's email before they registered
+      (async () => {
+        try {
+          const { data: claimed } = await supabase.rpc("claim_submissions_by_email" as any);
+          if (typeof claimed === "number" && claimed > 0) {
+            toast({
+              title: "Manuscripts linked to your account",
+              description: `${claimed} manuscript${claimed > 1 ? "s" : ""} previously uploaded by the editorial team under your email ${claimed > 1 ? "are" : "is"} now in your dashboard.`,
+            });
+          }
+        } catch { /* non-fatal */ }
+        loadSubmissions();
+      })();
       // Pre-fill author info from user metadata
       const meta = user.user_metadata;
       setForm(f => ({
@@ -111,6 +123,52 @@ const AuthorDashboard = () => {
       }));
     }
   }, [user]);
+
+  // Supplementary material: authors can add/download their own files at any stage
+  const [suppUploadingFor, setSuppUploadingFor] = useState<string | null>(null);
+
+  const downloadSupplementary = async (path: string) => {
+    const { data, error } = await supabase.storage.from("manuscript-submissions").download(path);
+    if (error || !data) {
+      toast({ title: "Download failed", description: error?.message || "File not found", variant: "destructive" });
+      return;
+    }
+    const url = URL.createObjectURL(data);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = path.split("/").pop() || "supplementary-file";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const addSupplementaryFiles = async (submissionId: string, files: FileList | null) => {
+    if (!user || !files || files.length === 0) return;
+    setSuppUploadingFor(submissionId);
+    try {
+      const paths: string[] = [];
+      for (const file of Array.from(files)) {
+        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+        const path = `submissions/${user.id}/supplementary/${Date.now()}-${safeName}`;
+        const { error: uploadError } = await supabase.storage
+          .from("manuscript-submissions")
+          .upload(path, file, { upsert: true });
+        if (uploadError) throw uploadError;
+        paths.push(path);
+      }
+      const { error } = await supabase.rpc("add_supplementary_paths" as any, {
+        _submission_id: submissionId,
+        _paths: paths,
+      });
+      if (error) throw error;
+      toast({ title: "Supplementary material added", description: `${paths.length} file(s) attached to your submission.` });
+      await loadSubmissions();
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setSuppUploadingFor(null);
+  };
 
   const loadSubmissions = async () => {
     setLoading(true);

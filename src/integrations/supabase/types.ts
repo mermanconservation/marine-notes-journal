@@ -346,6 +346,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_supplementary_paths: {
+        Args: { _paths: string[]; _submission_id: string }
+        Returns: undefined
+      }
+      claim_submissions_by_email: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

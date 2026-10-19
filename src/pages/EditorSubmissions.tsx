@@ -982,6 +982,37 @@ const EditorSubmissions = () => {
                           </button>
                         ))}
                       </div>
+                     </div>
+                  )}
+
+                  {/* Add supplementary material later — editor-uploaded submissions, any status before publishing */}
+                  {(selectedSub as any).submitted_by_editor && (
+                    <div className="p-3 rounded-md border border-dashed border-primary/40 bg-primary/5 space-y-2">
+                      <Label className="text-xs text-muted-foreground block">
+                        Add Supplementary Material (editor upload — available until the article is published, even after a decision)
+                      </Label>
+                      <Input
+                        type="file"
+                        multiple
+                        onChange={(e) => {
+                          if (e.target.files) setAddSuppFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                          e.target.value = "";
+                        }}
+                      />
+                      {addSuppFiles.length > 0 && (
+                        <div className="space-y-1">
+                          {addSuppFiles.map((f, i) => (
+                            <div key={i} className="flex items-center justify-between text-xs">
+                              <span className="flex items-center gap-1"><Paperclip className="h-3 w-3" /> {f.name}</span>
+                              <button type="button" className="text-destructive hover:underline" onClick={() => setAddSuppFiles(prev => prev.filter((_, j) => j !== i))}>remove</button>
+                            </div>
+                          ))}
+                          <Button size="sm" onClick={addSupplementaryToSubmission} disabled={addSuppSaving}>
+                            {addSuppSaving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Upload className="h-3 w-3 mr-1" />}
+                            Attach {addSuppFiles.length} file{addSuppFiles.length > 1 ? "s" : ""}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
 

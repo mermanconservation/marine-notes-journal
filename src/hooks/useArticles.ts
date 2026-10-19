@@ -17,6 +17,7 @@ export interface UnifiedArticle {
   issue: string;
   abstract: string;
   pages?: string;
+  supplementaryFiles?: { name: string; url: string }[];
 }
 
 function mapStaticArticles(): UnifiedArticle[] {
@@ -34,6 +35,7 @@ function mapStaticArticles(): UnifiedArticle[] {
     issue: a.issue,
     abstract: a.abstract,
     pages: (a as any).pages,
+    supplementaryFiles: (a as any).supplementaryFiles || undefined,
   }));
 }
 
@@ -60,6 +62,7 @@ async function fetchDbArticles(): Promise<UnifiedArticle[]> {
     issue: a.issue,
     abstract: a.abstract,
     pages: a.pages || undefined,
+    supplementaryFiles: Array.isArray(a.supplementary_files) ? a.supplementary_files : undefined,
   }));
 }
 

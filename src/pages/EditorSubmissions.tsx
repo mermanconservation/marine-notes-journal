@@ -234,6 +234,7 @@ const EditorSubmissions = () => {
   const [showAuthorUpload, setShowAuthorUpload] = useState(false);
   const [authorUploadSaving, setAuthorUploadSaving] = useState(false);
   const [authorUploadFile, setAuthorUploadFile] = useState<File | null>(null);
+  const [authorUploadSupplementary, setAuthorUploadSupplementary] = useState<File[]>([]);
   const [authorUploadForm, setAuthorUploadForm] = useState({
     title: "",
     manuscript_type: "",
@@ -249,6 +250,7 @@ const EditorSubmissions = () => {
 
   const resetAuthorUpload = () => {
     setAuthorUploadFile(null);
+    setAuthorUploadSupplementary([]);
     setAuthorUploadForm({
       title: "", manuscript_type: "", abstract: "", keywords: "",
       corresponding_author_name: "", corresponding_author_email: "",
@@ -289,6 +291,18 @@ const EditorSubmissions = () => {
         file_paths.push(path);
       }
 
+      // Upload supplementary material files (optional)
+      const supplementary_paths: string[] = [];
+      for (const file of authorUploadSupplementary) {
+        const safe = file.name.replace(/[^\w\-\.]+/g, "-");
+        const path = `submissions/${user.id}/supplementary/${Date.now()}-${safe}`;
+        const { error: upErr } = await supabase.storage
+          .from("manuscript-submissions")
+          .upload(path, file, { upsert: false, contentType: file.type });
+        if (upErr) throw upErr;
+        supplementary_paths.push(path);
+      }
+
       const payload: any = {
         title: f.title,
         manuscript_type: f.manuscript_type,
@@ -302,6 +316,7 @@ const EditorSubmissions = () => {
         cover_letter: f.cover_letter || null,
         copyright_agreed: true,
         file_paths,
+        supplementary_paths,
         status: "pending",
         pipeline_status: "pending",
         user_id: resolvedUserId,
@@ -491,6 +506,7 @@ const EditorSubmissions = () => {
               orcidIds: publishData.orcid_ids || [],
               pdfUrl,
               externalDoi: publishData.externalDoi || null,
+              supplementaryFiles: publishData.supplementaryFiles || [],
             },
           }),
         }
@@ -920,6 +936,20 @@ const EditorSubmissions = () => {
                     </div>
                   )}
 
+                  {/* Supplementary Material */}
+                  {(selectedSub as any).supplementary_paths && (selectedSub as any).supplementary_paths.length > 0 && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-2 block">Supplementary Material</Label>
+                      <div className="space-y-1">
+                        {((selectedSub as any).supplementary_paths as string[]).map((fp, i) => (
+                          <button key={i} onClick={() => handleFileClick(fp, selectedSub.user_id)} className="flex items-center gap-2 text-sm text-primary hover:underline cursor-pointer">
+                            <Paperclip className="h-3 w-3" /> {fp.split("/").pop()}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Download Manuscript Files */}
                   {selectedSub.file_paths && selectedSub.file_paths.length > 0 && (
                     <div className="flex gap-2">
@@ -1227,9 +1257,15 @@ const EditorSubmissions = () => {
                                     s.status === 'accepted'
                                   );
 
-                                  setPublishData({
+                                   const supplementaryFiles = ((selectedSub as any).supplementary_paths || []).map((p: string) => ({
+                                    name: p.split("/").pop() || "supplementary-file",
+                                    url: supabase.storage.from("manuscript-submissions").getPublicUrl(p).data.publicUrl,
+                                  }));
+
+                                   setPublishData({
                                     ...meta,
                                     pdfUrl,
+                                    supplementaryFiles,
                                     submittedDate: selectedSub.created_at,
                                     acceptedDate: selectedSub.decision_date || new Date().toISOString(),
                                     approvedDate: new Date().toISOString(),
@@ -1735,6 +1771,30 @@ Pages: ${publishData.articleNumber}`}
                 <div className="md:col-span-2">
                   <Label>Manuscript File (PDF/DOC)</Label>
                   <Input type="file" accept=".pdf,.doc,.docx" onChange={(e) => setAuthorUploadFile(e.target.files?.[0] || null)} />
+                </div>
+                <div className="md:col-span-2">
+                  <Label>Supplementary Material (optional)</Label>
+                  <Input
+                    type="file"
+                    multiple
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip,.png,.jpg,.jpeg,.mp4"
+                    onChange={(e) => {
+                      if (e.target.files) setAuthorUploadSupplementary(prev => [...prev, ...Array.from(e.target.files!)]);
+                      e.target.value = "";
+                    }}
+                  />
+                  {authorUploadSupplementary.length > 0 && (
+                    <div className="mt-2 space-y-1">
+                      {authorUploadSupplementary.map((f, i) => (
+                        <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Paperclip className="h-3 w-3" />
+                          <span className="flex-1 truncate">{f.name}</span>
+                          <button type="button" className="text-xs text-destructive hover:underline" onClick={() => setAuthorUploadSupplementary(prev => prev.filter((_, j) => j !== i))}>remove</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-1">Datasets, tables, figures — published as separate downloads with the article.</p>
                 </div>
               </div>
 

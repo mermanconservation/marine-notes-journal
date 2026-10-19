@@ -235,6 +235,41 @@ const EditorSubmissions = () => {
   const [authorUploadSaving, setAuthorUploadSaving] = useState(false);
   const [authorUploadFile, setAuthorUploadFile] = useState<File | null>(null);
   const [authorUploadSupplementary, setAuthorUploadSupplementary] = useState<File[]>([]);
+  // Add supplementary files to an existing editor-uploaded submission (any status, before publishing)
+  const [addSuppFiles, setAddSuppFiles] = useState<File[]>([]);
+  const [addSuppSaving, setAddSuppSaving] = useState(false);
+
+  const addSupplementaryToSubmission = async () => {
+    if (!user || !selectedSub || addSuppFiles.length === 0) return;
+    setAddSuppSaving(true);
+    try {
+      const newPaths: string[] = [];
+      for (const file of addSuppFiles) {
+        const safe = file.name.replace(/[^\w\-\.]+/g, "-");
+        const path = `submissions/${user.id}/supplementary/${Date.now()}-${safe}`;
+        const { error: upErr } = await supabase.storage
+          .from("manuscript-submissions")
+          .upload(path, file, { upsert: false, contentType: file.type });
+        if (upErr) throw upErr;
+        newPaths.push(path);
+      }
+      const merged = [...(((selectedSub as any).supplementary_paths as string[]) || []), ...newPaths];
+      const { error } = await supabase
+        .from("manuscript_submissions")
+        .update({ supplementary_paths: merged } as any)
+        .eq("id", selectedSub.id);
+      if (error) throw error;
+      toast({ title: "Supplementary material added", description: `${newPaths.length} file(s) attached to this submission.` });
+      setAddSuppFiles([]);
+      const { data: refreshed } = await supabase
+        .from("manuscript_submissions").select("*").eq("id", selectedSub.id).maybeSingle();
+      if (refreshed) setSelectedSub(refreshed as any);
+      await loadSubmissions();
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    }
+    setAddSuppSaving(false);
+  };
   const [authorUploadForm, setAuthorUploadForm] = useState({
     title: "",
     manuscript_type: "",
@@ -947,6 +982,37 @@ const EditorSubmissions = () => {
                           </button>
                         ))}
                       </div>
+                     </div>
+                  )}
+
+                  {/* Add supplementary material later — editor-uploaded submissions, any status before publishing */}
+                  {(selectedSub as any).submitted_by_editor && (
+                    <div className="p-3 rounded-md border border-dashed border-primary/40 bg-primary/5 space-y-2">
+                      <Label className="text-xs text-muted-foreground block">
+                        Add Supplementary Material (editor upload — available until the article is published, even after a decision)
+                      </Label>
+                      <Input
+                        type="file"
+                        multiple
+                        onChange={(e) => {
+                          if (e.target.files) setAddSuppFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                          e.target.value = "";
+                        }}
+                      />
+                      {addSuppFiles.length > 0 && (
+                        <div className="space-y-1">
+                          {addSuppFiles.map((f, i) => (
+                            <div key={i} className="flex items-center justify-between text-xs">
+                              <span className="flex items-center gap-1"><Paperclip className="h-3 w-3" /> {f.name}</span>
+                              <button type="button" className="text-destructive hover:underline" onClick={() => setAddSuppFiles(prev => prev.filter((_, j) => j !== i))}>remove</button>
+                            </div>
+                          ))}
+                          <Button size="sm" onClick={addSupplementaryToSubmission} disabled={addSuppSaving}>
+                            {addSuppSaving ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Upload className="h-3 w-3 mr-1" />}
+                            Attach {addSuppFiles.length} file{addSuppFiles.length > 1 ? "s" : ""}
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
 

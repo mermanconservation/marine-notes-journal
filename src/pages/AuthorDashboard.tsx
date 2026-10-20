@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PipelineProgress } from "@/components/PipelineProgress";
 import { formatDate } from "@/lib/utils";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -124,6 +125,17 @@ const AuthorDashboard = () => {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (!user || !submissions.some(sub => sub.pipeline_status === "running" || sub.pipeline_status === "pending")) return;
+    let refreshing = false;
+    const timer = window.setInterval(async () => {
+      if (refreshing) return;
+      refreshing = true;
+      try { await loadSubmissions(true); } finally { refreshing = false; }
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [user, submissions.some(sub => sub.pipeline_status === "running" || sub.pipeline_status === "pending")]);
+
   // Supplementary material: authors can add/download their own files at any stage
   const [suppUploadingFor, setSuppUploadingFor] = useState<string | null>(null);
 
@@ -170,12 +182,12 @@ const AuthorDashboard = () => {
     setSuppUploadingFor(null);
   };
 
-  const loadSubmissions = async () => {
-    setLoading(true);
+  const loadSubmissions = async (quiet = false) => {
+    if (!quiet) setLoading(true);
     const { data, error } = await supabase
       .from("manuscript_submissions")
       .select("*")
-      .eq("user_id", user!.id)
+      .eq("user_id", user?.id || "")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -298,7 +310,10 @@ const AuthorDashboard = () => {
       if (insertedSub) {
         supabase.functions.invoke("auto-review-pipeline", {
           body: { submission_id: insertedSub.id },
-        }).catch((err) => console.error("Auto-review pipeline failed:", err));
+        }).then(({ error, data }) => {
+          if (error || data?.error) toast({ title: "Review could not finish", description: data?.error || error?.message, variant: "destructive" });
+          void loadSubmissions(true);
+        }).catch((err) => toast({ title: "Review could not finish", description: err.message, variant: "destructive" }));
       }
 
       toast({ title: "Submitted!", description: "Your manuscript has been submitted for review." });
@@ -386,6 +401,7 @@ const AuthorDashboard = () => {
                           </Badge>
                         </div>
 
+                        {sub.pipeline_status && <PipelineProgress status={sub.pipeline_status} results={sub.pipeline_results} />}
                         {selectedSubmission?.id === sub.id && (
                           <div className="mt-4 pt-4 border-t border-border space-y-4">
                             <div>
@@ -561,22 +577,6 @@ const AuthorDashboard = () => {
                                     <p className="text-sm text-muted-foreground mt-0.5">Manuscript submitted for review</p>
                                   </div>
                                 </div>
-                                {/* AI Pipeline processing indicator */}
-                                {(sub.pipeline_status === "pending" || sub.pipeline_status === "running") && subReviews.length === 0 && (
-                                  <div className="relative">
-                                    <div className="absolute -left-[calc(0.5rem+1px)] top-1 h-3 w-3 rounded-full border-2 border-background bg-blue-500 animate-pulse" />
-                                    <div className="ml-2">
-                                      <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className="text-xs">
-                                          <Bot className="h-3 w-3 mr-1 animate-spin" /> AI Review In Progress
-                                        </Badge>
-                                      </div>
-                                      <p className="text-sm text-muted-foreground mt-0.5">
-                                        Your manuscript is being reviewed by the automated pipeline. This may take a few minutes...
-                                      </p>
-                                    </div>
-                                  </div>
-                                )}
                                 {/* Review entries in chronological order */}
                                 {[...subReviews].reverse().map((r) => {
                                   const isAiReview = isAiReviewComment(r.comment);

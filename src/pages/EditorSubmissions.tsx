@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { PipelineProgress } from "@/components/PipelineProgress";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { useNavigate, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -418,8 +419,8 @@ const EditorSubmissions = () => {
     }
   };
 
-  const loadSubmissions = async () => {
-    setLoading(true);
+  const loadSubmissions = async (quiet = false) => {
+    if (!quiet) setLoading(true);
     const { data, error } = await supabase
       .from("manuscript_submissions")
       .select("*")
@@ -432,6 +433,7 @@ const EditorSubmissions = () => {
     }
 
     setSubmissions(data || []);
+    setSelectedSub(previous => previous ? data?.find(sub => sub.id === previous.id) || previous : null);
 
     if (data && data.length > 0) {
       const { data: reviewData } = await supabase
@@ -450,6 +452,32 @@ const EditorSubmissions = () => {
       }
     }
     setLoading(false);
+  };
+
+  useEffect(() => {
+    if (!isEditor || !submissions.some(sub => sub.pipeline_status === "running" || sub.pipeline_status === "pending")) return;
+    let refreshing = false;
+    const timer = window.setInterval(async () => {
+      if (refreshing) return;
+      refreshing = true;
+      try { await loadSubmissions(true); } finally { refreshing = false; }
+    }, 3000);
+    return () => window.clearInterval(timer);
+  }, [isEditor, submissions.some(sub => sub.pipeline_status === "running" || sub.pipeline_status === "pending")]);
+
+  const startPipeline = () => {
+    if (!selectedSub) return;
+    const id = selectedSub.id;
+    setSelectedSub(previous => previous ? { ...previous, pipeline_status: "running", pipeline_results: null } : previous);
+    setSubmissions(previous => previous.map(sub => sub.id === id ? { ...sub, pipeline_status: "running", pipeline_results: null } : sub));
+    toast({ title: "Review started", description: "Progress will update automatically as checks complete." });
+    void supabase.functions.invoke("auto-review-pipeline", { body: { submission_id: id } }).then(async ({ error, data }) => {
+      if (error || data?.error) toast({ title: "Review could not finish", description: data?.error || error?.message, variant: "destructive" });
+      await loadSubmissions(true);
+    }).catch(async (error) => {
+      toast({ title: "Review could not finish", description: error.message, variant: "destructive" });
+      await loadSubmissions(true);
+    });
   };
 
   const loadNotifications = async () => {
@@ -1137,23 +1165,7 @@ const EditorSubmissions = () => {
                       <p className="text-sm font-medium mb-2">🔬 AI Review Pipeline has not been run yet</p>
                       <Button
                         size="sm"
-                        onClick={async () => {
-                          setActionLoading(true);
-                          try {
-                            await supabase.functions.invoke("auto-review-pipeline", {
-                              body: { submission_id: selectedSub.id },
-                            });
-                            toast({ title: "Pipeline started", description: "The AI review pipeline is now processing this manuscript." });
-                            setTimeout(async () => {
-                              await loadSubmissions();
-                              const updated = (await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub.id).single()).data;
-                              if (updated) setSelectedSub(updated as Submission);
-                            }, 3000);
-                          } catch (err: any) {
-                            toast({ title: "Error", description: err.message, variant: "destructive" });
-                          }
-                          setActionLoading(false);
-                        }}
+                        onClick={startPipeline}
                         disabled={actionLoading}
                       >
                         {actionLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <Play className="h-3 w-3 mr-1" />}
@@ -1237,6 +1249,7 @@ const EditorSubmissions = () => {
                           )}
                         </div>
 
+                        <PipelineProgress status={selectedSub.pipeline_status} results={selectedSub.pipeline_results} />
                         {/* Score overview bar */}
                         {selectedSub.pipeline_results?.steps && (
                           <div className="grid grid-cols-5 gap-1 mb-4">
@@ -1361,25 +1374,8 @@ const EditorSubmissions = () => {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={async () => {
-                              setActionLoading(true);
-                              try {
-                                await supabase.from("manuscript_submissions")
-                                  .update({ status: "pending", pipeline_status: "pending", pipeline_results: null, decision_date: null })
-                                  .eq("id", selectedSub.id);
-                                supabase.functions.invoke("auto-review-pipeline", {
-                                  body: { submission_id: selectedSub.id },
-                                }).catch(console.error);
-                                toast({ title: "Re-running pipeline", description: "The manuscript will be re-evaluated." });
-                                await loadSubmissions();
-                                const updated = (await supabase.from("manuscript_submissions").select("*").eq("id", selectedSub.id).single()).data;
-                                if (updated) setSelectedSub(updated as Submission);
-                              } catch (err: any) {
-                                toast({ title: "Error", description: err.message, variant: "destructive" });
-                              }
-                              setActionLoading(false);
-                            }}
-                            disabled={actionLoading}
+                            onClick={startPipeline}
+                            disabled={selectedSub.pipeline_status === "running" && !!selectedSub.pipeline_results?.progress?.updated_at && Date.now() - Date.parse(selectedSub.pipeline_results.progress.updated_at) < 15 * 60 * 1000}
                           >
                             {actionLoading ? <Loader2 className="h-3 w-3 animate-spin mr-1" /> : <RotateCcw className="h-3 w-3 mr-1" />}
                             Re-run Pipeline

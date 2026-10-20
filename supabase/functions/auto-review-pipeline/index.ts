@@ -146,7 +146,7 @@ serve(async (req) => {
     const snapshot = () => ({ run_id: runId, steps: [...steps].sort((a, b) => CHECK_NAMES.indexOf(a.step) - CHECK_NAMES.indexOf(b.step)), overall_passed: false, rejection_reasons: [], progress: { started_at: startedAt, updated_at: new Date().toISOString(), active_steps: [...active], percent: progressPercent(steps.length), phase } });
     // Compare-and-swap prevents two tabs from acquiring the same submission.
     const { data: claimed, error: claimError } = await supabase.from("manuscript_submissions")
-      .update({ pipeline_status: "running", pipeline_results: snapshot() })
+      .update({ pipeline_status: "running", pipeline_results: snapshot(), updated_at: startedAt })
       .eq("id", submission_id).eq("updated_at", sub.updated_at).select("id").maybeSingle();
     if (claimError) throw claimError;
     if (!claimed) return new Response(JSON.stringify({ success: true, already_running: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });

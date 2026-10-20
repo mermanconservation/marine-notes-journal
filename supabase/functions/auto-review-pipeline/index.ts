@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { z } from "npm:zod@3";
 import { CHECK_NAMES, mapBounded, progressPercent } from "./execution.ts";
+import { unzipSync, strFromU8 } from "npm:fflate@0.8.2";
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
@@ -175,6 +176,7 @@ ${sub.cover_letter ? `Cover Letter: ${sub.cover_letter}` : ""}`;
 
     // Download PDF for later steps (structure check, reference extraction)
     let pdfBase64: string | null = null;
+    let documentText = "";
     if (sub.file_paths && sub.file_paths.length > 0) {
       try {
         const filePath = sub.file_paths[sub.file_paths.length - 1];
@@ -184,12 +186,15 @@ ${sub.cover_letter ? `Cover Letter: ${sub.cover_letter}` : ""}`;
         if (!dlError && fileData) {
           const arrayBuffer = await fileData.arrayBuffer();
           const bytes = new Uint8Array(arrayBuffer);
-          let binary = "";
-          for (let i = 0; i < bytes.length; i++) {
-            binary += String.fromCharCode(bytes[i]);
+          if (new TextDecoder().decode(bytes.slice(0, 5)) === "%PDF-") {
+            let binary = "";
+            for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+            pdfBase64 = btoa(binary);
+          } else if (filePath.toLowerCase().endsWith(".docx")) {
+            const xml = unzipSync(bytes, { filter: entry => entry.name === "word/document.xml" })["word/document.xml"];
+            if (xml) documentText = strFromU8(xml).replace(/<\/w:p>/g, "\n").replace(/<[^>]+>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
           }
-          pdfBase64 = btoa(binary);
-          console.log("PDF downloaded for pipeline analysis, size:", bytes.length);
+          console.log("Manuscript downloaded for pipeline analysis, size:", bytes.length);
         } else {
           console.error("PDF download error for pipeline:", dlError);
         }
@@ -405,11 +410,12 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
     // ── STEP 6: Reference Quality & Verification Check ──
     // Download the manuscript PDF to extract the references section
     let pdfBase64ForRefs = pdfBase64;
-    if (!pdfBase64ForRefs && sub.file_paths && sub.file_paths.length > 0) {
+    if (!pdfBase64ForRefs && sub.file_paths?.some((path: string) => path.toLowerCase().endsWith(".pdf"))) {
       try {
-        const filePath = sub.file_paths[sub.file_paths.length - 1];
+        const filePath = [...sub.file_paths].reverse().find((path: string) => path.toLowerCase().endsWith(".pdf"));
+        if (!filePath) throw new Error("No PDF available");
         const { data: fileData, error: dlError } = await supabase.storage
-          .from("manuscripts")
+          .from("manuscript-submissions")
           .download(filePath);
         if (!dlError && fileData) {
           const arrayBuffer = await fileData.arrayBuffer();
@@ -462,7 +468,7 @@ If no references section is found, return an empty array.`,
       } else {
         extractMessages.push({
           role: "user",
-          content: `No PDF available. Based on the manuscript metadata below, identify any references, citations, DOIs, or URLs mentioned:\n\n${manuscriptContext}`,
+          content: documentText ? `Extract references from this Word manuscript:\n\n${documentText}` : `No readable full manuscript is available. Based on metadata only, identify any references, citations, DOIs, or URLs mentioned; do not invent references:\n\n${manuscriptContext}`,
         });
       }
 

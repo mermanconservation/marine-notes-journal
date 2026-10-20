@@ -1,0 +1,3 @@
+# Project rules
+- Keep review execution bounded to three concurrent checks, persist completed checks and active stages in the submission, and use an atomic database lease to prevent duplicate runs; this reduces latency without losing progress or multiplying AI usage.
+- Use the shared PipelineProgress view for authors and editors with quiet polling only for active reviews; progress must reflect saved work, never simulated elapsed-time percentages.

@@ -451,9 +451,10 @@ If no references section is found, return an empty array.`,
               text: "Extract all references from the References/Bibliography section at the end of this manuscript PDF. For each reference, extract the author names, title, DOI if listed, URLs, and whether it follows the journal's reference format.",
             },
             {
-              type: "image_url",
-              image_url: {
-                url: `data:application/pdf;base64,${pdfBase64ForRefs}`,
+              type: "file",
+              file: {
+                filename: "manuscript.pdf",
+                file_data: `data:application/pdf;base64,${pdfBase64ForRefs}`,
               },
             },
           ],

@@ -1,11 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
+import { z } from "npm:zod@3";
+import { CHECK_NAMES, mapBounded, progressPercent } from "./execution.ts";
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 
@@ -25,6 +22,9 @@ interface PipelineResults {
   suggested_volume?: string;
   suggested_issue?: string;
   prepared_metadata?: Record<string, unknown>;
+  run_id?: string;
+  progress?: Record<string, unknown>;
+  error?: string;
 }
 
 async function runAICheck(
@@ -78,6 +78,7 @@ async function runAICheck(
     console.error(`AI check ${toolName} failed:`, response.status, text);
     if (response.status === 429) throw new Error("RATE_LIMIT");
     if (response.status === 402) throw new Error("PAYMENT_REQUIRED");
+    if (response.status === 403) throw new Error("ACCESS_DENIED");
     throw new Error(`AI check failed: ${response.status}`);
   }
 
@@ -100,6 +101,7 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  let failureSave: ((message: string, paused: boolean) => Promise<void>) | undefined;
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
@@ -110,8 +112,12 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { submission_id } = await req.json();
-    if (!submission_id) throw new Error("submission_id is required");
+    const authorization = req.headers.get("Authorization");
+    const { data: authData, error: authError } = await supabase.auth.getUser((authorization || "").replace(/^Bearer /i, ""));
+    if (authError || !authData.user) return new Response(JSON.stringify({ error: "Sign in to run a review." }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const parsed = z.object({ submission_id: z.string().uuid() }).safeParse(await req.json().catch(() => null));
+    if (!parsed.success) return new Response(JSON.stringify({ error: "A valid submission ID is required." }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const { submission_id } = parsed.data;
 
     // Fetch submission
     const { data: sub, error: fetchErr } = await supabase
@@ -122,11 +128,41 @@ serve(async (req) => {
 
     if (fetchErr || !sub) throw new Error("Submission not found");
 
-    // Mark as running
-    await supabase
-      .from("manuscript_submissions")
-      .update({ pipeline_status: "running" })
-      .eq("id", submission_id);
+    const { data: roles, error: roleError } = await supabase.from("user_roles").select("role").eq("user_id", authData.user.id);
+    if (roleError) throw new Error("Unable to verify review access.");
+    const editor = roles?.some((role) => role.role === "editor" || role.role === "admin");
+    if (!editor && sub.user_id !== authData.user.id) return new Response(JSON.stringify({ error: "You cannot review this submission." }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    if (!editor && sub.pipeline_status !== "pending") return new Response(JSON.stringify({ error: "An editor must restart this review." }), { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    const previous = sub.pipeline_results || {};
+    const leaseUpdated = previous.progress?.updated_at;
+    if (sub.pipeline_status === "running" && leaseUpdated && Date.now() - Date.parse(leaseUpdated) < 15 * 60 * 1000) {
+      return new Response(JSON.stringify({ success: true, already_running: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    const runId = crypto.randomUUID();
+    const startedAt = new Date().toISOString();
+    let phase = "Preparing manuscript";
+    const steps: StepResult[] = [];
+    const active = new Set<string>();
+    const snapshot = () => ({ run_id: runId, steps: [...steps].sort((a, b) => CHECK_NAMES.indexOf(a.step) - CHECK_NAMES.indexOf(b.step)), overall_passed: false, rejection_reasons: [], progress: { started_at: startedAt, updated_at: new Date().toISOString(), active_steps: [...active], percent: progressPercent(steps.length), phase } });
+    // Compare-and-swap prevents two tabs from acquiring the same submission.
+    const { data: claimed, error: claimError } = await supabase.from("manuscript_submissions")
+      .update({ pipeline_status: "running", pipeline_results: snapshot() })
+      .eq("id", submission_id).eq("updated_at", sub.updated_at).select("id").maybeSingle();
+    if (claimError) throw claimError;
+    if (!claimed) return new Response(JSON.stringify({ success: true, already_running: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    let writes = Promise.resolve();
+    const saveProgress = () => {
+      writes = writes.then(async () => {
+        const { error } = await supabase.from("manuscript_submissions").update({ pipeline_results: snapshot() }).eq("id", submission_id).eq("pipeline_results->>run_id", runId);
+        if (error) throw error;
+      });
+      return writes;
+    };
+    failureSave = async (message, paused) => {
+      await writes.catch(() => {});
+      const { error } = await supabase.from("manuscript_submissions").update({ pipeline_status: paused ? "paused" : "error", pipeline_results: { ...snapshot(), error: message } }).eq("id", submission_id).eq("pipeline_results->>run_id", runId);
+      if (error) console.error("Could not save pipeline error", error);
+    };
 
     const manuscriptContext = `
 Title: ${sub.title}
@@ -137,13 +173,11 @@ Affiliation: ${sub.corresponding_author_affiliation}
 Abstract: ${sub.abstract}
 ${sub.cover_letter ? `Cover Letter: ${sub.cover_letter}` : ""}`;
 
-    const steps: StepResult[] = [];
-
     // Download PDF for later steps (structure check, reference extraction)
     let pdfBase64: string | null = null;
     if (sub.file_paths && sub.file_paths.length > 0) {
       try {
-        const filePath = sub.file_paths[0];
+        const filePath = sub.file_paths[sub.file_paths.length - 1];
         const { data: fileData, error: dlError } = await supabase.storage
           .from("manuscript-submissions")
           .download(filePath);
@@ -164,6 +198,7 @@ ${sub.cover_letter ? `Cover Letter: ${sub.cover_letter}` : ""}`;
       }
     }
 
+    const checks = [async () => {
     // ── STEP 1: Scope & Relevance ──
     const step1 = await runAICheck(
       LOVABLE_API_KEY,
@@ -192,7 +227,8 @@ Be strict: reject manuscripts clearly outside marine/ocean science scope. Pass m
       manuscriptContext,
       "scope_check",
     );
-    steps.push(step1);
+    return step1;
+    }, async () => {
 
     // ── STEP 2: Grammar & Language Quality ──
     const step2 = await runAICheck(
@@ -212,7 +248,8 @@ Score strictly: below 60 should fail. Minor issues (a few typos) can still pass 
       manuscriptContext,
       "grammar_check",
     );
-    steps.push(step2);
+    return step2;
+    }, async () => {
 
     // ── STEP 3: Structure & Formatting Compliance ──
     const structurePrompt = `You are a formatting and structure reviewer for Marine Notes Journal. Based on the manuscript metadata and PDF content (if available), evaluate compliance with the journal's author guidelines.
@@ -297,7 +334,7 @@ REFERENCE FORMAT:
 Check all applicable rules for the given manuscript type. Flag any missing required elements.`;
 
     const step3Messages = pdfBase64
-      ? `${manuscriptContext}\n\n[A PDF of the full manuscript has been provided for structural analysis.]`
+      ? `${manuscriptContext}\n\n[Only metadata is available for this structural assessment; do not claim to have inspected full PDF formatting.]`
       : manuscriptContext;
 
     const step3 = await runAICheck(
@@ -306,7 +343,8 @@ Check all applicable rules for the given manuscript type. Flag any missing requi
       step3Messages,
       "structure_check",
     );
-    steps.push(step3);
+    return step3;
+    }, async () => {
 
     // ── STEP 4: Ethical & Publication Compliance ──
     const step4 = await runAICheck(
@@ -341,7 +379,8 @@ Be lenient for Field Notes and Conservation News which may not require extensive
       manuscriptContext,
       "ethics_check",
     );
-    steps.push(step4);
+    return step4;
+    }, async () => {
 
     // ── STEP 5: Originality Assessment ──
     const step5 = await runAICheck(
@@ -360,14 +399,15 @@ Note: You cannot check against a plagiarism database. Provide your best assessme
       manuscriptContext,
       "originality_check",
     );
-    steps.push(step5);
+    return step5;
+    }, async () => {
 
     // ── STEP 6: Reference Quality & Verification Check ──
     // Download the manuscript PDF to extract the references section
     let pdfBase64ForRefs = pdfBase64;
     if (!pdfBase64ForRefs && sub.file_paths && sub.file_paths.length > 0) {
       try {
-        const filePath = sub.file_paths[0];
+        const filePath = sub.file_paths[sub.file_paths.length - 1];
         const { data: fileData, error: dlError } = await supabase.storage
           .from("manuscripts")
           .download(filePath);
@@ -488,10 +528,13 @@ If no references section is found, return an empty array.`,
           console.log(`Extracted ${extractedRefs.length} references (total found: ${args.total_references_found})`);
         }
       } else {
-        console.error("Reference extraction API error:", extractResponse.status);
+        if (extractResponse.status === 402) throw new Error("PAYMENT_REQUIRED");
+        if (extractResponse.status === 403) throw new Error("ACCESS_DENIED");
+        if (extractResponse.status === 429) throw new Error("RATE_LIMIT");
+        throw new Error(`Reference extraction failed: ${extractResponse.status}`);
       }
     } catch (e) {
-      console.error("Reference extraction failed:", e);
+      throw e;
     }
 
     // Verify DOIs and URLs from extracted references
@@ -499,7 +542,9 @@ If no references section is found, return an empty array.`,
     let verifiedCount = 0;
     let failedCount = 0;
 
-    for (const ref of extractedRefs.slice(0, 20)) {
+    phase = "Verifying references";
+    await saveProgress();
+    await mapBounded(extractedRefs.slice(0, 20), 4, async (ref) => {
       if (ref.doi) {
         const cleanDoi = ref.doi.replace(/^https?:\/\/doi\.org\//, "").trim();
         if (/^10\.\d{4,}\//.test(cleanDoi)) {
@@ -571,7 +616,7 @@ If no references section is found, return an empty array.`,
           failedCount++;
         }
       }
-    }
+    });
 
     const refSummary = extractedRefs.length > 0
       ? `Found ${extractedRefs.length} references in the manuscript.`
@@ -616,7 +661,21 @@ Score guidelines:
       manuscriptContext + verificationSummary,
       "reference_check",
     );
-    steps.push(step6);
+    return step6;
+    }];
+    await mapBounded(checks, 3, async (check, index) => {
+      active.add(CHECK_NAMES[index]);
+      phase = "Assessing manuscript";
+      await saveProgress();
+      const result = await check();
+      steps.push(result);
+      active.delete(CHECK_NAMES[index]);
+      await saveProgress();
+      return result;
+    });
+    steps.sort((a, b) => CHECK_NAMES.indexOf(a.step) - CHECK_NAMES.indexOf(b.step));
+    phase = "Saving final assessment";
+    await saveProgress();
 
     // ── Determine overall result ──
     // Threshold: ≥75 avg = auto-accept, 60-74 = editor_review, <60 = auto-reject
@@ -679,13 +738,15 @@ Score guidelines:
     }
 
     const results: PipelineResults = {
+      run_id: runId,
+      progress: { ...snapshot().progress, percent: 100, active_steps: [], phase: "Complete" },
       steps,
       overall_passed: avgScore >= 75,
       rejection_reasons: rejectionReasons,
       prepared_metadata: preparedMetadata,
     };
 
-    await supabase
+    const { error: finishError } = await supabase
       .from("manuscript_submissions")
       .update({
         pipeline_status: pipelineStatus,
@@ -693,7 +754,8 @@ Score guidelines:
         status: newStatus,
         decision_date: avgScore < 60 ? new Date().toISOString() : null,
       })
-      .eq("id", submission_id);
+      .eq("id", submission_id).eq("pipeline_results->>run_id", runId);
+    if (finishError) throw finishError;
 
     // Record the detailed review for editors
     const editorComment = `[AI AUTO-REVIEW PIPELINE]\n\n**Result: ${resultLabel}** (Average Score: ${avgScore}/100)\n\n${steps
@@ -718,36 +780,38 @@ Score guidelines:
 
     // Insert author-facing note using the submission's user_id as reviewer
     // (service role bypasses RLS, and this keeps the FK constraint satisfied)
-    const reviewerId = sub.user_id || sub.corresponding_author_email;
-    await supabase.from("submission_reviews").insert({
+    const { error: reviewError } = await supabase.from("submission_reviews").insert({
       submission_id,
-      reviewer_id: sub.user_id,
+      reviewer_id: authData.user.id,
       action: reviewAction,
       comment: authorNote,
     });
+    if (reviewError) throw reviewError;
 
     return new Response(JSON.stringify({ success: true, passed: avgScore >= 75, results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("Pipeline error:", e);
-    const msg = e instanceof Error ? e.message : "Unknown error";
+    const raw = e instanceof Error ? e.message : "Unknown error";
+    const msg = raw === "RATE_LIMIT" ? "AI service is busy. An editor can retry shortly." : raw === "PAYMENT_REQUIRED" ? "AI credits are exhausted. The owner must restore credits before restarting." : raw === "ACCESS_DENIED" ? "AI access is denied. Restore access before restarting the review." : raw;
+    await failureSave?.(msg, raw === "PAYMENT_REQUIRED" || raw === "ACCESS_DENIED");
 
-    if (msg === "RATE_LIMIT") {
-      return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again later." }), {
+    if (raw === "RATE_LIMIT") {
+      return new Response(JSON.stringify({ error: msg }), {
         status: 429,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    if (msg === "PAYMENT_REQUIRED") {
-      return new Response(JSON.stringify({ error: "AI service credits exhausted." }), {
+    if (raw === "PAYMENT_REQUIRED") {
+      return new Response(JSON.stringify({ error: msg }), {
         status: 402,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     return new Response(JSON.stringify({ success: false, error: msg }), {
-      status: 500,
+      status: raw === "ACCESS_DENIED" ? 403 : 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }

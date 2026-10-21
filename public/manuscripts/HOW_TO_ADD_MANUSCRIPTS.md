@@ -11,6 +11,8 @@ Upload your PDF file to the volume's year folder, regardless of upload date:
 - Continue annually: the folder year is 2025 + the volume number.
 Name each PDF `vol{volume}-iss{issue}-title.pdf` and use the same path in `articles.json`.
 
+Supplementary material follows the article: put supplementary files in the `supplementary/` subfolder of the same year (e.g. `public/manuscripts/2027/supplementary/MNJ-2026-007-Supplementary-Table-S1.pdf`) and use that path in the article's `supplementaryFiles` entries.
+
 ## Step 2: Update articles.json
 
 Edit `src/data/articles.json` and add a new article entry:

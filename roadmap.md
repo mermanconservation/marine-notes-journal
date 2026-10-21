@@ -4,5 +4,5 @@
 - [x] Verify the stalled manuscript through all six checks in the authenticated editor dashboard; repaired Word/PDF input mismatch and confirmed saved completion.
 
 # Manuscript volume folders
-- [ ] Move both Volume 2 PDFs to 2027 and update public links and issue year.
-- [ ] Apply volume-based years to future manuscript paths and verify the two downloads.
+- [x] Move both Volume 2 PDFs to 2027 and update public links and issue year.
+- [x] Apply volume-based years to future manuscript paths and verify the two downloads.

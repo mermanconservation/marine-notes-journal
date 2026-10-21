@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { stampPdf, buildCitation } from "@/utils/stampPdf";
 import pdfBanner from "@/assets/pdf-banner.png";
+import { volumeYear } from "@/utils/volumeYear";
 
 
 
@@ -526,7 +527,7 @@ const AdminPanel = () => {
       for (let i = 0; i < arr.length; i++) binary += String.fromCharCode(arr[i]);
       const base64 = btoa(binary);
 
-      const year = new Date(previewData.publicationDate).getFullYear();
+      const year = volumeYear(previewData.volume);
       const safeName = previewData.title.replace(/[^a-zA-Z0-9-]/g, "-").replace(/-+/g, "-").substring(0, 80);
       const fileName = `${year}/${previewData.doi}-${safeName}.pdf`;
 
@@ -680,7 +681,7 @@ const AdminPanel = () => {
     const maxVol = Math.max(...issues.map((i: any) => parseInt(i.volume) || 0));
     const inVol = issues.filter((i: any) => parseInt(i.volume) === maxVol);
     const maxIssue = Math.max(...inVol.map((i: any) => parseInt(i.issue) || 0));
-    const year = inVol[0]?.year || new Date().getFullYear();
+    const year = volumeYear(maxVol);
     setOpeningIssue(true);
     try {
       const code = ensurePasscode();
@@ -701,7 +702,7 @@ const AdminPanel = () => {
   const handleOpenNextVolume = async () => {
     const maxVol = issues.length === 0 ? 0 : Math.max(...issues.map((i: any) => parseInt(i.volume) || 0));
     const nextVol = maxVol + 1;
-    const year = new Date().getFullYear() + (issues.length === 0 ? 0 : 1);
+    const year = volumeYear(nextVol);
     setOpeningIssue(true);
     try {
       const code = ensurePasscode();

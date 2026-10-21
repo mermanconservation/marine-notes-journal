@@ -23,6 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { supabase as supabaseClient } from "@/integrations/supabase/client";
 import { AiReviewNote, isAiReviewComment } from "@/components/AiReviewNote";
 import ManuscriptFormatter from "@/components/ManuscriptFormatter";
+import { volumeYear } from "@/utils/volumeYear";
 
 const STATUS_OPTIONS = [
   { value: "pending", label: "Pending", color: "bg-yellow-100 text-yellow-800" },
@@ -1776,10 +1777,10 @@ Pages: ${publishData.articleNumber}`}
                 <div className="space-y-2">
                   <h3 className="font-semibold text-sm">Publication PDF (GitHub)</h3>
                   <p className="text-xs text-muted-foreground">
-                    The PDF path is auto-generated. Upload the finalized PDF to <code className="bg-muted px-1 rounded">public/manuscripts/{new Date(publishData.publicationDate).getFullYear()}/</code> on GitHub.
+                    The PDF path is auto-generated. Upload the finalized PDF to <code className="bg-muted px-1 rounded">public/manuscripts/{volumeYear(publishData.volume)}/</code> on GitHub.
                   </p>
                   {(() => {
-                    const year = new Date(publishData.publicationDate).getFullYear();
+                    const year = volumeYear(publishData.volume);
                     const safeName = publishData.title.replace(/[^a-zA-Z0-9\s-]/g, "").replace(/\s+/g, "-").substring(0, 80);
                     const generatedPath = `/manuscripts/${year}/vol${publishData.volume}-iss${publishData.issue}-${safeName}.pdf`;
                     return (

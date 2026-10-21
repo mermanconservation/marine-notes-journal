@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import issuesSource from "@/data/issues.json";
 import articlesSource from "@/data/articles.json";
+import { volumeYear } from "@/utils/volumeYear";
 
 interface IssueRecord {
   volume: string;
@@ -86,9 +87,7 @@ export default function ContentManager() {
     [issues]
   );
 
-  const yearFor = (volume: string, issue: string) =>
-    issues.find((i) => i.volume === volume && i.issue === issue)?.year ||
-    new Date().getFullYear();
+  const yearFor = (volume: string, _issue: string) => volumeYear(volume);
 
   const expectedPath = (article: any) => {
     const year = yearFor(String(article.volume), String(article.issue));
@@ -237,7 +236,7 @@ export default function ContentManager() {
       {
         volume: String(lastVolume),
         issue: String(nextIssue),
-        year: new Date().getFullYear(),
+        year: volumeYear(lastVolume),
         status: "open",
         title: `Issue ${nextIssue}`,
         issuePdfUrl: "",
@@ -254,7 +253,7 @@ export default function ContentManager() {
       {
         volume: String(nextVolume),
         issue: "1",
-        year: new Date().getFullYear(),
+        year: volumeYear(nextVolume),
         status: "open",
         title: "Issue 1",
         issuePdfUrl: "",

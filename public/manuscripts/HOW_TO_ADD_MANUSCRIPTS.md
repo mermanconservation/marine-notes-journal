@@ -4,10 +4,12 @@ When you upload a new manuscript PDF to GitHub, follow these steps to make it ap
 
 ## Step 1: Upload PDF to GitHub
 
-Upload your PDF file to the appropriate year folder:
-- `public/manuscripts/2026/` for 2026 publications
-- `public/manuscripts/2027/` for 2027 publications
-- etc.
+Upload your PDF file to the volume's year folder, regardless of upload date:
+- `public/manuscripts/2026/` for Volume 1
+- `public/manuscripts/2027/` for Volume 2
+- `public/manuscripts/2028/` for Volume 3
+- Continue annually: the folder year is 2025 + the volume number.
+Name each PDF `vol{volume}-iss{issue}-title.pdf` and use the same path in `articles.json`.
 
 ## Step 2: Update articles.json
 

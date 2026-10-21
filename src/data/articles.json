@@ -49,7 +49,9 @@
       "doi": "MNJ-2026-003",
       "title": "Juvenile Humpback Whale Recorded in the Pagasetic Gulf, Greece",
       "authors": "Christos Taklis",
-      "orcidIds": ["0000-0001-9181-0292"],
+      "orcidIds": [
+        "0000-0001-9181-0292"
+      ],
       "type": "Conservation News",
       "publicationDate": "2026-02-12",
       "pdfUrl": "/manuscripts/2026/vol1-iss1-Juvenile-Humpback-Whale-Recorded-in-the-Pagasetic-Gulf-Greece.pdf",
@@ -64,7 +66,9 @@
       "doi": "MNJ-2026-004",
       "title": "Nudibranch Diversity of South-East Pelion, Greece: An Eight-Year Citizen Science and Field Research Record (2017–2025)",
       "authors": "Christos Taklis",
-      "orcidIds": ["0000-0001-9181-0292"],
+      "orcidIds": [
+        "0000-0001-9181-0292"
+      ],
       "type": "Observational Reports",
       "publicationDate": "2026-04-13",
       "pdfUrl": "/manuscripts/2026/vol1-iss1-nudibranch-diversity-of-south-east-pelion-greece-an-eight-year-citizen-science-and-field-research-record-2017-2025.pdf",
@@ -94,7 +98,9 @@
       "doi": "MNJ-2026-006",
       "title": "First documented occurrence and evidence of local establishment of the non-indigenous crab Percnon gibbesi at Theotokos, southeastern Pelion, Greece",
       "authors": "Christos Taklis",
-      "orcidIds": ["0000-0001-9181-0292"],
+      "orcidIds": [
+        "0000-0001-9181-0292"
+      ],
       "type": "Research Article",
       "publicationDate": "2026-08-02",
       "pdfUrl": "/manuscripts/2026/vol2-iss1-percnon-gibbesi-theotokos-southeastern-pelion-greece.pdf",
@@ -103,7 +109,32 @@
       "issue": "1",
       "abstract": "The non-indigenous nimble spray crab Percnon gibbesi (H. Milne Edwards, 1853) has expanded rapidly across the Mediterranean Sea, including the Aegean and Ionian Seas, since its first regional record in 1999. We report the first documented occurrence of the species at Theotokos, southeastern Pelion, central Aegean Sea, Greece. An initial coastal biodiversity survey conducted under the NATIV-PELION monitoring programme recorded and photographed two individuals on 21 July 2026. A targeted follow-up survey on 22 July 2026 recorded 32 individuals at and around 39.19358894° N, 23.34314461° E, spanning size classes from small juveniles to large adults. Several specimens occupied crevices and sheltered interstices within the shallow rocky substrate, forming a dense local aggregation consistent with a probable settlement and refuge site. The co-occurrence of multiple size classes indicates that the record reflects more than the arrival of one or two transient individuals, and instead constitutes preliminary evidence of an established or actively establishing local population. Quantitative follow-up surveys are needed to characterise population density, spatial extent, reproductive status, and potential ecological interactions with native shallow-water grazers and benthic assemblages.",
       "pages": "1-7"
+    },
+    {
+      "id": 7,
+      "doi": "MNJ-2026-007",
+      "title": "Opportunistic Relocation of Massive Coral Colonies in the Arabian Gulf: Survival Outcomes from a Coastal Development Mitigation Case Report",
+      "authors": "Diego Lozano-Cortés, Riaan van der Merwe, Ali Alshafie, Sudhanshu Dixit, Karuppasamy Manikandan",
+      "orcidIds": [],
+      "type": "Case Report",
+      "publicationDate": "2026-10-21",
+      "pdfUrl": "/manuscripts/2026/vol2-iss1-opportunistic-relocation-of-massive-coral-colonies-arabian-gulf.pdf",
+      "resolverUrl": "https://www.marinenotesjournal.com/doi/MNJ-2026-007",
+      "volume": "2",
+      "issue": "1",
+      "abstract": "Massive coral colonies of the genera Dipsastraea, Platygyra and Porites were opportunistically relocated from a coastal development footprint in the Arabian Gulf to a mitigation site approximately 18 km away at 5 m depth. Colonies were fixed to either natural seabed or introduced concrete bases using underwater epoxy and were monitored after approximately 15 and 20 months. Overall survival after 20 months was 35.1%. Survival was 35.7% for Dipsastraea, 42.1% for Platygyra, and 0% for Porites. Final colony fate included 13 colonies alive, 20 dead in situ, and 4 missing/detached after 20 months. Exploratory logistic regression did not detect significant effects of genus or attachment substrate on survival, but inference was limited by the small sample size, uneven genus representation, complete mortality of Porites, and absence of control colonies. Missing and detached colonies were treated as non-survivors because they were functionally lost from the mitigation site. This case provides a practical benchmark for evaluating coral relocation under real project constraints and identifies three management lessons: field conditions during relocation should be documented carefully, attachment design is a critical failure point, and post-relocation monitoring should extend beyond one year to capture delayed mortality and mechanical loss.",
+      "pages": "8-25",
+      "supplementaryFiles": [
+        {
+          "name": "Supplementary Table S1",
+          "url": "/manuscripts/2026/supplementary/MNJ-2026-007-Supplementary-Table-S1.pdf"
+        },
+        {
+          "name": "Supplementary Table S2",
+          "url": "/manuscripts/2026/supplementary/MNJ-2026-007-Supplementary-Table-S2.pdf"
+        }
+      ]
     }
   ],
-  "nextSequence": 7
+  "nextSequence": 8
 }

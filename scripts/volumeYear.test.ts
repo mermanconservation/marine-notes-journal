@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { existsSync, readFileSync } from "node:fs";
-import { volumeYear } from "./volumeYear";
+import { volumeYear } from "../src/utils/volumeYear";
 
 test("Volume 2 manuscripts belong in 2027 and both PDFs exist there", () => {
   expect(volumeYear(2)).toBe(2027);

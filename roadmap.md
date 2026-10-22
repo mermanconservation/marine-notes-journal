@@ -6,3 +6,7 @@
 # Manuscript volume folders
 - [x] Move both Volume 2 PDFs to 2027 and update public links and issue year.
 - [x] Apply volume-based years to future manuscript paths and verify the two downloads.
+
+# Updated manuscript and publication tracking
+- [ ] Replace the coral article PDF with the updated manuscript, preserving its 2027 location and supplementary links.
+- [ ] Add a confirmed, saved “Published already” action to accepted submissions and verify it.

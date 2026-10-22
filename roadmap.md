@@ -8,5 +8,5 @@
 - [x] Apply volume-based years to future manuscript paths and verify the two downloads.
 
 # Updated manuscript and publication tracking
-- [ ] Replace the coral article PDF with the updated manuscript, preserving its 2027 location and supplementary links.
-- [ ] Add a confirmed, saved “Published already” action to accepted submissions and verify it.
+- [x] Replace the coral article PDF with the updated manuscript, preserving its 2027 location and supplementary links.
+- [x] Add a confirmed, saved “Published already” action to accepted submissions and verify it through the signed-in admin page and reload.

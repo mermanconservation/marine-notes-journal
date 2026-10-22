@@ -15,6 +15,13 @@
       "when": 1792426577874,
       "tag": "0001_author_supplementary_and_claim",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792645760197,
+      "tag": "0002_record_already_published_submission",
+      "breakpoints": true
     }
   ]
 }

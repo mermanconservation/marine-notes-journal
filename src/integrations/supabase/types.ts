@@ -358,6 +358,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      mark_submission_already_published: {
+        Args: { _submission_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "editor" | "user"

@@ -2,3 +2,4 @@
 - Keep review execution bounded to three concurrent checks, persist completed checks and active stages in the submission, and use an atomic database lease to prevent duplicate runs; this reduces latency without losing progress or multiplying AI usage.
 - Use the shared PipelineProgress view for authors and editors with quiet polling only for active reviews; progress must reflect saved work, never simulated elapsed-time percentages.
 - Use the shared volumeYear utility for manuscript folder paths and new volume/issue defaults, rather than upload or publication dates, so all editorial entry points use the same annual volume schedule.
+- Record manual publication acknowledgements through the admin-only atomic RPC and shared audit-note marker; retain the accepted decision and exclude acknowledged submissions from the admin publishing queue without creating duplicate articles.

@@ -20,6 +20,7 @@ import {
 import { stampPdf, buildCitation } from "@/utils/stampPdf";
 import pdfBanner from "@/assets/pdf-banner.png";
 import { volumeYear } from "@/utils/volumeYear";
+import { PUBLICATION_RECORDED_NOTE, recordedPublicationIds } from "@/utils/publicationTracking";
 
 
 
@@ -86,6 +87,9 @@ const AdminPanel = () => {
     return code;
   };
   const [acceptedSubmissions, setAcceptedSubmissions] = useState<any[]>([]);
+  const [alreadyPublishedSubmissions, setAlreadyPublishedSubmissions] = useState<any[]>([]);
+  const [recordingPublication, setRecordingPublication] = useState<string | null>(null);
+  const [publicationToRecord, setPublicationToRecord] = useState<{ id: string; title: string } | null>(null);
   const [publishingSubmission, setPublishingSubmission] = useState<string | null>(null);
   const [publishPdfFile, setPublishPdfFile] = useState<File | null>(null);
   const publishFileRef = useRef<HTMLInputElement>(null);
@@ -208,7 +212,17 @@ const AdminPanel = () => {
       }
     } catch {}
 
-    setAcceptedSubmissions(acceptedSubs || []);
+    const { data: publicationNotes, error: publicationNotesError } = await supabase
+      .from("submission_reviews")
+      .select("submission_id, action, comment")
+      .eq("action", "note")
+      .eq("comment", PUBLICATION_RECORDED_NOTE);
+    if (publicationNotesError) {
+      toast({ title: "Publication records unavailable", description: "Please reload before recording a publication.", variant: "destructive" });
+    }
+    const recordedIds = recordedPublicationIds(publicationNotes || []);
+    setAcceptedSubmissions((acceptedSubs || []).filter(sub => !recordedIds.has(sub.id)));
+    setAlreadyPublishedSubmissions((acceptedSubs || []).filter(sub => recordedIds.has(sub.id)));
 
     // Load journal issues
     const { data: issuesData } = await supabase
@@ -230,6 +244,23 @@ const AdminPanel = () => {
     setLoading(false);
   };
 
+
+  const handleRecordPublication = async () => {
+    if (!publicationToRecord || !user) return;
+    const submission = publicationToRecord;
+    setRecordingPublication(submission.id);
+    try {
+      const { error } = await supabase.rpc("mark_submission_already_published", { _submission_id: submission.id });
+      if (error) throw error;
+      setPublicationToRecord(null);
+      toast({ title: "Publication recorded", description: "The manuscript is marked as published already. No duplicate article or email was created." });
+      await loadData();
+    } catch (err: any) {
+      toast({ title: "Could not record publication", description: err.message, variant: "destructive" });
+    } finally {
+      setRecordingPublication(null);
+    }
+  };
 
   const handleDeleteArticle = async (article: any) => {
     if (deleteConfirmTitle !== article.title) {
@@ -1082,6 +1113,13 @@ const AdminPanel = () => {
                   <div className="flex flex-wrap gap-2">
                     <Button
                       size="sm" variant="outline"
+                      disabled={recordingPublication !== null}
+                      onClick={() => setPublicationToRecord({ id: sub.id, title: sub.title })}
+                    >
+                      <CheckCircle className="h-3 w-3 mr-1" /> Published already
+                    </Button>
+                    <Button
+                      size="sm" variant="outline"
                       disabled={extractingMeta || !publishPdfFile}
                       onClick={() => handleExtractMetadata(sub)}
                     >
@@ -1105,6 +1143,36 @@ const AdminPanel = () => {
             </CardContent>
           </Card>
         )}
+
+        {alreadyPublishedSubmissions.length > 0 && (
+          <section className="mb-6 space-y-3" aria-label="Already published submissions">
+            <h2 className="text-lg font-semibold">Already Published Submissions</h2>
+            {alreadyPublishedSubmissions.map(sub => (
+              <div key={sub.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-border py-3">
+                <p className="text-sm font-medium">{sub.title}</p>
+                <Badge variant="secondary"><CheckCircle className="mr-1 h-3 w-3" /> Published already</Badge>
+              </div>
+            ))}
+          </section>
+        )}
+
+        <AlertDialog open={publicationToRecord !== null} onOpenChange={open => { if (!open && !recordingPublication) setPublicationToRecord(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Record as published already?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {publicationToRecord?.title} will leave the Ready to Publish list. Its acceptance and review history will remain unchanged. No article will be created and no email will be sent.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={recordingPublication !== null}>Cancel</AlertDialogCancel>
+              <Button onClick={handleRecordPublication} disabled={recordingPublication !== null}>
+                {recordingPublication ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                Published already
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Journal Issues Management */}
         <Card className="mb-6">
